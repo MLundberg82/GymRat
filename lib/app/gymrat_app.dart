@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/gymrat_theme.dart';
-import '../features/hub/presentation/hub_screen.dart';
+import 'gymrat_shell.dart';
 
 class GymRatApp extends StatelessWidget {
   const GymRatApp({super.key});
@@ -12,7 +12,7 @@ class GymRatApp extends StatelessWidget {
       title: 'GymRat',
       debugShowCheckedModeBanner: false,
       theme: GymRatTheme.dark,
-      home: const HubScreen(),
+      home: const GymRatShell(),
     );
   }
 }

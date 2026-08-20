@@ -2,76 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/gymrat_colors.dart';
 
-class HubScreen extends StatefulWidget {
+class HubScreen extends StatelessWidget {
   const HubScreen({super.key});
-
-  @override
-  State<HubScreen> createState() => _HubScreenState();
-}
-
-class _HubScreenState extends State<HubScreen> {
-  int _selectedIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: const [
-            _HomeView(),
-            _PlaceholderView(
-              title: 'Workout',
-              icon: Icons.fitness_center_rounded,
-            ),
-            _PlaceholderView(
-              title: 'Progress',
-              icon: Icons.show_chart_rounded,
-            ),
-            _PlaceholderView(
-              title: 'Profile',
-              icon: Icons.person_outline_rounded,
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'HUB',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center_outlined),
-            selectedIcon: Icon(Icons.fitness_center_rounded),
-            label: 'WORKOUT',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.show_chart_outlined),
-            selectedIcon: Icon(Icons.show_chart_rounded),
-            label: 'PROGRESS',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'PROFILE',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HomeView extends StatelessWidget {
-  const _HomeView();
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +174,7 @@ class _CharacterPlaceholder extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
+          const Positioned(
             top: 20,
             left: 20,
             child: _StatBadge(
@@ -251,7 +183,7 @@ class _CharacterPlaceholder extends StatelessWidget {
               label: 'DAY STREAK',
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 20,
             right: 20,
             child: _StatBadge(
@@ -332,48 +264,6 @@ class _StatBadge extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PlaceholderView extends StatelessWidget {
-  const _PlaceholderView({
-    required this.title,
-    required this.icon,
-  });
-
-  final String title;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 54,
-            color: GymRatColors.textMuted,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              color: GymRatColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Coming soon',
-            style: TextStyle(
-              color: GymRatColors.textMuted,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

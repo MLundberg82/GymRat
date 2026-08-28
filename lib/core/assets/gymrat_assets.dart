@@ -2,7 +2,7 @@ abstract final class GymRatAssets {
   static const String gymBase = 'assets/gyms/gym_base.png';
 
   static String gymForLevel(int level) {
-    final state = level.clamp(1, 9).toInt();
+    final state = level.clamp(1, 50).toInt();
     return 'assets/gyms/gym_level_${state.toString().padLeft(2, '0')}.webp';
   }
 

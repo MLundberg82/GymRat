@@ -457,8 +457,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${context.tr.t(widget.upgrade.nameKey)} · '
-                  '${context.tr.t('tier')} ${widget.upgrade.tier}',
+                  context.tr.t(widget.upgrade.nameKey),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -486,6 +485,10 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       GymUpgradeType.spotlights => Icons.lightbulb_rounded,
       GymUpgradeType.speakers => Icons.speaker_rounded,
       GymUpgradeType.championPlaque => Icons.workspace_premium_rounded,
+      GymUpgradeType.cardio => Icons.directions_run_rounded,
+      GymUpgradeType.recovery => Icons.health_and_safety_rounded,
+      GymUpgradeType.strongman => Icons.sports_martial_arts_rounded,
+      GymUpgradeType.architecture => Icons.account_balance_rounded,
     };
   }
 }

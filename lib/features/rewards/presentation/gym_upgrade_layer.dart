@@ -30,7 +30,7 @@ class _GymUpgradeLayerState extends State<GymUpgradeLayer>
     final previous = widget.previousLevel;
     return widget.animateUnlock &&
         previous != null &&
-        previous.clamp(1, 9) < widget.level.clamp(1, 9);
+        previous.clamp(1, 50) < widget.level.clamp(1, 50);
   }
 
   @override

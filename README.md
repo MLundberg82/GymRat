@@ -1,17 +1,54 @@
-# gymrat
+# GymRat
 
-A new Flutter project.
+GymRat is a gamified Flutter training app that turns workouts, consistency,
+personal bests, XP, level-ups, and evolution into a premium RPG-style
+progression loop. Android is the first target; iOS is planned for a later
+stage.
 
-## Getting Started
+The durable product and engineering direction lives in
+[`docs/GYMRAT_VISION.md`](docs/GYMRAT_VISION.md). Repository-wide contribution
+rules live in [`AGENTS.md`](AGENTS.md).
 
-This project is a starting point for a Flutter application.
+## Current experience
 
-A few resources to get you started if this is your first Flutter project:
+The main journey is:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+`Hub -> Choose Workout -> Preview -> Active Workout/Walk -> rewards -> Workout Complete -> Hub`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The current free presets are Chest, Back, Legs, Arms, and Walk. Completed
+sessions persist locally through `shared_preferences`; `WorkoutSessionStore`
+owns history, XP, levels, streaks, and personal-best comparison.
+
+The app supports English, Swedish, Spanish, Russian, and Chinese, with system
+language used by default. Evolution milestones are levels 5, 10, 15, 20, 30,
+40, and 50.
+
+## Project structure
+
+- `lib/app`: application shell and routing entry point
+- `lib/core`: assets, localization, and theme primitives
+- `lib/features`: feature modules for hub, workouts, rewards, evolution,
+  character, profile, and progress
+- `test`: widget and domain regression tests
+- `docs`: durable product documentation
+
+## Local development
+
+Use the Flutter SDK configured for the project, then run:
+
+```text
+flutter pub get
+flutter run
+```
+
+Before pushing a change, all quality gates must pass:
+
+```text
+dart format <changed Dart files>
+flutter analyze
+flutter test
+flutter build apk --debug
+```
+
+Do not commit local tooling state such as `.codex/`, credentials, secrets,
+caches, or generated build outputs.

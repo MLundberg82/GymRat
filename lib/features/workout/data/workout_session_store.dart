@@ -156,8 +156,9 @@ abstract final class WorkoutSessionStore {
         firstToday = d > 0;
         if (d == 0) {
           streak = oldStreak.clamp(1, 999999);
-        } else if (d == 1)
+        } else if (d == 1) {
           streak = oldStreak + 1;
+        }
       }
     }
 

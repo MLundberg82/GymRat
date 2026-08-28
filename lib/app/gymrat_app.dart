@@ -30,8 +30,9 @@ class GymRatApp extends StatelessWidget {
             if (locale != null) return locale;
             if (device != null) {
               for (final supportedLocale in supported) {
-                if (supportedLocale.languageCode == device.languageCode)
+                if (supportedLocale.languageCode == device.languageCode) {
                   return supportedLocale;
+                }
               }
             }
             return const Locale('en');

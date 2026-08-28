@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/presentation/profile_screen.dart';
@@ -337,7 +338,7 @@ class _LevelProgress extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'LVL $level',
+                  '${context.tr.t('level')} $level',
                   style: TextStyle(
                     color: Color.lerp(
                       GymRatColors.textPrimary,
@@ -427,7 +428,7 @@ class _StatusRow extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          '$streak ${streak == 1 ? 'DAY' : 'DAYS'}',
+          '$streak ${context.tr.t(streak == 1 ? 'day' : 'days')}',
           style: const TextStyle(
             color: GymRatColors.textSecondary,
             fontSize: 10,
@@ -464,9 +465,9 @@ class _StartButton extends StatelessWidget {
     child: FilledButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.fitness_center_rounded),
-      label: const Text(
-        'START WORKOUT',
-        style: TextStyle(
+      label: Text(
+        context.tr.t('startWorkout'),
+        style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w900,
           letterSpacing: .9,
@@ -522,30 +523,36 @@ class _GymRatMenu extends StatelessWidget {
             const SizedBox(height: 26),
             _MenuItem(
               icon: Icons.fitness_center_rounded,
-              title: 'Workout',
+              title: context.tr.t('workout'),
               onTap: () => _open(context, onWorkout),
             ),
             _MenuItem(
               icon: Icons.show_chart_rounded,
-              title: 'Progress',
+              title: context.tr.t('progress'),
               onTap: () => _open(context, onProgress),
             ),
-            const _MenuItem(icon: Icons.history_rounded, title: 'History'),
-            const _MenuItem(icon: Icons.restaurant_rounded, title: 'Nutrition'),
-            const _MenuItem(
+            _MenuItem(
+              icon: Icons.history_rounded,
+              title: context.tr.t('history'),
+            ),
+            _MenuItem(
+              icon: Icons.restaurant_rounded,
+              title: context.tr.t('nutrition'),
+            ),
+            _MenuItem(
               icon: Icons.inventory_2_outlined,
-              title: 'Inventory & Shop',
+              title: context.tr.t('inventoryShop'),
             ),
             _MenuItem(
               icon: Icons.person_outline_rounded,
-              title: 'Profile & Settings',
+              title: context.tr.t('profileSettings'),
               onTap: () => _open(context, onProfile),
             ),
             const Spacer(),
             const Divider(),
-            const _MenuItem(
+            _MenuItem(
               icon: Icons.workspace_premium_outlined,
-              title: 'GymRat Premium',
+              title: context.tr.t('premium'),
               premium: true,
             ),
           ],
@@ -578,9 +585,9 @@ class _MenuItem extends StatelessWidget {
         style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
       trailing: onTap == null
-          ? const Text(
-              'SOON',
-              style: TextStyle(
+          ? Text(
+              context.tr.t('soon'),
+              style: const TextStyle(
                 color: GymRatColors.textMuted,
                 fontSize: 9,
                 fontWeight: FontWeight.w700,

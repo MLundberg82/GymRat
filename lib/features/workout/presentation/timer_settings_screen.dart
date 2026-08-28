@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../domain/workout_timer_settings.dart';
 
@@ -29,13 +30,13 @@ class _TimerSettingsScreenState extends State<TimerSettingsScreen> {
     return Scaffold(
       backgroundColor: GymRatColors.black,
       appBar: AppBar(
-        title: const Text('TIMER SETTINGS'),
+        title: Text(context.tr.t('timerSettings')),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text(
-              'SAVE',
-              style: TextStyle(
+            child: Text(
+              context.tr.t('save'),
+              style: const TextStyle(
                 color: GymRatColors.green,
                 fontWeight: FontWeight.w900,
               ),
@@ -47,7 +48,7 @@ class _TimerSettingsScreenState extends State<TimerSettingsScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           _TimerSetting(
-            title: 'SET TIMER',
+            title: context.tr.t('setTimer'),
             value: settings.setSeconds,
             min: 30,
             max: 120,
@@ -57,7 +58,7 @@ class _TimerSettingsScreenState extends State<TimerSettingsScreen> {
           ),
           const SizedBox(height: 28),
           _TimerSetting(
-            title: 'REST TIMER',
+            title: context.tr.t('restTimer'),
             value: settings.restSeconds,
             min: 30,
             max: 180,
@@ -70,16 +71,16 @@ class _TimerSettingsScreenState extends State<TimerSettingsScreen> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             activeThumbColor: GymRatColors.green,
-            title: const Text(
-              'AUTO LOOP',
-              style: TextStyle(
+            title: Text(
+              context.tr.t('autoLoop'),
+              style: const TextStyle(
                 color: GymRatColors.textPrimary,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            subtitle: const Text(
-              'Automatically switch between set and rest.',
-              style: TextStyle(color: GymRatColors.textSecondary),
+            subtitle: Text(
+              context.tr.t('autoLoopDescription'),
+              style: const TextStyle(color: GymRatColors.textSecondary),
             ),
             value: settings.autoLoop,
             onChanged: (value) =>

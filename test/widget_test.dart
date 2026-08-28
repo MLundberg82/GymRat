@@ -115,5 +115,15 @@ void main() {
     await tester.drag(exerciseList, const Offset(0, -150));
     await tester.pump();
     expect(find.text('TOTAL VOLYM'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TIMERINSTÄLLNINGAR'), findsOneWidget);
+    expect(find.text('SPARA'), findsOneWidget);
+    expect(find.text('SETTIMER'), findsOneWidget);
+    expect(find.text('VILOTIMER'), findsOneWidget);
+    expect(find.text('AUTOMATISK VÄXLING'), findsOneWidget);
+    expect(find.text('Växla automatiskt mellan set och vila.'), findsOneWidget);
   });
 }

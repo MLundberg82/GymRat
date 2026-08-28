@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    AppLanguageStore.locale.value = null;
+  });
+
+  tearDown(() {
+    AppLanguageStore.locale.value = null;
+  });
+
+  test('uses the system language by default', () async {
+    await AppLanguageStore.initialize();
+
+    expect(AppLanguageStore.locale.value, isNull);
+    expect(AppLanguageStore.currentCode(), 'system');
+  });
+
+  test('persists and restores an explicit language', () async {
+    await AppLanguageStore.setLanguage('sv');
+    expect(AppLanguageStore.locale.value, const Locale('sv'));
+
+    AppLanguageStore.locale.value = null;
+    await AppLanguageStore.initialize();
+
+    expect(AppLanguageStore.locale.value, const Locale('sv'));
+    expect(AppLanguageStore.currentCode(), 'sv');
+  });
+
+  test('restores system language after clearing an override', () async {
+    await AppLanguageStore.setLanguage('sv');
+    await AppLanguageStore.setLanguage('system');
+
+    AppLanguageStore.locale.value = const Locale('en');
+    await AppLanguageStore.initialize();
+
+    expect(AppLanguageStore.locale.value, isNull);
+    expect(AppLanguageStore.currentCode(), 'system');
+  });
+}

@@ -481,6 +481,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       GymUpgradeType.neonLights => Icons.bolt_rounded,
       GymUpgradeType.weightPlates => Icons.album_rounded,
       GymUpgradeType.powerRack => Icons.view_column_rounded,
+      GymUpgradeType.liftingPlatform => Icons.crop_square_rounded,
       GymUpgradeType.banner => Icons.flag_rounded,
       GymUpgradeType.spotlights => Icons.lightbulb_rounded,
       GymUpgradeType.speakers => Icons.speaker_rounded,

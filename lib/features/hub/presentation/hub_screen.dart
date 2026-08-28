@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/presentation/profile_screen.dart';
@@ -21,6 +20,10 @@ class HubScreen extends StatefulWidget {
 class _HubScreenState extends State<HubScreen> {
   PlayerProgress? progress;
   int animationFromXP = 0, animationVersion = 0;
+  int? get previousGymLevel => widget.unlockedUpgradeLevel == null
+      ? null
+      : WorkoutSessionStore.levelFromXP(animationFromXP);
+
   @override
   void initState() {
     super.initState();
@@ -61,16 +64,16 @@ class _HubScreenState extends State<HubScreen> {
     body: Stack(
       fit: StackFit.expand,
       children: [
-        const _GymBackground(),
+        GymUpgradeLayer(
+          level: progress?.level ?? 1,
+          previousLevel: previousGymLevel,
+          animateUnlock: widget.unlockedUpgradeLevel != null,
+        ),
         const _Atmosphere(),
         const _GroundShadow(),
         const _CharacterLayer(),
         const _ForegroundHaze(),
         const _ScreenOverlay(),
-        GymUpgradeLayer(
-          level: progress?.level ?? 1,
-          highlightLevel: widget.unlockedUpgradeLevel,
-        ),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
@@ -92,19 +95,6 @@ class _HubScreenState extends State<HubScreen> {
           ),
         ),
       ],
-    ),
-  );
-}
-
-class _GymBackground extends StatelessWidget {
-  const _GymBackground();
-  @override
-  Widget build(BuildContext context) => Positioned.fill(
-    child: Image.asset(
-      GymRatAssets.gymBase,
-      fit: BoxFit.cover,
-      alignment: Alignment.center,
-      filterQuality: FilterQuality.high,
     ),
   );
 }

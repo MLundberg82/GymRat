@@ -3,6 +3,7 @@ enum GymUpgradeType {
   neonLights,
   weightPlates,
   powerRack,
+  liftingPlatform,
   banner,
   spotlights,
   speakers,
@@ -22,12 +23,22 @@ class GymUpgrade {
 }
 
 abstract final class GymUpgradeCatalog {
-  static const _types = GymUpgradeType.values;
+  static const _types = <GymUpgradeType>[
+    GymUpgradeType.weightPlates,
+    GymUpgradeType.neonLights,
+    GymUpgradeType.liftingPlatform,
+    GymUpgradeType.banner,
+    GymUpgradeType.spotlights,
+    GymUpgradeType.speakers,
+    GymUpgradeType.championPlaque,
+    GymUpgradeType.dumbbellRack,
+  ];
   static const _keys = <GymUpgradeType, String>{
     GymUpgradeType.dumbbellRack: 'upgradeDumbbellRack',
     GymUpgradeType.neonLights: 'upgradeNeonLights',
     GymUpgradeType.weightPlates: 'upgradeWeightPlates',
     GymUpgradeType.powerRack: 'upgradePowerRack',
+    GymUpgradeType.liftingPlatform: 'upgradeLiftingPlatform',
     GymUpgradeType.banner: 'upgradeBanner',
     GymUpgradeType.spotlights: 'upgradeSpotlights',
     GymUpgradeType.speakers: 'upgradeSpeakers',

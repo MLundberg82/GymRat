@@ -1,6 +1,11 @@
 abstract final class GymRatAssets {
   static const String gymBase = 'assets/gyms/gym_base.png';
 
+  static String gymForLevel(int level) {
+    final state = level.clamp(1, 9).toInt();
+    return 'assets/gyms/gym_level_${state.toString().padLeft(2, '0')}.webp';
+  }
+
   static const String maleLevel1 = 'assets/characters/male/level_01.png';
 
   static const List<String> maleLevel1IdleFrames = [

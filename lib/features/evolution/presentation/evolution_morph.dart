@@ -160,6 +160,7 @@ class _EvolutionMorphState extends State<EvolutionMorph>
     final reveal = _phase(p, .55, .76, Curves.easeOutCubic);
     final settle = _phase(p, .69, .92, Curves.elasticOut);
     final textReveal = _phase(p, .69, .86, Curves.easeOutBack);
+    final textOpacity = textReveal.clamp(0.0, 1.0).toDouble();
     final sourceFade = 1 - _phase(p, .24, .47, Curves.easeInCubic);
     final silhouetteFade = 1 - _phase(p, .60, .78, Curves.easeInCubic);
     final blast = _phase(p, .44, .69, Curves.easeOutQuart);
@@ -207,6 +208,7 @@ class _EvolutionMorphState extends State<EvolutionMorph>
                     reveal: reveal,
                     settle: settle,
                     textReveal: textReveal,
+                    textOpacity: textOpacity,
                     sourceOpacity: sourceFade,
                     silhouetteOpacity: silhouetteFade,
                     intensity: intensity,
@@ -279,6 +281,7 @@ class _EvolutionMorphState extends State<EvolutionMorph>
     required double reveal,
     required double settle,
     required double textReveal,
+    required double textOpacity,
     required double sourceOpacity,
     required double silhouetteOpacity,
     required double intensity,
@@ -306,7 +309,7 @@ class _EvolutionMorphState extends State<EvolutionMorph>
           left: 20,
           right: 20,
           child: Opacity(
-            opacity: (1 - textReveal) * (.36 + .64 * charge),
+            opacity: (1 - textOpacity) * (.36 + .64 * charge),
             child: Text(
               context.tr.t('powerSurging'),
               textAlign: TextAlign.center,
@@ -372,7 +375,7 @@ class _EvolutionMorphState extends State<EvolutionMorph>
         Align(
           alignment: const Alignment(0, .88),
           child: Opacity(
-            opacity: textReveal,
+            opacity: textOpacity,
             child: Transform.translate(
               offset: Offset(0, 36 * (1 - textReveal)),
               child: _resultBadge(context),

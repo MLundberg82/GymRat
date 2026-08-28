@@ -31,7 +31,7 @@ void main() {
     expect(find.text('0 DAGAR'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.menu_rounded));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.text('Träning'), findsOneWidget);
     expect(find.text('Utveckling'), findsOneWidget);
@@ -40,6 +40,15 @@ void main() {
     expect(find.text('Utrustning & Butik'), findsOneWidget);
     expect(find.text('Profil & Inställningar'), findsOneWidget);
     expect(find.text('GymRat Premium'), findsOneWidget);
+
+    await tester.tap(find.text('Utveckling'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('UTVECKLING'), findsNWidgets(2));
+    expect(
+      find.text('Nivåer, XP och progression kommer härnäst.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Workout entry flow uses the selected language', (

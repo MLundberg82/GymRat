@@ -1,16 +1,19 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../evolution/domain/evolution_milestones.dart';
+import '../../evolution/presentation/evolution_sequence.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../domain/gym_upgrade.dart';
 import 'level_up_celebration.dart';
 import 'pr_celebration.dart';
 
-enum _RewardPhase { personalBest, xp, levelUp }
+enum _RewardPhase { personalBest, xp, levelUp, evolution }
 
 class RewardSequence extends StatefulWidget {
   const RewardSequence({
@@ -28,8 +31,9 @@ class _RewardSequenceState extends State<RewardSequence> {
   static const xpDuration = Duration(milliseconds: 1800),
       phaseGap = Duration(milliseconds: 140);
   _RewardPhase phase = _RewardPhase.xp;
-  int prIndex = 0, celebrationLevel = 1;
+  int prIndex = 0, celebrationLevel = 1, evolutionLevel = 5;
   bool finished = false;
+  Completer<void>? evolutionCompleter;
   @override
   void initState() {
     super.initState();
@@ -58,7 +62,6 @@ class _RewardSequenceState extends State<RewardSequence> {
     await Future<void>.delayed(xpDuration + const Duration(milliseconds: 260));
     if (!mounted) return;
     if (widget.result.leveledUp) {
-      const milestones = {5, 10, 15, 20, 30, 40, 50};
       for (
         var level = widget.result.previousLevel + 1;
         level <= widget.result.newLevel;
@@ -69,17 +72,35 @@ class _RewardSequenceState extends State<RewardSequence> {
           celebrationLevel = level;
           phase = _RewardPhase.levelUp;
         });
-        await Future<void>.delayed(
-          (milestones.contains(level)
-                  ? LevelUpCelebration.evolutionDuration
-                  : LevelUpCelebration.duration) +
-              phaseGap,
-        );
+        await Future<void>.delayed(LevelUpCelebration.duration + phaseGap);
+        if (!mounted) return;
+        if (EvolutionMilestones.isMilestone(level)) {
+          evolutionCompleter = Completer<void>();
+          setState(() {
+            evolutionLevel = level;
+            phase = _RewardPhase.evolution;
+          });
+          await evolutionCompleter!.future;
+          await Future<void>.delayed(phaseGap);
+        }
       }
     }
     if (!mounted || finished) return;
     finished = true;
     widget.onComplete();
+  }
+
+  void _completeEvolution() {
+    final completer = evolutionCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+
+  @override
+  void dispose() {
+    _completeEvolution();
+    super.dispose();
   }
 
   @override
@@ -102,16 +123,14 @@ class _RewardSequenceState extends State<RewardSequence> {
           key: ValueKey('level-$celebrationLevel'),
           previousLevel: celebrationLevel - 1,
           newLevel: celebrationLevel,
-          isEvolution: const {
-            5,
-            10,
-            15,
-            20,
-            30,
-            40,
-            50,
-          }.contains(celebrationLevel),
+          isEvolution: false,
           upgrade: GymUpgradeCatalog.forLevel(celebrationLevel),
+        ),
+        _RewardPhase.evolution => EvolutionSequence(
+          key: ValueKey('evolution-$evolutionLevel'),
+          previousLevel: evolutionLevel - 1,
+          newLevel: evolutionLevel,
+          onComplete: _completeEvolution,
         ),
       },
     ),

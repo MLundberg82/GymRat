@@ -71,7 +71,7 @@ class _HubScreenState extends State<HubScreen> {
         ),
         const _Atmosphere(),
         const _GroundShadow(),
-        const _CharacterLayer(),
+        _CharacterLayer(level: progress?.level ?? 1),
         const _ForegroundHaze(),
         const _ScreenOverlay(),
         SafeArea(
@@ -152,7 +152,9 @@ class _GroundShadow extends StatelessWidget {
 }
 
 class _CharacterLayer extends StatelessWidget {
-  const _CharacterLayer();
+  const _CharacterLayer({required this.level});
+
+  final int level;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
@@ -185,7 +187,7 @@ class _CharacterLayer extends StatelessWidget {
               1,
               0,
             ]),
-            child: GymRatCharacter(height: h),
+            child: GymRatCharacter(height: h, level: level),
           ),
         ),
       );

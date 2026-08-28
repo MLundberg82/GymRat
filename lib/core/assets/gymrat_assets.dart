@@ -8,6 +8,12 @@ abstract final class GymRatAssets {
 
   static const String maleLevel1 = 'assets/characters/male/level_01.png';
 
+  static String maleForLevel(int level) {
+    return switch (level) {
+      _ => maleLevel1,
+    };
+  }
+
   static const List<String> maleLevel1IdleFrames = [
     'assets/characters/male/level_01/idle/idle_00.png',
     'assets/characters/male/level_01/idle/idle_01.png',

@@ -4,11 +4,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/assets/gymrat_assets.dart';
+import '../../evolution/domain/evolution_milestones.dart';
 
 class GymRatCharacter extends StatefulWidget {
-  const GymRatCharacter({super.key, this.height});
+  const GymRatCharacter({super.key, this.height, this.level = 1});
 
   final double? height;
+  final int level;
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -266,14 +268,22 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      _currentFrame,
-      height: widget.height,
-      fit: BoxFit.contain,
+    return Transform(
+      transform: Matrix4.diagonal3Values(
+        EvolutionMilestones.widthScaleForLevel(widget.level),
+        EvolutionMilestones.heightScaleForLevel(widget.level),
+        1,
+      ),
       alignment: Alignment.bottomCenter,
-      gaplessPlayback: true,
-      filterQuality: FilterQuality.high,
-      cacheHeight: _cacheHeight,
+      child: Image.asset(
+        _currentFrame,
+        height: widget.height,
+        fit: BoxFit.contain,
+        alignment: Alignment.bottomCenter,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.high,
+        cacheHeight: _cacheHeight,
+      ),
     );
   }
 }

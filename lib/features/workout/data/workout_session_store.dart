@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../evolution/domain/evolution_milestones.dart';
 import '../domain/workout_result.dart';
 
 class PlayerProgress {
@@ -176,9 +177,8 @@ abstract final class WorkoutSessionStore {
         totalXP = previousXP + xp.totalXP,
         newLevel = levelFromXP(totalXP);
 
-    const milestones = [5, 10, 15, 20, 30, 40, 50];
     int? unlocked;
-    for (final m in milestones) {
+    for (final m in EvolutionMilestones.unlockLevels) {
       if (m > previousLevel && m <= newLevel) unlocked = m;
     }
 

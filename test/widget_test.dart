@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/app/gymrat_app.dart';
 import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:gymrat/features/workout/data/workout_session_store.dart';
+import 'package:gymrat/features/workout/domain/workout_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -44,11 +46,49 @@ void main() {
     await tester.tap(find.text('Utveckling'));
     await tester.pumpAndSettle();
 
-    expect(find.text('UTVECKLING'), findsNWidgets(2));
+    expect(find.text('UTVECKLING'), findsOneWidget);
+    expect(find.text('NIVÅ 1'), findsOneWidget);
+    expect(find.text('TOTAL XP'), findsOneWidget);
+    expect(find.text('PASS'), findsOneWidget);
+    expect(find.text('SVIT'), findsOneWidget);
+    expect(find.text('SENASTE PASSEN'), findsOneWidget);
     expect(
-      find.text('Nivåer, XP och progression kommer härnäst.'),
+      find.text('Slutför ditt första pass för att starta historiken.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('Progress shows persisted workout history', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await WorkoutSessionStore.complete(
+      workoutName: 'CHEST',
+      walk: false,
+      durationSeconds: 1800,
+      exercises: const <WorkoutExerciseResult>[
+        WorkoutExerciseResult(
+          name: 'Bench Press',
+          muscleGroup: 'chest',
+          sets: <WorkoutSetResult>[WorkoutSetResult(weight: 100, reps: 5)],
+        ),
+      ],
+    );
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Progress'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROGRESS'), findsOneWidget);
+    expect(find.text('RECENT WORKOUTS'), findsOneWidget);
+    expect(find.text('CHEST'), findsOneWidget);
+    expect(find.textContaining('30 MIN'), findsOneWidget);
+    expect(find.text('500 kg'), findsOneWidget);
   });
 
   testWidgets('Workout entry flow uses the selected language', (

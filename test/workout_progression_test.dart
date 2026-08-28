@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/features/workout/data/workout_presets.dart';
 import 'package:gymrat/features/workout/data/workout_session_store.dart';
@@ -63,6 +65,56 @@ void main() {
       expect(higherResult.prs.single.previousBest, 100);
       expect(higherResult.prs.single.newWeight, 105);
       expect(higherResult.xp.prXP, 18);
+    });
+  });
+
+  group('WorkoutSessionStore progress snapshot', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+    });
+
+    test('returns an empty snapshot for a new player', () async {
+      final snapshot = await WorkoutSessionStore.getProgressSnapshot();
+
+      expect(snapshot.player.level, 1);
+      expect(snapshot.player.totalXP, 0);
+      expect(snapshot.totalWorkouts, 0);
+      expect(snapshot.recentWorkouts, isEmpty);
+    });
+
+    test('returns persisted workouts in newest-first order', () async {
+      await _completeBenchPress(100);
+      await WorkoutSessionStore.complete(
+        workoutName: 'WALK',
+        walk: true,
+        durationSeconds: 900,
+        exercises: const <WorkoutExerciseResult>[],
+      );
+
+      final snapshot = await WorkoutSessionStore.getProgressSnapshot();
+
+      expect(snapshot.totalWorkouts, 2);
+      expect(snapshot.recentWorkouts, hasLength(2));
+      expect(snapshot.recentWorkouts.first.workoutName, 'WALK');
+      expect(snapshot.recentWorkouts.first.isWalk, isTrue);
+      expect(snapshot.recentWorkouts.last.exerciseCount, 1);
+      expect(snapshot.recentWorkouts.last.volume, 500);
+    });
+
+    test('ignores corrupt history without failing progress', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'gymrat-workout-history': jsonEncode(<Object>[
+          'invalid',
+          <String, Object>{'workoutName': 'MISSING DATE'},
+        ]),
+        'gymrat-total-xp': 25,
+      });
+
+      final snapshot = await WorkoutSessionStore.getProgressSnapshot();
+
+      expect(snapshot.player.totalXP, 25);
+      expect(snapshot.totalWorkouts, 0);
+      expect(snapshot.recentWorkouts, isEmpty);
     });
   });
 }

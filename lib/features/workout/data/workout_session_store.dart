@@ -18,6 +18,72 @@ class PlayerProgress {
       requiredLevelXP <= 0 ? 0 : (currentLevelXP / requiredLevelXP).clamp(0, 1);
 }
 
+class WorkoutHistoryEntry {
+  const WorkoutHistoryEntry({
+    required this.workoutName,
+    required this.completedAt,
+    required this.durationSeconds,
+    required this.exerciseCount,
+    required this.volume,
+    required this.isWalk,
+  });
+
+  final String workoutName;
+  final DateTime completedAt;
+  final int durationSeconds;
+  final int exerciseCount;
+  final double volume;
+  final bool isWalk;
+
+  static WorkoutHistoryEntry? tryParse(Map<String, dynamic> json) {
+    final rawWorkoutName = json['workoutName'];
+    final rawCompletedAt = json['completedAt'];
+    if (rawWorkoutName is! String || rawCompletedAt is! String) return null;
+    final completedAt = DateTime.tryParse(rawCompletedAt);
+    if (rawWorkoutName.isEmpty || completedAt == null) {
+      return null;
+    }
+
+    final exercises = <WorkoutExerciseResult>[];
+    for (final raw in json['exercises'] as List? ?? const []) {
+      if (raw is! Map) continue;
+      try {
+        exercises.add(
+          WorkoutExerciseResult.fromJson(Map<String, dynamic>.from(raw)),
+        );
+      } catch (_) {
+        // Keep older sessions readable even if one exercise is malformed.
+      }
+    }
+
+    final rawDuration = json['durationSeconds'];
+    final rawWalk = json['walk'];
+    return WorkoutHistoryEntry(
+      workoutName: rawWorkoutName,
+      completedAt: completedAt,
+      durationSeconds: rawDuration is num ? rawDuration.toInt() : 0,
+      exerciseCount: exercises.length,
+      volume: exercises.fold<double>(
+        0,
+        (sum, exercise) => sum + exercise.volume,
+      ),
+      isWalk: rawWalk is bool ? rawWalk : exercises.isEmpty,
+    );
+  }
+}
+
+class ProgressSnapshot {
+  const ProgressSnapshot({
+    required this.player,
+    required this.totalWorkouts,
+    required this.recentWorkouts,
+  });
+
+  final PlayerProgress player;
+  final int totalWorkouts;
+  final List<WorkoutHistoryEntry> recentWorkouts;
+}
+
 abstract final class WorkoutSessionStore {
   static const _historyKey = 'gymrat-workout-history',
       _xpKey = 'gymrat-total-xp',
@@ -30,8 +96,11 @@ abstract final class WorkoutSessionStore {
         raw = p.getString(_historyKey);
     if (raw == null) return [];
     try {
-      return (jsonDecode(raw) as List)
-          .map((e) => Map<String, dynamic>.from(e as Map))
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return decoded
+          .whereType<Map>()
+          .map((entry) => Map<String, dynamic>.from(entry))
           .toList();
     } catch (_) {
       return [];
@@ -41,10 +110,16 @@ abstract final class WorkoutSessionStore {
   static Future<double?> _previousBest(String name) async {
     var found = false, best = 0.0;
     for (final w in await _history()) {
-      for (final raw in w['exercises'] as List? ?? const []) {
-        final e = WorkoutExerciseResult.fromJson(
-          Map<String, dynamic>.from(raw as Map),
-        );
+      final rawExercises = w['exercises'];
+      if (rawExercises is! List) continue;
+      for (final raw in rawExercises) {
+        if (raw is! Map) continue;
+        WorkoutExerciseResult e;
+        try {
+          e = WorkoutExerciseResult.fromJson(Map<String, dynamic>.from(raw));
+        } catch (_) {
+          continue;
+        }
         if (e.name != name) continue;
         found = true;
         for (final s in e.sets) {
@@ -189,6 +264,7 @@ abstract final class WorkoutSessionStore {
       'workoutName': workoutName,
       'completedAt': now.toIso8601String(),
       'durationSeconds': durationSeconds,
+      'walk': walk,
       'exercises': exercises.map((e) => e.toJson()).toList(),
     });
     await p.setString(_historyKey, jsonEncode(history));
@@ -222,6 +298,27 @@ abstract final class WorkoutSessionStore {
       currentLevelXP: currentLevelXP(xp),
       requiredLevelXP: levelSpan(l),
       streak: await getStreak(),
+    );
+  }
+
+  static Future<ProgressSnapshot> getProgressSnapshot({
+    int recentLimit = 5,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    final history = await _history();
+    final parsedWorkouts = history
+        .map(WorkoutHistoryEntry.tryParse)
+        .whereType<WorkoutHistoryEntry>()
+        .toList(growable: false);
+    final recentWorkouts = parsedWorkouts
+        .take(recentLimit < 0 ? 0 : recentLimit)
+        .toList(growable: false);
+
+    return ProgressSnapshot(
+      player: await getPlayerProgress(),
+      totalWorkouts: (preferences.getInt(_workoutsKey) ?? parsedWorkouts.length)
+          .clamp(0, 999999999),
+      recentWorkouts: recentWorkouts,
     );
   }
 

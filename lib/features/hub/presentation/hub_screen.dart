@@ -1,269 +1,603 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../character/presentation/gymrat_character.dart';
+import '../../profile/presentation/profile_screen.dart';
+import '../../progress/presentation/progress_screen.dart';
+import '../../rewards/presentation/gym_upgrade_layer.dart';
+import '../../workout/data/workout_session_store.dart';
+import '../../workout/presentation/workout_screen.dart';
 
-class HubScreen extends StatelessWidget {
-  const HubScreen({super.key});
+class HubScreen extends StatefulWidget {
+  const HubScreen({super.key, this.animationFromXP, this.unlockedUpgradeLevel});
+  final int? animationFromXP, unlockedUpgradeLevel;
+  @override
+  State<HubScreen> createState() => _HubScreenState();
+}
+
+class _HubScreenState extends State<HubScreen> {
+  PlayerProgress? progress;
+  int animationFromXP = 0, animationVersion = 0;
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialProgress();
+  }
+
+  Future<void> _loadInitialProgress() async {
+    final loaded = await WorkoutSessionStore.getPlayerProgress();
+    if (!mounted) return;
+    setState(() {
+      progress = loaded;
+      animationFromXP =
+          widget.animationFromXP ?? loaded.totalXP - loaded.currentLevelXP;
+      animationVersion++;
+    });
+  }
+
+  Future<void> _open(Widget page) async {
+    final before = progress;
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    final loaded = await WorkoutSessionStore.getPlayerProgress();
+    if (!mounted) return;
+    setState(() {
+      animationFromXP = before?.totalXP ?? loaded.totalXP;
+      progress = loaded;
+      animationVersion++;
+    });
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _Header(),
-          const SizedBox(height: 24),
-          const _LevelSection(),
-          const SizedBox(height: 22),
-          const Expanded(
-            child: _CharacterPlaceholder(),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: GymRatColors.black,
+    endDrawer: _GymRatMenu(
+      onWorkout: () => _open(const WorkoutScreen()),
+      onProgress: () => _open(const ProgressScreen()),
+      onProfile: () => _open(const ProfileScreen()),
+    ),
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        const _GymBackground(),
+        const _Atmosphere(),
+        const _GroundShadow(),
+        const _CharacterLayer(),
+        const _ForegroundHaze(),
+        const _ScreenOverlay(),
+        GymUpgradeLayer(
+          level: progress?.level ?? 1,
+          highlightLevel: widget.unlockedUpgradeLevel,
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+            child: Column(
+              children: [
+                const _Header(),
+                const SizedBox(height: 10),
+                _LevelProgress(
+                  key: ValueKey(animationVersion),
+                  progress: progress,
+                  fromTotalXP: animationFromXP,
+                ),
+                const Spacer(),
+                _StatusRow(streak: progress?.streak ?? 0),
+                const SizedBox(height: 12),
+                _StartButton(onPressed: () => _open(const WorkoutScreen())),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 58,
-            child: FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.fitness_center_rounded,
-                size: 22,
-              ),
-              label: const Text(
-                'START WORKOUT',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.7,
-                ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: GymRatColors.green,
-                foregroundColor: GymRatColors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GymBackground extends StatelessWidget {
+  const _GymBackground();
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+    child: Image.asset(
+      GymRatAssets.gymBase,
+      fit: BoxFit.cover,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+    ),
+  );
+}
+
+class _Atmosphere extends StatelessWidget {
+  const _Atmosphere();
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0, -.12),
+                radius: .72,
+                colors: [
+                  Colors.white.withValues(alpha: .055),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
-        ],
+        ),
+        Positioned.fill(
+          child: ColoredBox(
+            color: const Color(0xFF07100B).withValues(alpha: .08),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _GroundShadow extends StatelessWidget {
+  const _GroundShadow();
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: const Alignment(0, .56),
+    child: Container(
+      width: 220,
+      height: 42,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(100),
+        gradient: RadialGradient(
+          colors: [
+            Colors.black.withValues(alpha: .72),
+            Colors.black.withValues(alpha: .34),
+            Colors.transparent,
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _CharacterLayer extends StatelessWidget {
+  const _CharacterLayer();
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, c) {
+      final h = (c.maxHeight * .70).clamp(440.0, 720.0).toDouble();
+      return Align(
+        alignment: const Alignment(0, .25),
+        child: SizedBox(
+          width: c.maxWidth * .92,
+          height: h,
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.matrix([
+              .90,
+              0,
+              0,
+              0,
+              0,
+              0,
+              .94,
+              0,
+              0,
+              0,
+              0,
+              0,
+              .90,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+            ]),
+            child: GymRatCharacter(height: h),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _ForegroundHaze extends StatelessWidget {
+  const _ForegroundHaze();
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Align(
+      alignment: Alignment.bottomCenter,
+      child: FractionallySizedBox(
+        widthFactor: 1,
+        heightFactor: .34,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                GymRatColors.black.withValues(alpha: .08),
+                GymRatColors.black.withValues(alpha: .38),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ScreenOverlay extends StatelessWidget {
+  const _ScreenOverlay();
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: const [0, .18, .66, 1],
+          colors: [
+            GymRatColors.black.withValues(alpha: .72),
+            GymRatColors.black.withValues(alpha: .16),
+            Colors.transparent,
+            GymRatColors.black.withValues(alpha: .80),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _Header extends StatelessWidget {
   const _Header();
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      RichText(
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: 'GYM',
+              style: TextStyle(
+                color: GymRatColors.textPrimary,
+                fontSize: 27,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                letterSpacing: -1.4,
+              ),
+            ),
+            TextSpan(
+              text: 'RAT',
+              style: TextStyle(
+                color: GymRatColors.green,
+                fontSize: 27,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                letterSpacing: -1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const Spacer(),
+      Builder(
+        builder: (context) => IconButton(
+          onPressed: () => Scaffold.of(context).openEndDrawer(),
+          icon: const Icon(Icons.menu_rounded),
+          color: GymRatColors.textSecondary,
+        ),
+      ),
+    ],
+  );
+}
 
+class _LevelProgress extends StatelessWidget {
+  const _LevelProgress({
+    super.key,
+    required this.progress,
+    required this.fromTotalXP,
+  });
+  final PlayerProgress? progress;
+  final int fromTotalXP;
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final target =
+        progress ??
+        const PlayerProgress(
+          totalXP: 0,
+          level: 1,
+          currentLevelXP: 0,
+          requiredLevelXP: 90,
+          streak: 0,
+        );
+    final start = math.min(fromTotalXP, target.totalXP);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: start.toDouble(), end: target.totalXP.toDouble()),
+      duration: target.totalXP == start
+          ? const Duration(milliseconds: 500)
+          : const Duration(milliseconds: 2100),
+      curve: Curves.easeInOutCubic,
+      builder: (context, value, child) {
+        final total = value.round(),
+            level = WorkoutSessionStore.levelFromXP(total);
+        final current = WorkoutSessionStore.currentLevelXP(total),
+            required = WorkoutSessionStore.levelSpan(level);
+        final fill = required <= 0
+            ? 0.0
+            : (current / required).clamp(0.0, 1.0).toDouble();
+        final energy = target.totalXP == start
+            ? 0.0
+            : math
+                  .sin(
+                    ((value - start) / (target.totalXP - start)).clamp(
+                          0.0,
+                          1.0,
+                        ) *
+                        math.pi,
+                  )
+                  .abs();
+        return Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  'LVL $level',
+                  style: TextStyle(
+                    color: Color.lerp(
+                      GymRatColors.textPrimary,
+                      GymRatColors.gold,
+                      energy,
+                    ),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    shadows: [
+                      Shadow(
+                        color: GymRatColors.gold.withValues(
+                          alpha: .38 * energy,
+                        ),
+                        blurRadius: 16,
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$current / $required XP',
+                  style: const TextStyle(
+                    color: GymRatColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(100),
+                boxShadow: [
+                  BoxShadow(
+                    color: GymRatColors.gold.withValues(alpha: .28 * energy),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: GymRatColors.surfaceElevated),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: fill,
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFFF8F00),
+                              GymRatColors.gold,
+                              Color(0xFFFFF3B0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({required this.streak});
+  final int streak;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Row(
       children: [
-        RichText(
-          text: const TextSpan(
-            children: [
-              TextSpan(
-                text: 'GYM',
-                style: TextStyle(
-                  color: GymRatColors.textPrimary,
-                  fontSize: 27,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: -1,
-                ),
-              ),
-              TextSpan(
-                text: 'RAT',
-                style: TextStyle(
-                  color: GymRatColors.green,
-                  fontSize: 27,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: -1,
-                ),
-              ),
-            ],
+        const Icon(
+          Icons.local_fire_department_rounded,
+          size: 17,
+          color: GymRatColors.textSecondary,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '$streak ${streak == 1 ? 'DAY' : 'DAYS'}',
+          style: const TextStyle(
+            color: GymRatColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
           ),
         ),
         const Spacer(),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.menu_rounded),
+        const Icon(
+          Icons.check_rounded,
+          size: 17,
           color: GymRatColors.textSecondary,
-          tooltip: 'Menu',
         ),
-      ],
-    );
-  }
-}
-
-class _LevelSection extends StatelessWidget {
-  const _LevelSection();
-
-  @override
-  Widget build(BuildContext context) {
-    const currentXp = 7650.0;
-    const requiredXp = 9000.0;
-    const progress = currentXp / requiredXp;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
+        const SizedBox(width: 6),
         const Text(
-          'LVL 23',
+          '3/3',
           style: TextStyle(
-            color: GymRatColors.textPrimary,
-            fontSize: 18,
+            color: GymRatColors.textSecondary,
+            fontSize: 10,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.4,
           ),
         ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: GymRatColors.surfaceElevated,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    GymRatColors.textPrimary,
+      ],
+    ),
+  );
+}
+
+class _StartButton extends StatelessWidget {
+  const _StartButton({required this.onPressed});
+  final VoidCallback onPressed;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: 58,
+    child: FilledButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.fitness_center_rounded),
+      label: const Text(
+        'START WORKOUT',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w900,
+          letterSpacing: .9,
+        ),
+      ),
+      style: FilledButton.styleFrom(
+        backgroundColor: GymRatColors.green,
+        foregroundColor: GymRatColors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
+      ),
+    ),
+  );
+}
+
+class _GymRatMenu extends StatelessWidget {
+  const _GymRatMenu({
+    required this.onWorkout,
+    required this.onProgress,
+    required this.onProfile,
+  });
+  final VoidCallback onWorkout, onProgress, onProfile;
+  void _open(BuildContext context, VoidCallback action) {
+    Navigator.of(context).pop();
+    Future<void>.delayed(const Duration(milliseconds: 120), action);
+  }
+
+  @override
+  Widget build(BuildContext context) => Drawer(
+    width: MediaQuery.sizeOf(context).width * .92,
+    backgroundColor: GymRatColors.black,
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'GYMRAT',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-              ),
-              const SizedBox(height: 7),
-              const Text(
-                '7 650 / 9 000 XP',
-                style: TextStyle(
-                  color: GymRatColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CharacterPlaceholder extends StatelessWidget {
-  const _CharacterPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            GymRatColors.surface,
-            GymRatColors.black,
+              ],
+            ),
+            const SizedBox(height: 26),
+            _MenuItem(
+              icon: Icons.fitness_center_rounded,
+              title: 'Workout',
+              onTap: () => _open(context, onWorkout),
+            ),
+            _MenuItem(
+              icon: Icons.show_chart_rounded,
+              title: 'Progress',
+              onTap: () => _open(context, onProgress),
+            ),
+            const _MenuItem(icon: Icons.history_rounded, title: 'History'),
+            const _MenuItem(icon: Icons.restaurant_rounded, title: 'Nutrition'),
+            const _MenuItem(
+              icon: Icons.inventory_2_outlined,
+              title: 'Inventory & Shop',
+            ),
+            _MenuItem(
+              icon: Icons.person_outline_rounded,
+              title: 'Profile & Settings',
+              onTap: () => _open(context, onProfile),
+            ),
+            const Spacer(),
+            const Divider(),
+            const _MenuItem(
+              icon: Icons.workspace_premium_outlined,
+              title: 'GymRat Premium',
+              premium: true,
+            ),
           ],
         ),
-        border: Border.all(
-          color: GymRatColors.border,
-        ),
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Positioned(
-            top: 20,
-            left: 20,
-            child: _StatBadge(
-              icon: Icons.local_fire_department_rounded,
-              value: '12',
-              label: 'DAY STREAK',
-            ),
-          ),
-          const Positioned(
-            top: 20,
-            right: 20,
-            child: _StatBadge(
-              icon: Icons.check_circle_outline_rounded,
-              value: '3/3',
-              label: 'DAILY GOAL',
-            ),
-          ),
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.pets_rounded,
-                size: 106,
-                color: GymRatColors.textMuted,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'YOUR GYMRAT',
-                style: TextStyle(
-                  color: GymRatColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1,
-                ),
-              ),
-              SizedBox(height: 7),
-              Text(
-                'Character & gym environment coming next',
-                style: TextStyle(
-                  color: GymRatColors.textMuted,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }
 
-class _StatBadge extends StatelessWidget {
-  const _StatBadge({
+class _MenuItem extends StatelessWidget {
+  const _MenuItem({
     required this.icon,
-    required this.value,
-    required this.label,
+    required this.title,
+    this.onTap,
+    this.premium = false,
   });
-
   final IconData icon;
-  final String value;
-  final String label;
-
+  final String title;
+  final VoidCallback? onTap;
+  final bool premium;
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 19,
-          color: GymRatColors.textSecondary,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(
-            color: GymRatColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: GymRatColors.textMuted,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+    final color = premium ? GymRatColors.premium : GymRatColors.textPrimary;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      onTap: onTap,
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      ),
+      trailing: onTap == null
+          ? const Text(
+              'SOON',
+              style: TextStyle(
+                color: GymRatColors.textMuted,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          : const Icon(
+              Icons.chevron_right_rounded,
+              color: GymRatColors.textMuted,
+            ),
     );
   }
 }

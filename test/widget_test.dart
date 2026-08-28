@@ -85,4 +85,35 @@ void main() {
     expect(find.text('STARTA'), findsOneWidget);
     expect(find.text('SLUTFÖR'), findsOneWidget);
   });
+
+  testWidgets('Active strength workout uses the selected language', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    AppLanguageStore.locale.value = const Locale('sv');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+
+    await tester.tap(find.text('STARTA TRÄNING'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CHEST'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('STARTA TRÄNING'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ÖVNING 1 / 4'), findsOneWidget);
+    expect(find.text('VILA'), findsOneWidget);
+    expect(find.text('REPS'), findsOneWidget);
+    expect(find.text('NÄSTA ÖVNING'), findsOneWidget);
+
+    final exerciseList = find.byType(ListView).last;
+    await tester.drag(exerciseList, const Offset(0, -350));
+    await tester.pump();
+    expect(find.text('LÄGG TILL SET'), findsOneWidget);
+
+    await tester.drag(exerciseList, const Offset(0, -150));
+    await tester.pump();
+    expect(find.text('TOTAL VOLYM'), findsOneWidget);
+  });
 }

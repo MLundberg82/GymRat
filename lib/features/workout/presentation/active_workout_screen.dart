@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_models.dart';
@@ -220,7 +221,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
                 children: [
                   Text(
-                    'EXERCISE ${exerciseIndex + 1} / ${widget.preset.exercises.length}',
+                    '${context.tr.t('exercise')} ${exerciseIndex + 1} / '
+                    '${widget.preset.exercises.length}',
                     style: const TextStyle(
                       color: GymRatColors.green,
                       fontSize: 10,
@@ -251,7 +253,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   TextButton.icon(
                     onPressed: _addSet,
                     icon: const Icon(Icons.add_rounded),
-                    label: const Text('ADD SET'),
+                    label: Text(context.tr.t('addSet')),
                     style: TextButton.styleFrom(
                       foregroundColor: GymRatColors.green,
                     ),
@@ -259,9 +261,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text(
-                        'TOTAL VOLUME',
-                        style: TextStyle(
+                      Text(
+                        context.tr.t('totalVolume'),
+                        style: const TextStyle(
                           color: GymRatColors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -359,7 +361,7 @@ class _TimerBar extends StatelessWidget {
         InkWell(
           onTap: onMode,
           child: Text(
-            mode == _TimerMode.set ? 'SET' : 'REST',
+            context.tr.t(mode == _TimerMode.set ? 'setLabel' : 'rest'),
             style: const TextStyle(
               color: GymRatColors.green,
               fontSize: 10,
@@ -391,13 +393,13 @@ class _TimerBar extends StatelessWidget {
 class _SetHeader extends StatelessWidget {
   const _SetHeader();
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => Row(
     children: [
-      SizedBox(width: 40, child: Text('SET')),
-      Expanded(child: Text('KG')),
-      SizedBox(width: 12),
-      Expanded(child: Text('REPS')),
-      SizedBox(width: 42),
+      SizedBox(width: 40, child: Text(context.tr.t('setLabel'))),
+      const Expanded(child: Text('KG')),
+      const SizedBox(width: 12),
+      Expanded(child: Text(context.tr.t('reps'))),
+      const SizedBox(width: 42),
     ],
   );
 }
@@ -524,10 +526,10 @@ class _WorkoutNavigation extends StatelessWidget {
               ),
               child: Text(
                 loading
-                    ? 'SAVING...'
+                    ? context.tr.t('saving')
                     : isLast
-                    ? 'FINISH WORKOUT'
-                    : 'NEXT EXERCISE',
+                    ? context.tr.t('finishWorkout')
+                    : context.tr.t('nextExercise'),
                 style: const TextStyle(fontWeight: FontWeight.w900),
               ),
             ),

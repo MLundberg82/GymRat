@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_models.dart';
@@ -67,7 +68,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: GymRatColors.black,
-    appBar: AppBar(title: const Text('WALK')),
+    appBar: AppBar(title: Text(context.tr.t('walkTitle'))),
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -91,7 +92,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              running ? 'WALK IN PROGRESS' : 'READY',
+              context.tr.t(running ? 'walkInProgress' : 'ready'),
               style: const TextStyle(
                 color: GymRatColors.textSecondary,
                 fontSize: 11,
@@ -112,7 +113,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
                         foregroundColor: GymRatColors.black,
                       ),
                       child: Text(
-                        running ? 'PAUSE' : 'START',
+                        context.tr.t(running ? 'pause' : 'start'),
                         style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                     ),
@@ -123,7 +124,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
                   height: 58,
                   child: OutlinedButton(
                     onPressed: elapsed > 0 && !finishing ? _finish : null,
-                    child: Text(finishing ? 'SAVING...' : 'FINISH'),
+                    child: Text(context.tr.t(finishing ? 'saving' : 'finish')),
                   ),
                 ),
               ],

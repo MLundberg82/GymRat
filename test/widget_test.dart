@@ -76,5 +76,13 @@ void main() {
       find.text('Gå så länge du vill. Passet räknas mot din svit.'),
       findsOneWidget,
     );
+
+    await tester.tap(find.text('STARTA PROMENAD'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROMENAD'), findsOneWidget);
+    expect(find.text('REDO'), findsOneWidget);
+    expect(find.text('STARTA'), findsOneWidget);
+    expect(find.text('SLUTFÖR'), findsOneWidget);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../data/workout_presets.dart';
 import '../domain/workout_models.dart';
@@ -26,9 +27,9 @@ class WorkoutScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                 children: [
-                  const Text(
-                    'CHOOSE YOUR\nSESSION',
-                    style: TextStyle(
+                  Text(
+                    context.tr.t('chooseSession'),
+                    style: const TextStyle(
                       color: GymRatColors.textPrimary,
                       fontSize: 30,
                       height: 0.98,
@@ -37,9 +38,9 @@ class WorkoutScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Train. Earn XP. Level up.',
-                    style: TextStyle(
+                  Text(
+                    context.tr.t('workoutTagline'),
+                    style: const TextStyle(
                       color: GymRatColors.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -81,9 +82,9 @@ class _Header extends StatelessWidget {
             color: GymRatColors.textPrimary,
           ),
           const SizedBox(width: 2),
-          const Text(
-            'WORKOUT',
-            style: TextStyle(
+          Text(
+            context.tr.t('workoutTitle'),
+            style: const TextStyle(
               color: GymRatColors.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -119,9 +120,9 @@ class _WorkoutRow extends StatelessWidget {
     }
   }
 
-  String get _exerciseText {
+  String _exerciseText(BuildContext context) {
     if (preset.isWalk) {
-      return 'Timed walk · counts toward your streak';
+      return context.tr.t('timedWalkStreak');
     }
 
     return preset.exercises.map((exercise) => exercise.name).join(' · ');
@@ -167,7 +168,7 @@ class _WorkoutRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 9),
-                      if (preset.isWalk) const _Tag(text: 'STREAK'),
+                      if (preset.isWalk) _Tag(text: context.tr.t('streak')),
                     ],
                   ),
                   const SizedBox(height: 3),
@@ -181,7 +182,7 @@ class _WorkoutRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    _exerciseText,
+                    _exerciseText(context),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -244,26 +245,26 @@ class _PremiumWorkoutRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: GymRatColors.premium.withValues(alpha: 0.25)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.lock_outline_rounded, color: GymRatColors.premium),
-          SizedBox(width: 14),
+          const Icon(Icons.lock_outline_rounded, color: GymRatColors.premium),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'CUSTOM WORKOUT',
-                  style: TextStyle(
+                  context.tr.t('customWorkout'),
+                  style: const TextStyle(
                     color: GymRatColors.textPrimary,
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
                   ),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Text(
-                  'Build your own session from the full exercise library.',
-                  style: TextStyle(
+                  context.tr.t('customWorkoutDescription'),
+                  style: const TextStyle(
                     color: GymRatColors.textSecondary,
                     fontSize: 11,
                   ),
@@ -272,8 +273,8 @@ class _PremiumWorkoutRow extends StatelessWidget {
             ),
           ),
           Text(
-            'PREMIUM',
-            style: TextStyle(
+            context.tr.t('premiumLabel'),
+            style: const TextStyle(
               color: GymRatColors.premium,
               fontSize: 8,
               fontWeight: FontWeight.w900,

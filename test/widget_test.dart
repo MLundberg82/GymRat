@@ -41,4 +41,40 @@ void main() {
     expect(find.text('Profil & Inställningar'), findsOneWidget);
     expect(find.text('GymRat Premium'), findsOneWidget);
   });
+
+  testWidgets('Workout entry flow uses the selected language', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    AppLanguageStore.locale.value = const Locale('sv');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+
+    await tester.tap(find.text('STARTA TRÄNING'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('VÄLJ DITT\nPASS'), findsOneWidget);
+    expect(find.text('Träna. Tjäna XP. Gå upp i nivå.'), findsOneWidget);
+    expect(find.text('TRÄNING'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('WALK'), 300);
+
+    expect(find.text('SVIT'), findsOneWidget);
+    expect(
+      find.text('Tidsinställd promenad · räknas mot din svit'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('WALK'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('FÖRHANDSVISNING'), findsOneWidget);
+    expect(find.text('STARTA PROMENAD'), findsOneWidget);
+    expect(find.text('TIDSINSTÄLLD PROMENAD'), findsOneWidget);
+    expect(
+      find.text('Gå så länge du vill. Passet räknas mot din svit.'),
+      findsOneWidget,
+    );
+  });
 }

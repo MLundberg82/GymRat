@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../domain/workout_models.dart';
 import 'active_workout_screen.dart';
@@ -69,7 +70,7 @@ class WorkoutPreviewScreen extends StatelessWidget {
                     foregroundColor: GymRatColors.black,
                   ),
                   child: Text(
-                    preset.isWalk ? 'START WALK' : 'START WORKOUT',
+                    context.tr.t(preset.isWalk ? 'startWalk' : 'startWorkout'),
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
@@ -97,9 +98,9 @@ class _Header extends StatelessWidget {
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
           ),
-          const Text(
-            'PREVIEW',
-            style: TextStyle(
+          Text(
+            context.tr.t('preview'),
+            style: const TextStyle(
               color: GymRatColors.textSecondary,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.2,
@@ -146,7 +147,7 @@ class _ExerciseRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${exercise.defaultSets} SETS',
+            '${exercise.defaultSets} ${context.tr.t('sets')}',
             style: const TextStyle(
               color: GymRatColors.textMuted,
               fontSize: 9,
@@ -170,26 +171,29 @@ class _WalkPreview extends StatelessWidget {
         color: GymRatColors.surface,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.directions_walk_rounded,
             color: GymRatColors.green,
             size: 34,
           ),
-          SizedBox(height: 14),
+          const SizedBox(height: 14),
           Text(
-            'TIMED WALK',
-            style: TextStyle(
+            context.tr.t('timedWalk'),
+            style: const TextStyle(
               color: GymRatColors.textPrimary,
               fontWeight: FontWeight.w900,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Walk for as long as you want. The session counts toward your streak.',
+            context.tr.t('timedWalkDescription'),
             textAlign: TextAlign.center,
-            style: TextStyle(color: GymRatColors.textSecondary, height: 1.45),
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              height: 1.45,
+            ),
           ),
         ],
       ),

@@ -2,8 +2,8 @@
 
 GymRat is a gamified Flutter training app that turns workouts, consistency,
 personal bests, XP, level-ups, and evolution into a premium RPG-style
-progression loop. Android is the first target; iOS is planned for a later
-stage.
+progression loop. Android is the first verified target, while shared features
+are kept at code parity with iOS for native verification on macOS/Xcode.
 
 The durable product and engineering direction lives in
 [`docs/GYMRAT_VISION.md`](docs/GYMRAT_VISION.md). Repository-wide contribution
@@ -22,6 +22,10 @@ owns history, XP, levels, streaks, and personal-best comparison.
 The app supports English, Swedish, Spanish, Russian, and Chinese, with system
 language used by default. Evolution milestones are levels 5, 10, 15, 20, 30,
 40, and 50.
+
+Completed sessions are also available through the Training History combat log.
+Its Records tab derives earned personal bests from persisted history: the first
+result remains a baseline, and only a later improvement unlocks a record.
 
 ## Project structure
 

@@ -4,7 +4,8 @@ These instructions apply to the entire repository.
 
 ## Product direction
 
-- GymRat is a Flutter app for Android first, with iOS planned later.
+- GymRat is a Flutter app for Android first. Keep every feature at code parity
+  with iOS; native iOS builds and signing are verified on macOS/Xcode.
 - The experience must feel like an addictive premium training RPG, not a
   generic wellness app.
 - Preserve the visual language: graphite/black surfaces, green for workouts

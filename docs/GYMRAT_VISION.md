@@ -2,11 +2,12 @@
 
 ## Product identity
 
-GymRat is a Flutter training app built for Android first, with iOS support
-planned later. It should feel like an addictive premium RPG powered by real
-training progress. It is not a conventional wellness app: workouts are the
-gameplay loop, consistency builds the character and gym, and rewards make
-progress feel immediate and valuable.
+GymRat is a Flutter training app built for Android first, with feature-level
+code parity maintained for iOS. Native iOS builds, signing, and device checks
+are completed on macOS/Xcode. It should feel like an addictive premium RPG
+powered by real training progress. It is not a conventional wellness app:
+workouts are the gameplay loop, consistency builds the character and gym, and
+rewards make progress feel immediate and valuable.
 
 The product should be intense, aspirational, and premium without becoming
 cluttered. Functionality and progression must remain understandable even when
@@ -90,6 +91,27 @@ As verified from the repository on 2026-08-28:
   `maleLevel1` master.
 - The theme already defines the graphite/black, action green, reward gold, and
   Premium purple roles.
+- The iOS runner targets iOS 15, uses Flutter's Swift Package Manager plugin
+  integration, and declares the same five supported languages as the app.
+
+## iOS verification on macOS
+
+The shared Flutter code must remain free of unnecessary Android-only behavior.
+When a macOS/Xcode environment is available, verify iOS with:
+
+1. Run `flutter doctor -v` and resolve every Xcode/CocoaPods warning that
+   applies to the installed Flutter toolchain.
+2. Run `flutter pub get`, `flutter analyze`, and `flutter test`.
+3. Run `flutter build ios --debug --no-codesign`.
+4. Open `ios/Runner.xcworkspace`, select the correct Apple development team,
+   and confirm the production bundle identifier before signing.
+5. Test a current iPhone simulator and a physical iPhone, including safe-area
+   layout, system-language selection, persistence after relaunch, the complete
+   workout/reward loop, history details, and personal-best records.
+
+The checked-in iOS icon set still uses the generated Flutter placeholder. Do
+not replace it until an approved GymRat app-icon master exists; never generate
+the rat with AI for this purpose.
 
 ## Engineering standard
 

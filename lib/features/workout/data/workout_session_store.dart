@@ -20,20 +20,24 @@ class PlayerProgress {
 
 class WorkoutHistoryEntry {
   const WorkoutHistoryEntry({
+    required this.id,
     required this.workoutName,
     required this.completedAt,
     required this.durationSeconds,
-    required this.exerciseCount,
-    required this.volume,
     required this.isWalk,
+    required this.exercises,
   });
 
+  final String id;
   final String workoutName;
   final DateTime completedAt;
   final int durationSeconds;
-  final int exerciseCount;
-  final double volume;
   final bool isWalk;
+  final List<WorkoutExerciseResult> exercises;
+
+  int get exerciseCount => exercises.length;
+  double get volume =>
+      exercises.fold<double>(0, (sum, exercise) => sum + exercise.volume);
 
   static WorkoutHistoryEntry? tryParse(Map<String, dynamic> json) {
     final rawWorkoutName = json['workoutName'];
@@ -45,31 +49,79 @@ class WorkoutHistoryEntry {
     }
 
     final exercises = <WorkoutExerciseResult>[];
-    for (final raw in json['exercises'] as List? ?? const []) {
-      if (raw is! Map) continue;
-      try {
-        exercises.add(
-          WorkoutExerciseResult.fromJson(Map<String, dynamic>.from(raw)),
-        );
-      } catch (_) {
-        // Keep older sessions readable even if one exercise is malformed.
+    final rawExercises = json['exercises'];
+    if (rawExercises is List) {
+      for (final raw in rawExercises) {
+        if (raw is! Map) continue;
+        try {
+          exercises.add(
+            WorkoutExerciseResult.fromJson(Map<String, dynamic>.from(raw)),
+          );
+        } catch (_) {
+          // Keep older sessions readable even if one exercise is malformed.
+        }
       }
     }
 
+    final rawId = json['id'];
     final rawDuration = json['durationSeconds'];
     final rawWalk = json['walk'];
     return WorkoutHistoryEntry(
+      id: rawId is String && rawId.isNotEmpty
+          ? rawId
+          : 'legacy-${completedAt.microsecondsSinceEpoch}-$rawWorkoutName',
       workoutName: rawWorkoutName,
       completedAt: completedAt,
       durationSeconds: rawDuration is num ? rawDuration.toInt() : 0,
-      exerciseCount: exercises.length,
-      volume: exercises.fold<double>(
-        0,
-        (sum, exercise) => sum + exercise.volume,
-      ),
       isWalk: rawWalk is bool ? rawWalk : exercises.isEmpty,
+      exercises: List.unmodifiable(exercises),
     );
   }
+}
+
+class PersonalBestRecord {
+  const PersonalBestRecord({
+    required this.exerciseName,
+    required this.weight,
+    required this.previousBest,
+    required this.baselineWeight,
+    required this.achievedAt,
+    required this.improvementCount,
+  });
+
+  final String exerciseName;
+  final double weight;
+  final double previousBest;
+  final double baselineWeight;
+  final DateTime achievedAt;
+  final int improvementCount;
+
+  double get totalImprovement => weight - baselineWeight;
+}
+
+class TrainingHistorySnapshot {
+  const TrainingHistorySnapshot({
+    required this.workouts,
+    required this.personalBests,
+  });
+
+  final List<WorkoutHistoryEntry> workouts;
+  final List<PersonalBestRecord> personalBests;
+
+  int get totalDurationSeconds =>
+      workouts.fold<int>(0, (sum, workout) => sum + workout.durationSeconds);
+  double get totalVolume =>
+      workouts.fold<double>(0, (sum, workout) => sum + workout.volume);
+}
+
+class _PersonalBestState {
+  _PersonalBestState({required this.baselineWeight, required this.currentBest});
+
+  final double baselineWeight;
+  double currentBest;
+  double previousBest = 0;
+  DateTime? achievedAt;
+  int improvementCount = 0;
 }
 
 class ProgressSnapshot {
@@ -105,6 +157,59 @@ abstract final class WorkoutSessionStore {
     } catch (_) {
       return [];
     }
+  }
+
+  static Future<List<WorkoutHistoryEntry>> _parsedHistory() async {
+    return (await _history())
+        .map(WorkoutHistoryEntry.tryParse)
+        .whereType<WorkoutHistoryEntry>()
+        .toList();
+  }
+
+  static List<PersonalBestRecord> _personalBests(
+    List<WorkoutHistoryEntry> workouts,
+  ) {
+    final states = <String, _PersonalBestState>{};
+    for (final workout in workouts.reversed) {
+      for (final exercise in workout.exercises) {
+        var sessionBest = 0.0;
+        for (final set in exercise.sets) {
+          if (set.weight > sessionBest) sessionBest = set.weight;
+        }
+        if (exercise.name.isEmpty || exercise.sets.isEmpty) continue;
+
+        final state = states[exercise.name];
+        if (state == null) {
+          states[exercise.name] = _PersonalBestState(
+            baselineWeight: sessionBest,
+            currentBest: sessionBest,
+          );
+        } else if (sessionBest > state.currentBest) {
+          state.previousBest = state.currentBest;
+          state.currentBest = sessionBest;
+          state.achievedAt = workout.completedAt;
+          state.improvementCount++;
+        }
+      }
+    }
+
+    final records = <PersonalBestRecord>[];
+    for (final entry in states.entries) {
+      final state = entry.value;
+      if (state.improvementCount == 0 || state.achievedAt == null) continue;
+      records.add(
+        PersonalBestRecord(
+          exerciseName: entry.key,
+          weight: state.currentBest,
+          previousBest: state.previousBest,
+          baselineWeight: state.baselineWeight,
+          achievedAt: state.achievedAt!,
+          improvementCount: state.improvementCount,
+        ),
+      );
+    }
+    records.sort((a, b) => b.achievedAt.compareTo(a.achievedAt));
+    return List.unmodifiable(records);
   }
 
   static Future<double?> _previousBest(String name) async {
@@ -305,11 +410,7 @@ abstract final class WorkoutSessionStore {
     int recentLimit = 5,
   }) async {
     final preferences = await SharedPreferences.getInstance();
-    final history = await _history();
-    final parsedWorkouts = history
-        .map(WorkoutHistoryEntry.tryParse)
-        .whereType<WorkoutHistoryEntry>()
-        .toList(growable: false);
+    final parsedWorkouts = await _parsedHistory();
     final recentWorkouts = parsedWorkouts
         .take(recentLimit < 0 ? 0 : recentLimit)
         .toList(growable: false);
@@ -319,6 +420,14 @@ abstract final class WorkoutSessionStore {
       totalWorkouts: (preferences.getInt(_workoutsKey) ?? parsedWorkouts.length)
           .clamp(0, 999999999),
       recentWorkouts: recentWorkouts,
+    );
+  }
+
+  static Future<TrainingHistorySnapshot> getTrainingHistory() async {
+    final workouts = await _parsedHistory();
+    return TrainingHistorySnapshot(
+      workouts: List.unmodifiable(workouts),
+      personalBests: _personalBests(workouts),
     );
   }
 

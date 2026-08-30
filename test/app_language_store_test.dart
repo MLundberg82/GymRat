@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:gymrat/core/localization/gymrat_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -40,5 +41,36 @@ void main() {
 
     expect(AppLanguageStore.locale.value, isNull);
     expect(AppLanguageStore.currentCode(), 'system');
+  });
+
+  test('history and record copy exists in every supported language', () {
+    const keys = <String>[
+      'trainingHistory',
+      'combatLog',
+      'records',
+      'trainingArchive',
+      'emptyHistoryTitle',
+      'workoutDetails',
+      'exerciseBreakdown',
+      'recordVault',
+      'recordsUnlocked',
+      'noRecordsTitle',
+      'baseline',
+      'previousBest',
+      'totalGain',
+      'recordBreaks',
+      'historyLoadError',
+    ];
+
+    for (final locale in AppLanguageStore.supported) {
+      final translations = GymRatLocalizations(locale);
+      for (final key in keys) {
+        expect(
+          translations.t(key),
+          isNot(key),
+          reason: '$key is missing for ${locale.languageCode}',
+        );
+      }
+    }
   });
 }

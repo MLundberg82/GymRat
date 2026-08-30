@@ -91,6 +91,77 @@ void main() {
     expect(find.text('500 kg'), findsOneWidget);
   });
 
+  testWidgets('History shows workout details and earned records', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _completeHistoryWorkout(100);
+    await _completeHistoryWorkout(105);
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TRAINING HISTORY'), findsOneWidget);
+    expect(find.text('COMBAT LOG'), findsOneWidget);
+    expect(find.text('RECORDS'), findsOneWidget);
+    expect(find.text('TRAINING ARCHIVE'), findsOneWidget);
+    expect(find.text('CHEST'), findsNWidgets(2));
+
+    await tester.tap(find.text('CHEST').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('WORKOUT DETAILS'), findsOneWidget);
+    expect(find.text('EXERCISE BREAKDOWN'), findsOneWidget);
+    expect(find.text('Bench Press'), findsOneWidget);
+    expect(find.text('105 kg'), findsOneWidget);
+    expect(find.text('5 REPS'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('RECORDS'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HALL OF RECORDS'), findsOneWidget);
+    expect(find.text('1 RECORDS UNLOCKED'), findsOneWidget);
+    expect(find.text('Bench Press'), findsOneWidget);
+    expect(find.text('105 kg'), findsOneWidget);
+    expect(find.text('+5 kg'), findsOneWidget);
+  });
+
+  testWidgets('History fits a narrow phone in Spanish', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    AppLanguageStore.locale.value = const Locale('es');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Historial'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('HISTORIAL DE ENTRENAMIENTO'), findsOneWidget);
+    expect(find.text('REGISTRO DE COMBATE'), findsOneWidget);
+    expect(find.text('RÉCORDS'), findsOneWidget);
+    expect(find.text('NO HAY SESIONES REGISTRADAS'), findsOneWidget);
+  });
+
   testWidgets('Workout entry flow uses the selected language', (
     WidgetTester tester,
   ) async {
@@ -175,4 +246,19 @@ void main() {
     expect(find.text('AUTOMATISK VÄXLING'), findsOneWidget);
     expect(find.text('Växla automatiskt mellan set och vila.'), findsOneWidget);
   });
+}
+
+Future<WorkoutResult> _completeHistoryWorkout(double weight) {
+  return WorkoutSessionStore.complete(
+    workoutName: 'CHEST',
+    walk: false,
+    durationSeconds: 1800,
+    exercises: <WorkoutExerciseResult>[
+      WorkoutExerciseResult(
+        name: 'Bench Press',
+        muscleGroup: 'chest',
+        sets: <WorkoutSetResult>[WorkoutSetResult(weight: weight, reps: 5)],
+      ),
+    ],
+  );
 }

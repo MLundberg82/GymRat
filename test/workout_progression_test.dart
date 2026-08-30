@@ -99,6 +99,7 @@ void main() {
       expect(snapshot.recentWorkouts.first.isWalk, isTrue);
       expect(snapshot.recentWorkouts.last.exerciseCount, 1);
       expect(snapshot.recentWorkouts.last.volume, 500);
+      expect(snapshot.recentWorkouts.last.exercises.single.sets.single.reps, 5);
     });
 
     test('ignores corrupt history without failing progress', () async {
@@ -115,6 +116,27 @@ void main() {
       expect(snapshot.player.totalXP, 25);
       expect(snapshot.totalWorkouts, 0);
       expect(snapshot.recentWorkouts, isEmpty);
+    });
+
+    test('derives PB achievements only after the stored baseline', () async {
+      await _completeBenchPress(100);
+      var history = await WorkoutSessionStore.getTrainingHistory();
+      expect(history.personalBests, isEmpty);
+
+      await _completeBenchPress(90);
+      await _completeBenchPress(105);
+      await _completeBenchPress(110);
+      history = await WorkoutSessionStore.getTrainingHistory();
+
+      expect(history.workouts, hasLength(4));
+      expect(history.personalBests, hasLength(1));
+      final record = history.personalBests.single;
+      expect(record.exerciseName, 'Bench Press');
+      expect(record.baselineWeight, 100);
+      expect(record.previousBest, 105);
+      expect(record.weight, 110);
+      expect(record.totalImprovement, 10);
+      expect(record.improvementCount, 2);
     });
   });
 }

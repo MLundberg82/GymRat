@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../character/presentation/gymrat_character.dart';
+import '../../history/presentation/history_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../progress/presentation/progress_screen.dart';
 import '../../rewards/presentation/gym_upgrade_layer.dart';
@@ -60,6 +61,7 @@ class _HubScreenState extends State<HubScreen> {
     endDrawer: _GymRatMenu(
       onWorkout: () => _open(const WorkoutScreen()),
       onProgress: () => _open(const ProgressScreen()),
+      onHistory: () => _open(const HistoryScreen()),
       onProfile: () => _open(const ProfileScreen()),
     ),
     body: Stack(
@@ -486,9 +488,10 @@ class _GymRatMenu extends StatelessWidget {
   const _GymRatMenu({
     required this.onWorkout,
     required this.onProgress,
+    required this.onHistory,
     required this.onProfile,
   });
-  final VoidCallback onWorkout, onProgress, onProfile;
+  final VoidCallback onWorkout, onProgress, onHistory, onProfile;
   void _open(BuildContext context, VoidCallback action) {
     Navigator.of(context).pop();
     Future<void>.delayed(const Duration(milliseconds: 120), action);
@@ -534,6 +537,7 @@ class _GymRatMenu extends StatelessWidget {
             _MenuItem(
               icon: Icons.history_rounded,
               title: context.tr.t('history'),
+              onTap: () => _open(context, onHistory),
             ),
             _MenuItem(
               icon: Icons.restaurant_rounded,

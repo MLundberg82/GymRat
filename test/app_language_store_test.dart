@@ -43,7 +43,7 @@ void main() {
     expect(AppLanguageStore.currentCode(), 'system');
   });
 
-  test('history and record copy exists in every supported language', () {
+  test('feature copy exists in every supported language', () {
     const keys = <String>[
       'trainingHistory',
       'combatLog',
@@ -60,6 +60,17 @@ void main() {
       'totalGain',
       'recordBreaks',
       'historyLoadError',
+      'armoryTitle',
+      'armoryCollection',
+      'armoryStore',
+      'armoryVaultTitle',
+      'restorePurchases',
+      'armoryOwned',
+      'questBoardTitle',
+      'dailyContracts',
+      'weeklyCampaign',
+      'questDailySession',
+      'questWeeklyDuration',
     ];
 
     for (final locale in AppLanguageStore.supported) {

@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../armory/presentation/armory_screen.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../progress/presentation/progress_screen.dart';
+import '../../quests/domain/quest_progress.dart';
+import '../../quests/presentation/quest_board_screen.dart';
 import '../../rewards/presentation/gym_upgrade_layer.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/presentation/workout_screen.dart';
@@ -21,6 +24,7 @@ class HubScreen extends StatefulWidget {
 
 class _HubScreenState extends State<HubScreen> {
   PlayerProgress? progress;
+  QuestSnapshot? quests;
   int animationFromXP = 0, animationVersion = 0;
   int? get previousGymLevel => widget.unlockedUpgradeLevel == null
       ? null
@@ -33,10 +37,18 @@ class _HubScreenState extends State<HubScreen> {
   }
 
   Future<void> _loadInitialProgress() async {
-    final loaded = await WorkoutSessionStore.getPlayerProgress();
+    final results = await Future.wait<Object>([
+      WorkoutSessionStore.getPlayerProgress(),
+      WorkoutSessionStore.getTrainingHistory(),
+    ]);
+    final loaded = results[0] as PlayerProgress;
+    final loadedQuests = QuestProgressCalculator.fromHistory(
+      results[1] as TrainingHistorySnapshot,
+    );
     if (!mounted) return;
     setState(() {
       progress = loaded;
+      quests = loadedQuests;
       animationFromXP =
           widget.animationFromXP ?? loaded.totalXP - loaded.currentLevelXP;
       animationVersion++;
@@ -46,11 +58,19 @@ class _HubScreenState extends State<HubScreen> {
   Future<void> _open(Widget page) async {
     final before = progress;
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-    final loaded = await WorkoutSessionStore.getPlayerProgress();
+    final results = await Future.wait<Object>([
+      WorkoutSessionStore.getPlayerProgress(),
+      WorkoutSessionStore.getTrainingHistory(),
+    ]);
+    final loaded = results[0] as PlayerProgress;
+    final loadedQuests = QuestProgressCalculator.fromHistory(
+      results[1] as TrainingHistorySnapshot,
+    );
     if (!mounted) return;
     setState(() {
       animationFromXP = before?.totalXP ?? loaded.totalXP;
       progress = loaded;
+      quests = loadedQuests;
       animationVersion++;
     });
   }
@@ -62,7 +82,10 @@ class _HubScreenState extends State<HubScreen> {
       onWorkout: () => _open(const WorkoutScreen()),
       onProgress: () => _open(const ProgressScreen()),
       onHistory: () => _open(const HistoryScreen()),
+      onMissions: () => _open(const QuestBoardScreen()),
+      onArmory: () => _open(const ArmoryScreen()),
       onProfile: () => _open(const ProfileScreen()),
+      onPremium: () => _open(const ArmoryScreen(initialTab: 1)),
     ),
     body: Stack(
       fit: StackFit.expand,
@@ -90,7 +113,12 @@ class _HubScreenState extends State<HubScreen> {
                   fromTotalXP: animationFromXP,
                 ),
                 const Spacer(),
-                _StatusRow(streak: progress?.streak ?? 0),
+                _StatusRow(
+                  streak: progress?.streak ?? 0,
+                  completedQuests: quests?.completedDaily ?? 0,
+                  totalQuests: quests?.daily.length ?? 3,
+                  onQuests: () => _open(const QuestBoardScreen()),
+                ),
                 const SizedBox(height: 12),
                 _StartButton(onPressed: () => _open(const WorkoutScreen())),
               ],
@@ -416,43 +444,68 @@ class _LevelProgress extends StatelessWidget {
 }
 
 class _StatusRow extends StatelessWidget {
-  const _StatusRow({required this.streak});
+  const _StatusRow({
+    required this.streak,
+    required this.completedQuests,
+    required this.totalQuests,
+    required this.onQuests,
+  });
   final int streak;
+  final int completedQuests;
+  final int totalQuests;
+  final VoidCallback onQuests;
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 4),
-    child: Row(
-      children: [
-        const Icon(
-          Icons.local_fire_department_rounded,
-          size: 17,
-          color: GymRatColors.textSecondary,
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onQuests,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.local_fire_department_rounded,
+              size: 17,
+              color: GymRatColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$streak ${context.tr.t(streak == 1 ? 'day' : 'days')}',
+              style: const TextStyle(
+                color: GymRatColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.check_rounded,
+              size: 17,
+              color: completedQuests == totalQuests
+                  ? GymRatColors.gold
+                  : GymRatColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$completedQuests/$totalQuests',
+              style: TextStyle(
+                color: completedQuests == totalQuests
+                    ? GymRatColors.gold
+                    : GymRatColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: GymRatColors.textMuted,
+            ),
+          ],
         ),
-        const SizedBox(width: 6),
-        Text(
-          '$streak ${context.tr.t(streak == 1 ? 'day' : 'days')}',
-          style: const TextStyle(
-            color: GymRatColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const Spacer(),
-        const Icon(
-          Icons.check_rounded,
-          size: 17,
-          color: GymRatColors.textSecondary,
-        ),
-        const SizedBox(width: 6),
-        const Text(
-          '3/3',
-          style: TextStyle(
-            color: GymRatColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
+      ),
     ),
   );
 }
@@ -489,9 +542,18 @@ class _GymRatMenu extends StatelessWidget {
     required this.onWorkout,
     required this.onProgress,
     required this.onHistory,
+    required this.onMissions,
+    required this.onArmory,
     required this.onProfile,
+    required this.onPremium,
   });
-  final VoidCallback onWorkout, onProgress, onHistory, onProfile;
+  final VoidCallback onWorkout,
+      onProgress,
+      onHistory,
+      onMissions,
+      onArmory,
+      onProfile,
+      onPremium;
   void _open(BuildContext context, VoidCallback action) {
     Navigator.of(context).pop();
     Future<void>.delayed(const Duration(milliseconds: 120), action);
@@ -540,12 +602,18 @@ class _GymRatMenu extends StatelessWidget {
               onTap: () => _open(context, onHistory),
             ),
             _MenuItem(
+              icon: Icons.assignment_turned_in_outlined,
+              title: context.tr.t('missions'),
+              onTap: () => _open(context, onMissions),
+            ),
+            _MenuItem(
               icon: Icons.restaurant_rounded,
               title: context.tr.t('nutrition'),
             ),
             _MenuItem(
               icon: Icons.inventory_2_outlined,
               title: context.tr.t('inventoryShop'),
+              onTap: () => _open(context, onArmory),
             ),
             _MenuItem(
               icon: Icons.person_outline_rounded,
@@ -558,6 +626,7 @@ class _GymRatMenu extends StatelessWidget {
               icon: Icons.workspace_premium_outlined,
               title: context.tr.t('premium'),
               premium: true,
+              onTap: () => _open(context, onPremium),
             ),
           ],
         ),

@@ -39,7 +39,8 @@ void main() {
     expect(find.text('Utveckling'), findsOneWidget);
     expect(find.text('Historik'), findsOneWidget);
     expect(find.text('Kost'), findsOneWidget);
-    expect(find.text('Utrustning & Butik'), findsOneWidget);
+    expect(find.text('Uppdrag'), findsOneWidget);
+    expect(find.text('Gym Armory'), findsOneWidget);
     expect(find.text('Profil & Inställningar'), findsOneWidget);
     expect(find.text('GymRat Premium'), findsOneWidget);
 
@@ -56,6 +57,47 @@ void main() {
       find.text('Slutför ditt första pass för att starta historiken.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('Hub opens the real Quest Board and Gym Armory', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('0/3'), findsOneWidget);
+    await tester.tap(find.text('0/3'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('QUEST BOARD'), findsOneWidget);
+    expect(find.text('DAILY CONTRACTS'), findsOneWidget);
+    expect(find.text('WEEKLY CAMPAIGN'), findsOneWidget);
+    expect(find.text('ANSWER THE CALL'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gym Armory'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('GYM ARMORY'), findsOneWidget);
+    expect(find.text('YOUR GYM. YOUR LEGACY.'), findsOneWidget);
+    expect(find.text('0 / 49'), findsOneWidget);
+
+    await tester.tap(find.text('STORE'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('THE PREMIUM VAULT'), findsOneWidget);
+    expect(find.text('THE VAULT IS BEING FORGED'), findsOneWidget);
   });
 
   testWidgets('Progress shows persisted workout history', (

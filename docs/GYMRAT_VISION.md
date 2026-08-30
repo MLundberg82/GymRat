@@ -74,6 +74,34 @@ The current localization infrastructure supports English, Swedish, Spanish,
 Russian, and Chinese. Some legacy screens still contain hard-coded copy; new
 work must not expand that debt.
 
+## Missions and Gym Armory
+
+Missions turn persisted workout history into daily contracts and weekly
+campaigns. They must reward sustainable training behavior and never pressure a
+user to chase unsafe weight, duration, or personal-best targets. Initial quest
+progress is derived from completed sessions, duration, and exercise count, so
+the board remains consistent with the training archive and does not create a
+second source of truth.
+
+Gym Armory is both the collection of gym upgrades earned through levels and the
+future storefront for GymRat Premium and cosmetic rat items. Earned progression
+must remain distinct from paid content. Paid digital content uses Apple In-App
+Purchase on iOS and Google Play Billing on Android, with RevenueCat providing a
+shared Flutter integration for offerings, purchases, entitlements, and restore.
+The app must remain fully usable when store configuration or connectivity is
+unavailable.
+
+RevenueCat public SDK keys are supplied at build time and are never committed:
+
+- `REVENUECAT_APPLE_API_KEY`
+- `REVENUECAT_GOOGLE_API_KEY`
+
+Products and localized prices come from the official stores through the active
+RevenueCat offering. Do not hard-code prices or ship fictional store products.
+Premium should use a subscription entitlement. Permanent cosmetic purchases
+should use non-consumable products attached to the entitlement that unlocks the
+item. Every restorable purchase flow must expose Restore Purchases.
+
 ## Verified implementation baseline
 
 As verified from the repository on 2026-08-28:
@@ -109,8 +137,10 @@ When a macOS/Xcode environment is available, verify iOS with:
    layout, system-language selection, persistence after relaunch, the complete
    workout/reward loop, history details, and personal-best records.
 
-The checked-in iOS icon set still uses the generated Flutter placeholder. Do
-not replace it until an approved GymRat app-icon master exists; never generate
+The checked-in launcher icon sets still use the generated Flutter placeholder.
+The approved shield-and-barbell source master is preserved at
+`assets/branding/gymrat_app_icon_master_v1.png`; keep it unchanged until the
+platform icon exports are deliberately generated and reviewed. Never generate
 the rat with AI for this purpose.
 
 ## Engineering standard

@@ -120,6 +120,9 @@ abstract final class GymUpgradeCatalog {
     );
   }
 
+  static List<GymUpgrade> get all =>
+      List.unmodifiable(List.generate(49, (index) => forLevel(index + 2)));
+
   static Map<GymUpgradeType, int> tiersAtLevel(int level) {
     final tiers = <GymUpgradeType, int>{};
     final safeLevel = level.clamp(1, 50).toInt();

@@ -5,9 +5,22 @@ import 'package:gymrat/features/workout/data/workout_presets.dart';
 import 'package:gymrat/features/workout/data/workout_session_store.dart';
 import 'package:gymrat/features/workout/domain/workout_models.dart';
 import 'package:gymrat/features/workout/domain/workout_result.dart';
+import 'package:gymrat/features/rewards/domain/gym_upgrade.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('Gym Armory exposes every level upgrade in order', () {
+    final upgrades = GymUpgradeCatalog.all;
+
+    expect(upgrades, hasLength(49));
+    expect(upgrades.first.level, 2);
+    expect(upgrades.last.level, 50);
+    expect(
+      upgrades.map((upgrade) => upgrade.level),
+      orderedEquals(List.generate(49, (index) => index + 2)),
+    );
+  });
+
   group('Workout presets', () {
     test('keeps the five expected presets free', () {
       expect(WorkoutPresets.free.map((preset) => preset.id), <String>[

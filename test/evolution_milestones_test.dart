@@ -43,5 +43,18 @@ void main() {
         previousHeight = height;
       }
     });
+
+    test('level 1 is visibly smaller than the level 10 form', () {
+      expect(
+        EvolutionMilestones.widthScaleForLevel(10) /
+            EvolutionMilestones.widthScaleForLevel(1),
+        greaterThan(1.4),
+      );
+      expect(
+        EvolutionMilestones.heightScaleForLevel(10) /
+            EvolutionMilestones.heightScaleForLevel(1),
+        greaterThan(1.3),
+      );
+    });
   });
 }

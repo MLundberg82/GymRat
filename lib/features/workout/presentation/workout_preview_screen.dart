@@ -28,7 +28,10 @@ class WorkoutPreviewScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _Header(onBack: () => Navigator.of(context).pop()),
+            _Header(
+              title: preset.title,
+              onBack: () => Navigator.of(context).pop(),
+            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
@@ -84,8 +87,9 @@ class WorkoutPreviewScreen extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.onBack});
+  const _Header({required this.title, required this.onBack});
 
+  final String title;
   final VoidCallback onBack;
 
   @override
@@ -99,7 +103,7 @@ class _Header extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
           ),
           Text(
-            context.tr.t('preview'),
+            title,
             style: const TextStyle(
               color: GymRatColors.textSecondary,
               fontWeight: FontWeight.w900,

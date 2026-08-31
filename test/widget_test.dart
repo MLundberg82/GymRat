@@ -91,6 +91,7 @@ void main() {
     expect(find.text('TOTAL XP'), findsOneWidget);
     expect(find.text('PASS'), findsOneWidget);
     expect(find.text('SVIT'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('SENASTE PASSEN'), 300);
     expect(find.text('SENASTE PASSEN'), findsOneWidget);
     expect(
       find.text('Slutför ditt första pass för att starta historiken.'),
@@ -168,6 +169,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PROGRESS'), findsOneWidget);
+    expect(find.text('TRAINING BY AREA'), findsOneWidget);
+    await tester.tap(find.text('CHEST').first);
+    await tester.pumpAndSettle();
+    expect(find.text('VOLUME TREND'), findsOneWidget);
+    expect(find.text('Bench Press'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('RECENT WORKOUTS'), 300);
     expect(find.text('RECENT WORKOUTS'), findsOneWidget);
     expect(find.text('CHEST'), findsOneWidget);
     expect(find.textContaining('30 MIN'), findsOneWidget);
@@ -275,7 +284,7 @@ void main() {
     await tester.tap(find.text('WALK'));
     await tester.pumpAndSettle();
 
-    expect(find.text('FÖRHANDSVISNING'), findsOneWidget);
+    expect(find.text('WALK'), findsWidgets);
     expect(find.text('STARTA PROMENAD'), findsOneWidget);
     expect(find.text('TIDSINSTÄLLD PROMENAD'), findsOneWidget);
     expect(

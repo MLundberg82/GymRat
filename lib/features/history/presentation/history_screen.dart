@@ -84,10 +84,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             return TabBarView(
               children: [
                 _CombatLog(history: history, onRefresh: _refresh),
-                PersonalBestsView(
-                  records: history.personalBests,
-                  onRefresh: _refresh,
-                ),
+                PersonalBestsView(history: history, onRefresh: _refresh),
               ],
             );
           },

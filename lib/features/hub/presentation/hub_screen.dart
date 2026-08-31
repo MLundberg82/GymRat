@@ -586,7 +586,7 @@ class _GymRatMenu extends StatelessWidget {
       onPremium;
   void _open(BuildContext context, VoidCallback action) {
     Navigator.of(context).pop();
-    Future<void>.delayed(const Duration(milliseconds: 120), action);
+    Future<void>.delayed(const Duration(milliseconds: 240), action);
   }
 
   @override
@@ -594,71 +594,83 @@ class _GymRatMenu extends StatelessWidget {
     width: MediaQuery.sizeOf(context).width * .92,
     backgroundColor: GymRatColors.black,
     child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Text(
-                  'GYMRAT',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 520),
+        curve: Curves.easeOutCubic,
+        builder: (context, reveal, child) => Opacity(
+          opacity: reveal.clamp(0.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(24 * (1 - reveal), 0),
+            child: child,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'GYMRAT',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-            const SizedBox(height: 26),
-            _MenuItem(
-              icon: Icons.fitness_center_rounded,
-              title: context.tr.t('workout'),
-              onTap: () => _open(context, onWorkout),
-            ),
-            _MenuItem(
-              icon: Icons.show_chart_rounded,
-              title: context.tr.t('progress'),
-              onTap: () => _open(context, onProgress),
-            ),
-            _MenuItem(
-              icon: Icons.history_rounded,
-              title: context.tr.t('history'),
-              onTap: () => _open(context, onHistory),
-            ),
-            _MenuItem(
-              icon: Icons.assignment_turned_in_outlined,
-              title: context.tr.t('missions'),
-              onTap: () => _open(context, onMissions),
-            ),
-            _MenuItem(
-              icon: Icons.restaurant_rounded,
-              title: context.tr.t('nutrition'),
-            ),
-            _MenuItem(
-              icon: Icons.inventory_2_outlined,
-              title: context.tr.t('inventoryShop'),
-              onTap: () => _open(context, onArmory),
-            ),
-            _MenuItem(
-              icon: Icons.person_outline_rounded,
-              title: context.tr.t('profileSettings'),
-              onTap: () => _open(context, onProfile),
-            ),
-            const Spacer(),
-            const Divider(),
-            _MenuItem(
-              icon: Icons.workspace_premium_outlined,
-              title: context.tr.t('premiumCoach'),
-              premium: true,
-              onTap: () => _open(context, onPremium),
-            ),
-          ],
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 26),
+              _MenuItem(
+                icon: Icons.fitness_center_rounded,
+                title: context.tr.t('workout'),
+                onTap: () => _open(context, onWorkout),
+              ),
+              _MenuItem(
+                icon: Icons.show_chart_rounded,
+                title: context.tr.t('progress'),
+                onTap: () => _open(context, onProgress),
+              ),
+              _MenuItem(
+                icon: Icons.history_rounded,
+                title: context.tr.t('history'),
+                onTap: () => _open(context, onHistory),
+              ),
+              _MenuItem(
+                icon: Icons.assignment_turned_in_outlined,
+                title: context.tr.t('missions'),
+                onTap: () => _open(context, onMissions),
+              ),
+              _MenuItem(
+                icon: Icons.restaurant_rounded,
+                title: context.tr.t('nutrition'),
+              ),
+              _MenuItem(
+                icon: Icons.inventory_2_outlined,
+                title: context.tr.t('inventoryShop'),
+                onTap: () => _open(context, onArmory),
+              ),
+              _MenuItem(
+                icon: Icons.person_outline_rounded,
+                title: context.tr.t('profileSettings'),
+                onTap: () => _open(context, onProfile),
+              ),
+              const Spacer(),
+              const Divider(),
+              _MenuItem(
+                icon: Icons.workspace_premium_outlined,
+                title: context.tr.t('premiumCoach'),
+                premium: true,
+                onTap: () => _open(context, onPremium),
+              ),
+            ],
+          ),
         ),
       ),
     ),

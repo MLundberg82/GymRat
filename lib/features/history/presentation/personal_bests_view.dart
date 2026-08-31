@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../progress/domain/training_analytics.dart';
+import '../../progress/presentation/progress_line_chart.dart';
+import '../../progress/presentation/training_detail_screen.dart';
 import '../../workout/data/workout_session_store.dart';
 
 class PersonalBestsView extends StatelessWidget {
   const PersonalBestsView({
     super.key,
-    required this.records,
+    required this.history,
     required this.onRefresh,
   });
 
-  final List<PersonalBestRecord> records;
+  final TrainingHistorySnapshot history;
   final Future<void> Function() onRefresh;
+
+  List<PersonalBestRecord> get records => history.personalBests;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +39,14 @@ class PersonalBestsView extends StatelessWidget {
             )
           else
             for (var index = 0; index < records.length; index++) ...[
-              _RecordCard(record: records[index], rank: index + 1),
+              _RecordCard(
+                record: records[index],
+                rank: index + 1,
+                trend: TrainingAnalytics.exercise(
+                  history,
+                  records[index].exerciseName,
+                ),
+              ),
               const SizedBox(height: 12),
             ],
         ],
@@ -125,131 +137,164 @@ class _RecordVaultHeader extends StatelessWidget {
 }
 
 class _RecordCard extends StatelessWidget {
-  const _RecordCard({required this.record, required this.rank});
+  const _RecordCard({
+    required this.record,
+    required this.rank,
+    required this.trend,
+  });
 
   final PersonalBestRecord record;
   final int rank;
+  final ExerciseTrend trend;
 
   @override
   Widget build(BuildContext context) {
     final date = MaterialLocalizations.of(context)
         .formatMediumDate(record.achievedAt);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: GymRatColors.surface,
+    return Material(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: GymRatColors.goldDark.withValues(alpha: .7)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ExerciseProgressScreen(trend: trend),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: GymRatColors.goldDark.withValues(alpha: .7),
+            ),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: GymRatColors.gold.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: GymRatColors.gold.withValues(alpha: .35),
-                  ),
-                ),
-                child: Text(
-                  '#$rank',
-                  style: const TextStyle(
-                    color: GymRatColors.gold,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      record.exerciseName,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: GymRatColors.gold.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: GymRatColors.gold.withValues(alpha: .35),
+                      ),
+                    ),
+                    child: Text(
+                      '#$rank',
                       style: const TextStyle(
-                        color: GymRatColors.textPrimary,
-                        fontSize: 16,
+                        color: GymRatColors.gold,
+                        fontSize: 11,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: GymRatColors.textMuted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          record.exerciseName,
+                          style: const TextStyle(
+                            color: GymRatColors.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          date,
+                          style: const TextStyle(
+                            color: GymRatColors.textMuted,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${_weight(record.weight)} kg',
+                        style: const TextStyle(
+                          color: GymRatColors.gold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      Text(
+                        '+${_weight(record.totalImprovement)} kg',
+                        style: const TextStyle(
+                          color: GymRatColors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        context.tr.t('totalGain'),
+                        style: const TextStyle(
+                          color: GymRatColors.textMuted,
+                          fontSize: 7,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .4,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: GymRatColors.goldDark,
+                        size: 19,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 16),
+              Container(
+                height: 1,
+                color: GymRatColors.gold.withValues(alpha: .15),
+              ),
+              const SizedBox(height: 14),
+              ProgressLineChart(
+                points: trend.personalBestPath,
+                color: GymRatColors.gold,
+                height: 92,
+                semanticLabel: context.tr.t('personalBestJourney'),
+              ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  Text(
-                    '${_weight(record.weight)} kg',
-                    style: const TextStyle(
-                      color: GymRatColors.gold,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
+                  Expanded(
+                    child: _RecordMetric(
+                      label: context.tr.t('baseline'),
+                      value: '${_weight(record.baselineWeight)} kg',
                     ),
                   ),
-                  Text(
-                    '+${_weight(record.totalImprovement)} kg',
-                    style: const TextStyle(
-                      color: GymRatColors.green,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                  Expanded(
+                    child: _RecordMetric(
+                      label: context.tr.t('previousBest'),
+                      value: '${_weight(record.previousBest)} kg',
                     ),
                   ),
-                  Text(
-                    context.tr.t('totalGain'),
-                    style: const TextStyle(
-                      color: GymRatColors.textMuted,
-                      fontSize: 7,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: .4,
+                  Expanded(
+                    child: _RecordMetric(
+                      label: context.tr.t('recordBreaks'),
+                      value: '${record.improvementCount}',
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(height: 1, color: GymRatColors.gold.withValues(alpha: .15)),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _RecordMetric(
-                  label: context.tr.t('baseline'),
-                  value: '${_weight(record.baselineWeight)} kg',
-                ),
-              ),
-              Expanded(
-                child: _RecordMetric(
-                  label: context.tr.t('previousBest'),
-                  value: '${_weight(record.previousBest)} kg',
-                ),
-              ),
-              Expanded(
-                child: _RecordMetric(
-                  label: context.tr.t('recordBreaks'),
-                  value: '${record.improvementCount}',
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

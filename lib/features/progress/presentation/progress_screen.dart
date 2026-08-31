@@ -3,6 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../domain/training_analytics.dart';
+import 'progress_line_chart.dart';
+import 'training_detail_screen.dart';
+
+class _ProgressData {
+  const _ProgressData({required this.snapshot, required this.history});
+
+  final ProgressSnapshot snapshot;
+  final TrainingHistorySnapshot history;
+}
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -12,16 +22,27 @@ class ProgressScreen extends StatefulWidget {
 }
 
 class _ProgressScreenState extends State<ProgressScreen> {
-  late Future<ProgressSnapshot> _snapshot;
+  late Future<_ProgressData> _snapshot;
 
   @override
   void initState() {
     super.initState();
-    _snapshot = WorkoutSessionStore.getProgressSnapshot();
+    _snapshot = _load();
+  }
+
+  Future<_ProgressData> _load() async {
+    final values = await Future.wait<Object>([
+      WorkoutSessionStore.getProgressSnapshot(),
+      WorkoutSessionStore.getTrainingHistory(),
+    ]);
+    return _ProgressData(
+      snapshot: values[0] as ProgressSnapshot,
+      history: values[1] as TrainingHistorySnapshot,
+    );
   }
 
   Future<void> _refresh() async {
-    final next = WorkoutSessionStore.getProgressSnapshot();
+    final next = _load();
     setState(() => _snapshot = next);
     await next;
   }
@@ -41,7 +62,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           ),
         ),
       ),
-      body: FutureBuilder<ProgressSnapshot>(
+      body: FutureBuilder<_ProgressData>(
         future: _snapshot,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -58,7 +79,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
             );
           }
           return _ProgressContent(
-            data: snapshot.requireData,
+            data: snapshot.requireData.snapshot,
+            history: snapshot.requireData.history,
             onRefresh: _refresh,
           );
         },
@@ -68,9 +90,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
 }
 
 class _ProgressContent extends StatelessWidget {
-  const _ProgressContent({required this.data, required this.onRefresh});
+  const _ProgressContent({
+    required this.data,
+    required this.history,
+    required this.onRefresh,
+  });
 
   final ProgressSnapshot data;
+  final TrainingHistorySnapshot history;
   final Future<void> Function() onRefresh;
 
   @override
@@ -118,6 +145,40 @@ class _ProgressContent extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           Text(
+            context.tr.t('trainingByArea'),
+            style: const TextStyle(
+              color: GymRatColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            context.tr.t('trainingByAreaHelp'),
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 11,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final category in TrainingAnalytics.categories(history)) ...[
+            _CategoryCard(
+              category: category,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WorkoutCategoryDetailScreen(
+                    history: history,
+                    category: category,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 18),
+          Text(
             context.tr.t('recentWorkouts'),
             style: const TextStyle(
               color: GymRatColors.textPrimary,
@@ -138,6 +199,89 @@ class _ProgressContent extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({required this.category, required this.onTap});
+
+  final WorkoutCategoryTrend category;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: GymRatColors.surface,
+    borderRadius: BorderRadius.circular(19),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(19),
+      child: Container(
+        height: 104,
+        padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: GymRatColors.greenDark.withValues(alpha: .55),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                color: GymRatColors.green.withValues(alpha: .11),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                category.isWalk
+                    ? Icons.directions_walk_rounded
+                    : Icons.fitness_center_rounded,
+                color: GymRatColors.green,
+              ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.name,
+                    style: const TextStyle(
+                      color: GymRatColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .7,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${category.sessions.length} ${context.tr.t('sessions')}',
+                    style: const TextStyle(
+                      color: GymRatColors.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 92,
+              child: ProgressLineChart(
+                points: category.primaryMetric,
+                height: 62,
+                semanticLabel: category.name,
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: GymRatColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _LevelCard extends StatelessWidget {

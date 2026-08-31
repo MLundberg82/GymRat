@@ -259,6 +259,7 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
   }
 
   String get _currentFrame {
+    if (widget.gender != RatGender.male) return _identityMaster;
     if (_action == _IdleAction.neutral || _activeFrames.isEmpty) {
       return _identityMaster;
     }
@@ -268,8 +269,8 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
 
   String get _identityMaster => switch (widget.gender) {
     RatGender.male => GymRatAssets.maleLevel1,
-    RatGender.female => GymRatAssets.maleLevel1,
-    RatGender.nonBinary => GymRatAssets.maleLevel1,
+    RatGender.female => GymRatAssets.femaleLevel1,
+    RatGender.nonBinary => GymRatAssets.nonBinaryLevel1,
   };
 
   @override

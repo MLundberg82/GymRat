@@ -34,6 +34,15 @@ See `docs/GYMRAT_VISION.md` for the durable product and architecture vision.
 - Evolution milestones are levels 5, 10, 15, 20, 30, 40, and 50.
 - Continue using the accepted rat master asset for every evolution stage until
   approved milestone assets exist. Never AI-regenerate the rat.
+- First launch collects rat identity, training experience, intended weekly
+  frequency, height, weight, and training goal. Identity options are male,
+  female, and non-binary; they never change workout access or progression.
+- The rat grows through evolution stages toward a deliberately massive level-50
+  physique. Cosmetic items may unlock from level-ups or Armory Credits, but
+  must remain separate from workout performance.
+- Premium coaching may use the saved profile and workout history for safe
+  rotation, volume, and recovery guidance. It must never force PBs, prescribe
+  medical treatment, or infer aggressive load increases.
 
 ## Engineering rules
 

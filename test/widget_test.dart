@@ -2,13 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/app/gymrat_app.dart';
 import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:gymrat/features/profile/data/training_profile_store.dart';
+import 'package:gymrat/features/profile/domain/training_profile.dart';
 import 'package:gymrat/features/workout/data/workout_session_store.dart';
 import 'package:gymrat/features/workout/domain/workout_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('first launch creates a persistent training profile', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    TrainingProfileStore.profile.value = null;
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('FORGE YOUR GYMRAT'), findsOneWidget);
+    await tester.tap(find.text('Female'));
+    await tester.tap(find.text('CONTINUE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Advanced'));
+    await tester.tap(find.text('CONTINUE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Build muscle'));
+    await tester.tap(find.text('FORGE MY GYMRAT'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('START WORKOUT'), findsOneWidget);
+    expect(TrainingProfileStore.profile.value?.gender, RatGender.female);
+    expect(
+      TrainingProfileStore.profile.value?.experience,
+      TrainingExperience.advanced,
+    );
+    expect(TrainingProfileStore.profile.value?.goal, TrainingGoal.buildMuscle);
+  });
+
   testWidgets('GymRat app starts successfully', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('en');
     addTearDown(() => AppLanguageStore.locale.value = null);
     await tester.pumpWidget(const GymRatApp());
@@ -23,6 +61,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('sv');
     addTearDown(() => AppLanguageStore.locale.value = null);
     await tester.pumpWidget(const GymRatApp());
@@ -42,7 +81,7 @@ void main() {
     expect(find.text('Uppdrag'), findsOneWidget);
     expect(find.text('Gym Armory'), findsOneWidget);
     expect(find.text('Profil & Inställningar'), findsOneWidget);
-    expect(find.text('GymRat Premium'), findsOneWidget);
+    expect(find.text('GYMRAT PREMIUM COACH'), findsOneWidget);
 
     await tester.tap(find.text('Utveckling'));
     await tester.pumpAndSettle();
@@ -67,6 +106,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('en');
     addTearDown(() => AppLanguageStore.locale.value = null);
 
@@ -104,6 +144,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     await WorkoutSessionStore.complete(
       workoutName: 'CHEST',
       walk: false,
@@ -141,6 +182,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     await _completeHistoryWorkout(100);
     await _completeHistoryWorkout(105);
     AppLanguageStore.locale.value = const Locale('en');
@@ -188,6 +230,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('es');
     addTearDown(() => AppLanguageStore.locale.value = null);
 
@@ -208,6 +251,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('sv');
     addTearDown(() => AppLanguageStore.locale.value = null);
     await tester.pumpWidget(const GymRatApp());
@@ -252,6 +296,7 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
     AppLanguageStore.locale.value = const Locale('sv');
     addTearDown(() => AppLanguageStore.locale.value = null);
     await tester.pumpWidget(const GymRatApp());
@@ -302,5 +347,18 @@ Future<WorkoutResult> _completeHistoryWorkout(double weight) {
         sets: <WorkoutSetResult>[WorkoutSetResult(weight: weight, reps: 5)],
       ),
     ],
+  );
+}
+
+Future<void> _prepareTrainingProfile() {
+  return TrainingProfileStore.save(
+    const TrainingProfile(
+      gender: RatGender.nonBinary,
+      experience: TrainingExperience.beginner,
+      heightCm: 175,
+      weightKg: 75,
+      sessionsPerWeek: 3,
+      goal: TrainingGoal.generalFitness,
+    ),
   );
 }

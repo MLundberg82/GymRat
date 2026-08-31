@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../armory/presentation/armory_screen.dart';
+import '../../armory/data/rat_inventory_store.dart';
+import '../../armory/domain/rat_item.dart';
 import '../../character/presentation/gymrat_character.dart';
+import '../../coach/presentation/coach_screen.dart';
 import '../../history/presentation/history_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
+import '../../profile/data/training_profile_store.dart';
+import '../../profile/domain/training_profile.dart';
 import '../../progress/presentation/progress_screen.dart';
 import '../../quests/domain/quest_progress.dart';
 import '../../quests/presentation/quest_board_screen.dart';
@@ -25,6 +30,7 @@ class HubScreen extends StatefulWidget {
 class _HubScreenState extends State<HubScreen> {
   PlayerProgress? progress;
   QuestSnapshot? quests;
+  RatInventoryState? inventory;
   int animationFromXP = 0, animationVersion = 0;
   int? get previousGymLevel => widget.unlockedUpgradeLevel == null
       ? null
@@ -40,15 +46,18 @@ class _HubScreenState extends State<HubScreen> {
     final results = await Future.wait<Object>([
       WorkoutSessionStore.getPlayerProgress(),
       WorkoutSessionStore.getTrainingHistory(),
+      RatInventoryStore.load(),
     ]);
     final loaded = results[0] as PlayerProgress;
     final loadedQuests = QuestProgressCalculator.fromHistory(
       results[1] as TrainingHistorySnapshot,
     );
+    final loadedInventory = results[2] as RatInventoryState;
     if (!mounted) return;
     setState(() {
       progress = loaded;
       quests = loadedQuests;
+      inventory = loadedInventory;
       animationFromXP =
           widget.animationFromXP ?? loaded.totalXP - loaded.currentLevelXP;
       animationVersion++;
@@ -61,16 +70,19 @@ class _HubScreenState extends State<HubScreen> {
     final results = await Future.wait<Object>([
       WorkoutSessionStore.getPlayerProgress(),
       WorkoutSessionStore.getTrainingHistory(),
+      RatInventoryStore.load(),
     ]);
     final loaded = results[0] as PlayerProgress;
     final loadedQuests = QuestProgressCalculator.fromHistory(
       results[1] as TrainingHistorySnapshot,
     );
+    final loadedInventory = results[2] as RatInventoryState;
     if (!mounted) return;
     setState(() {
       animationFromXP = before?.totalXP ?? loaded.totalXP;
       progress = loaded;
       quests = loadedQuests;
+      inventory = loadedInventory;
       animationVersion++;
     });
   }
@@ -85,7 +97,7 @@ class _HubScreenState extends State<HubScreen> {
       onMissions: () => _open(const QuestBoardScreen()),
       onArmory: () => _open(const ArmoryScreen()),
       onProfile: () => _open(const ProfileScreen()),
-      onPremium: () => _open(const ArmoryScreen(initialTab: 1)),
+      onPremium: () => _open(const CoachScreen()),
     ),
     body: Stack(
       fit: StackFit.expand,
@@ -97,7 +109,14 @@ class _HubScreenState extends State<HubScreen> {
         ),
         const _Atmosphere(),
         const _GroundShadow(),
-        _CharacterLayer(level: progress?.level ?? 1),
+        _CharacterLayer(
+          level: progress?.level ?? 1,
+          gender:
+              TrainingProfileStore.profile.value?.gender ?? RatGender.nonBinary,
+          loadout: (inventory ?? const RatInventoryState()).loadoutForLevel(
+            progress?.level ?? 1,
+          ),
+        ),
         const _ForegroundHaze(),
         const _ScreenOverlay(),
         SafeArea(
@@ -183,9 +202,15 @@ class _GroundShadow extends StatelessWidget {
 }
 
 class _CharacterLayer extends StatelessWidget {
-  const _CharacterLayer({required this.level});
+  const _CharacterLayer({
+    required this.level,
+    required this.gender,
+    required this.loadout,
+  });
 
   final int level;
+  final RatGender gender;
+  final RatLoadout loadout;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
@@ -218,7 +243,12 @@ class _CharacterLayer extends StatelessWidget {
               1,
               0,
             ]),
-            child: GymRatCharacter(height: h, level: level),
+            child: GymRatCharacter(
+              height: h,
+              level: level,
+              gender: gender,
+              loadout: loadout,
+            ),
           ),
         ),
       );
@@ -624,7 +654,7 @@ class _GymRatMenu extends StatelessWidget {
             const Divider(),
             _MenuItem(
               icon: Icons.workspace_premium_outlined,
-              title: context.tr.t('premium'),
+              title: context.tr.t('premiumCoach'),
               premium: true,
               onTap: () => _open(context, onPremium),
             ),

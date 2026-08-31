@@ -125,4 +125,17 @@ abstract final class ArmoryBilling {
       return false;
     }
   }
+
+  static Future<bool> hasActiveEntitlement(String identifier) async {
+    if (!_configured) return false;
+    try {
+      return (await Purchases.getCustomerInfo())
+              .entitlements
+              .active[identifier]
+              ?.isActive ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
 }

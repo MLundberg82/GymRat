@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../armory/data/rat_inventory_store.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../domain/quest_progress.dart';
 
@@ -22,8 +23,33 @@ class _QuestBoardScreenState extends State<QuestBoardScreen> {
   }
 
   Future<QuestSnapshot> _load() async {
-    final history = await WorkoutSessionStore.getTrainingHistory();
-    return QuestProgressCalculator.fromHistory(history);
+    final results = await Future.wait<Object>([
+      WorkoutSessionStore.getTrainingHistory(),
+      RatInventoryStore.load(),
+    ]);
+    final inventory = results[1] as RatInventoryState;
+    return QuestProgressCalculator.fromHistory(
+      results[0] as TrainingHistorySnapshot,
+      claimedQuestIds: inventory.claimedQuests,
+      credits: inventory.credits,
+    );
+  }
+
+  Future<void> _claim(QuestProgress quest) async {
+    if (!quest.isComplete || quest.isClaimed) return;
+    final claimed = await RatInventoryStore.claimQuest(
+      quest.claimId,
+      quest.rewardCredits,
+    );
+    if (!mounted || !claimed) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '+${quest.rewardCredits} ${context.tr.t('armoryCredits')}',
+        ),
+      ),
+    );
+    await _refresh();
   }
 
   Future<void> _refresh() async {
@@ -74,12 +100,14 @@ class _QuestBoardScreenState extends State<QuestBoardScreen> {
                 title: context.tr.t('dailyContracts'),
                 subtitle: context.tr.t('dailyContractsSubtitle'),
                 quests: quests.daily,
+                onClaim: _claim,
               ),
               const SizedBox(height: 24),
               _QuestSection(
                 title: context.tr.t('weeklyCampaign'),
                 subtitle: context.tr.t('weeklyCampaignSubtitle'),
                 quests: quests.weekly,
+                onClaim: _claim,
               ),
             ],
           ),
@@ -175,6 +203,21 @@ class _QuestBoardHeader extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Icon(Icons.hexagon_rounded, color: GymRatColors.gold),
+              const SizedBox(height: 3),
+              Text(
+                '${snapshot.credits}',
+                style: const TextStyle(
+                  color: GymRatColors.gold,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -186,11 +229,13 @@ class _QuestSection extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.quests,
+    required this.onClaim,
   });
 
   final String title;
   final String subtitle;
   final List<QuestProgress> quests;
+  final Future<void> Function(QuestProgress quest) onClaim;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -212,7 +257,7 @@ class _QuestSection extends StatelessWidget {
       ),
       const SizedBox(height: 11),
       for (final quest in quests) ...[
-        _QuestCard(quest: quest),
+        _QuestCard(quest: quest, onClaim: () => onClaim(quest)),
         const SizedBox(height: 10),
       ],
     ],
@@ -220,9 +265,10 @@ class _QuestSection extends StatelessWidget {
 }
 
 class _QuestCard extends StatelessWidget {
-  const _QuestCard({required this.quest});
+  const _QuestCard({required this.quest, required this.onClaim});
 
   final QuestProgress quest;
+  final VoidCallback onClaim;
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +348,51 @@ class _QuestCard extends StatelessWidget {
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(
+                Icons.hexagon_rounded,
+                color: GymRatColors.gold,
+                size: 16,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '+${quest.rewardCredits}',
+                style: const TextStyle(
+                  color: GymRatColors.gold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              if (quest.isClaimed)
+                Text(
+                  context.tr.t('claimed'),
+                  style: const TextStyle(
+                    color: GymRatColors.gold,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                )
+              else if (quest.isComplete)
+                FilledButton(
+                  onPressed: onClaim,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: GymRatColors.gold,
+                    foregroundColor: GymRatColors.black,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  child: Text(
+                    context.tr.t('claimReward'),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

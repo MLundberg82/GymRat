@@ -71,6 +71,17 @@ void main() {
       'weeklyCampaign',
       'questDailySession',
       'questWeeklyDuration',
+      'onboardingTitle',
+      'genderFemale',
+      'genderNonBinary',
+      'experienceExpert',
+      'goalBuildMuscle',
+      'ratLoadout',
+      'armoryCredits',
+      'itemOlympiaAura',
+      'claimReward',
+      'premiumCoach',
+      'coachNextMission',
     ];
 
     for (final locale in AppLanguageStore.supported) {

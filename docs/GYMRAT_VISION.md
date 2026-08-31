@@ -102,6 +102,40 @@ Premium should use a subscription entitlement. Permanent cosmetic purchases
 should use non-consumable products attached to the entitlement that unlocks the
 item. Every restorable purchase flow must expose Restore Purchases.
 
+Quest contracts award Armory Credits through an explicit claim action. Claims
+are idempotent and persisted with the inventory state so the same contract can
+never be collected twice. Armory Credits are earned through training and are
+used only for standard cosmetic items; they are not sold for money. Other rat
+items unlock directly from specific level-ups. Paid cosmetics remain direct
+store products and must not be confused with earned progression.
+
+## Player profile, character, and coaching
+
+The first launch creates a durable training profile containing:
+
+- rat identity: male, female, or non-binary;
+- training experience: beginner, intermediate, advanced, or expert;
+- intended sessions per week;
+- height and weight;
+- primary goal: muscle, strength, fat loss, or general fitness.
+
+The profile can be edited later and is the input for future Premium coaching.
+Gender identity must not change workout access, XP, rewards, or progression.
+Until separate approved character masters exist, every identity deliberately
+uses the accepted rat master. Missing female or non-binary assets must never
+cause a runtime failure, and the rat must never be AI-regenerated.
+
+The rat grows at each evolution milestone. Growth is modest at early levels and
+ends in an intentionally massive Mr Olympia-scale silhouette at level 50.
+Equipment is layered independently from the master character, persisted as a
+slot-based loadout, and can be replaced without changing progression data.
+
+GymRat Premium Coach uses the training profile and persisted session history to
+recommend the next safe workout rotation, set and repetition ranges, recovery,
+and weekly frequency. Recommendations must never prescribe medical treatment,
+force personal records, or increase load from assumptions. Pain, illness, and
+professional medical guidance always override the recommendation engine.
+
 ## Verified implementation baseline
 
 As verified from the repository on 2026-08-28:

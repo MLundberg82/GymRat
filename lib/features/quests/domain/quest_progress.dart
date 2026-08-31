@@ -13,6 +13,9 @@ class QuestProgress {
     required this.unit,
     required this.current,
     required this.target,
+    required this.claimId,
+    required this.rewardCredits,
+    required this.isClaimed,
   });
 
   final String id;
@@ -22,6 +25,9 @@ class QuestProgress {
   final QuestUnit unit;
   final int current;
   final int target;
+  final String claimId;
+  final int rewardCredits;
+  final bool isClaimed;
 
   bool get isComplete => current >= target;
   double get progress => (current / target).clamp(0.0, 1.0);
@@ -29,10 +35,15 @@ class QuestProgress {
 }
 
 class QuestSnapshot {
-  const QuestSnapshot({required this.daily, required this.weekly});
+  const QuestSnapshot({
+    required this.daily,
+    required this.weekly,
+    this.credits = 0,
+  });
 
   final List<QuestProgress> daily;
   final List<QuestProgress> weekly;
+  final int credits;
 
   int get completedDaily => daily.where((quest) => quest.isComplete).length;
   int get completedWeekly => weekly.where((quest) => quest.isComplete).length;
@@ -42,12 +53,16 @@ abstract final class QuestProgressCalculator {
   static QuestSnapshot fromHistory(
     TrainingHistorySnapshot history, {
     DateTime? now,
+    Set<String> claimedQuestIds = const <String>{},
+    int credits = 0,
   }) {
     final localNow = (now ?? DateTime.now()).toLocal();
     final today = DateTime(localNow.year, localNow.month, localNow.day);
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
     final tomorrow = today.add(const Duration(days: 1));
     final nextWeek = weekStart.add(const Duration(days: 7));
+    final dayToken = _dateToken(today);
+    final weekToken = _dateToken(weekStart);
 
     final dailyWorkouts = history.workouts
         .where((workout) => _isWithin(workout.completedAt, today, tomorrow))
@@ -79,6 +94,9 @@ abstract final class QuestProgressCalculator {
           unit: QuestUnit.sessions,
           current: dailyWorkouts.length,
           target: 1,
+          claimId: 'daily-session-$dayToken',
+          rewardCredits: 10,
+          isClaimed: claimedQuestIds.contains('daily-session-$dayToken'),
         ),
         QuestProgress(
           id: 'daily-duration',
@@ -88,6 +106,9 @@ abstract final class QuestProgressCalculator {
           unit: QuestUnit.minutes,
           current: dailySeconds ~/ 60,
           target: 20,
+          claimId: 'daily-duration-$dayToken',
+          rewardCredits: 10,
+          isClaimed: claimedQuestIds.contains('daily-duration-$dayToken'),
         ),
         QuestProgress(
           id: 'daily-exercises',
@@ -97,6 +118,9 @@ abstract final class QuestProgressCalculator {
           unit: QuestUnit.exercises,
           current: dailyExercises,
           target: 3,
+          claimId: 'daily-exercises-$dayToken',
+          rewardCredits: 15,
+          isClaimed: claimedQuestIds.contains('daily-exercises-$dayToken'),
         ),
       ]),
       weekly: List.unmodifiable(<QuestProgress>[
@@ -108,6 +132,9 @@ abstract final class QuestProgressCalculator {
           unit: QuestUnit.sessions,
           current: weeklyWorkouts.length,
           target: 3,
+          claimId: 'weekly-sessions-$weekToken',
+          rewardCredits: 30,
+          isClaimed: claimedQuestIds.contains('weekly-sessions-$weekToken'),
         ),
         QuestProgress(
           id: 'weekly-duration',
@@ -117,8 +144,12 @@ abstract final class QuestProgressCalculator {
           unit: QuestUnit.minutes,
           current: weeklySeconds ~/ 60,
           target: 90,
+          claimId: 'weekly-duration-$weekToken',
+          rewardCredits: 35,
+          isClaimed: claimedQuestIds.contains('weekly-duration-$weekToken'),
         ),
       ]),
+      credits: credits,
     );
   }
 
@@ -126,4 +157,9 @@ abstract final class QuestProgressCalculator {
     final localValue = value.toLocal();
     return !localValue.isBefore(start) && localValue.isBefore(end);
   }
+
+  static String _dateToken(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}'
+      '${value.month.toString().padLeft(2, '0')}'
+      '${value.day.toString().padLeft(2, '0')}';
 }

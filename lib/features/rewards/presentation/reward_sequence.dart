@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../evolution/domain/evolution_milestones.dart';
+import '../../armory/domain/rat_item.dart';
 import '../../evolution/presentation/evolution_sequence.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/domain/workout_result.dart';
@@ -125,6 +126,7 @@ class _RewardSequenceState extends State<RewardSequence> {
           newLevel: celebrationLevel,
           isEvolution: false,
           upgrade: GymUpgradeCatalog.forLevel(celebrationLevel),
+          ratItem: RatItemCatalog.forLevel(celebrationLevel),
         ),
         _RewardPhase.evolution => EvolutionSequence(
           key: ValueKey('evolution-$evolutionLevel'),

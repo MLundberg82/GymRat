@@ -5,6 +5,8 @@ import '../core/localization/app_language_store.dart';
 import '../core/localization/gymrat_localizations.dart';
 import '../core/theme/gymrat_theme.dart';
 import '../features/hub/presentation/hub_screen.dart';
+import '../features/profile/data/training_profile_store.dart';
+import '../features/profile/presentation/onboarding_screen.dart';
 
 class GymRatApp extends StatelessWidget {
   const GymRatApp({super.key});
@@ -37,7 +39,11 @@ class GymRatApp extends StatelessWidget {
             }
             return const Locale('en');
           },
-          home: const HubScreen(),
+          home: ValueListenableBuilder(
+            valueListenable: TrainingProfileStore.profile,
+            builder: (context, profile, _) =>
+                profile == null ? const OnboardingScreen() : const HubScreen(),
+          ),
         );
       },
     );

@@ -4,13 +4,23 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/assets/gymrat_assets.dart';
+import '../../armory/domain/rat_item.dart';
 import '../../evolution/domain/evolution_milestones.dart';
+import '../../profile/domain/training_profile.dart';
 
 class GymRatCharacter extends StatefulWidget {
-  const GymRatCharacter({super.key, this.height, this.level = 1});
+  const GymRatCharacter({
+    super.key,
+    this.height,
+    this.level = 1,
+    this.gender = RatGender.nonBinary,
+    this.loadout = const RatLoadout(<RatItemSlot, RatItem>{}),
+  });
 
   final double? height;
   final int level;
+  final RatGender gender;
+  final RatLoadout loadout;
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -250,11 +260,17 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
 
   String get _currentFrame {
     if (_action == _IdleAction.neutral || _activeFrames.isEmpty) {
-      return GymRatAssets.maleLevel1;
+      return _identityMaster;
     }
 
     return _activeFrames[_frameIndex];
   }
+
+  String get _identityMaster => switch (widget.gender) {
+    RatGender.male => GymRatAssets.maleLevel1,
+    RatGender.female => GymRatAssets.maleLevel1,
+    RatGender.nonBinary => GymRatAssets.maleLevel1,
+  };
 
   @override
   void dispose() {
@@ -268,6 +284,7 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
 
   @override
   Widget build(BuildContext context) {
+    final aura = widget.loadout[RatItemSlot.aura];
     return Transform(
       transform: Matrix4.diagonal3Values(
         EvolutionMilestones.widthScaleForLevel(widget.level),
@@ -275,15 +292,114 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
         1,
       ),
       alignment: Alignment.bottomCenter,
-      child: Image.asset(
-        _currentFrame,
-        height: widget.height,
-        fit: BoxFit.contain,
+      child: Stack(
         alignment: Alignment.bottomCenter,
-        gaplessPlayback: true,
-        filterQuality: FilterQuality.high,
-        cacheHeight: _cacheHeight,
+        children: [
+          if (aura != null)
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0, .10),
+                    radius: .48,
+                    colors: [
+                      _itemColor(aura).withValues(alpha: .38),
+                      _itemColor(aura).withValues(alpha: .10),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Image.asset(
+            _currentFrame,
+            height: widget.height,
+            fit: BoxFit.contain,
+            alignment: Alignment.bottomCenter,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.high,
+            cacheHeight: _cacheHeight,
+            semanticLabel: widget.gender.name,
+          ),
+          Positioned.fill(child: _EquipmentOverlay(loadout: widget.loadout)),
+        ],
       ),
     );
   }
 }
+
+class _EquipmentOverlay extends StatelessWidget {
+  const _EquipmentOverlay({required this.loadout});
+
+  final RatLoadout loadout;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Stack(
+      children: [
+        if (loadout[RatItemSlot.head] case final item?)
+          Align(
+            alignment: const Alignment(0, -.82),
+            child: _EquipmentBadge(item: item, size: 36),
+          ),
+        if (loadout[RatItemSlot.neck] case final item?)
+          Align(
+            alignment: const Alignment(0, -.25),
+            child: _EquipmentBadge(item: item, size: 27),
+          ),
+        if (loadout[RatItemSlot.belt] case final item?)
+          Align(
+            alignment: const Alignment(0, .30),
+            child: _EquipmentBadge(item: item, size: 30),
+          ),
+      ],
+    ),
+  );
+}
+
+class _EquipmentBadge extends StatelessWidget {
+  const _EquipmentBadge({required this.item, required this.size});
+
+  final RatItem item;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(
+        colors: [Colors.white, _itemColor(item), Colors.black],
+        stops: const [0, .42, 1],
+      ),
+      border: Border.all(color: _itemColor(item), width: 2),
+      boxShadow: [
+        BoxShadow(color: _itemColor(item), blurRadius: 13, spreadRadius: 1),
+      ],
+    ),
+    child: Icon(_itemIcon(item), color: Colors.black, size: size * .58),
+  );
+}
+
+Color _itemColor(RatItem item) {
+  if (item.id.contains('void') || item.id.contains('violet')) {
+    return const Color(0xFF9B6DFF);
+  }
+  if (item.id.contains('emerald') || item.id.contains('power')) {
+    return const Color(0xFF32D071);
+  }
+  if (item.id.contains('shadow')) return const Color(0xFF7C8790);
+  if (item.id.contains('molten')) return const Color(0xFFFF6D00);
+  return const Color(0xFFFFC107);
+}
+
+IconData _itemIcon(RatItem item) => switch (item.slot) {
+  RatItemSlot.head =>
+    item.id.contains('crown')
+        ? Icons.workspace_premium_rounded
+        : Icons.sports_martial_arts_rounded,
+  RatItemSlot.neck => Icons.link_rounded,
+  RatItemSlot.belt => Icons.shield_rounded,
+  RatItemSlot.aura => Icons.auto_awesome_rounded,
+};

@@ -30,12 +30,12 @@ abstract final class EvolutionMilestones {
   }
 
   static double widthScaleForLevel(int level) {
-    const scales = <double>[1, 1.018, 1.035, 1.052, 1.070, 1.090, 1.110, 1.130];
+    const scales = <double>[1, 1.06, 1.12, 1.18, 1.27, 1.36, 1.47, 1.62];
     return scales[stageIndexForLevel(level)];
   }
 
   static double heightScaleForLevel(int level) {
-    const scales = <double>[1, 1.010, 1.018, 1.026, 1.034, 1.045, 1.055, 1.065];
+    const scales = <double>[1, 1.02, 1.05, 1.08, 1.12, 1.16, 1.20, 1.25];
     return scales[stageIndexForLevel(level)];
   }
 

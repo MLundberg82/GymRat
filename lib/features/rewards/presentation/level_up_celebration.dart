@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../armory/domain/rat_item.dart';
 import '../domain/gym_upgrade.dart';
 
 class LevelUpCelebration extends StatefulWidget {
@@ -17,6 +18,7 @@ class LevelUpCelebration extends StatefulWidget {
     required this.newLevel,
     required this.isEvolution,
     required this.upgrade,
+    this.ratItem,
   });
 
   static const duration = Duration(milliseconds: 4700);
@@ -26,6 +28,7 @@ class LevelUpCelebration extends StatefulWidget {
   final int newLevel;
   final bool isEvolution;
   final GymUpgrade upgrade;
+  final RatItem? ratItem;
 
   Duration get playDuration => isEvolution ? evolutionDuration : duration;
 
@@ -466,6 +469,20 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                if (widget.ratItem case final item?) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '+ ${context.tr.t('ratItemUnlocked')}: '
+                    '${context.tr.t(item.nameKey)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: GymRatColors.green,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -133,6 +133,19 @@ void main() {
     expect(find.text('GYM ARMORY'), findsOneWidget);
     expect(find.text('YOUR GYM. YOUR LEGACY.'), findsOneWidget);
     expect(find.text('0 / 49'), findsOneWidget);
+    expect(find.text('RAT APPEARANCE'), findsOneWidget);
+
+    final collectionList = find.byType(ListView).first;
+    for (var step = 0; step < 3; step++) {
+      await tester.drag(collectionList, const Offset(0, -500));
+      await tester.pump();
+    }
+    await tester.tap(find.text('FOUNDER TRAINING TEE'));
+    await tester.pump();
+
+    expect(find.text('ITEM CONCEPT'), findsOneWidget);
+    expect(find.textContaining('never be placed over the rat'), findsOneWidget);
+    expect(find.text('EQUIP'), findsNothing);
 
     await tester.tap(find.text('STORE'));
     await tester.pumpAndSettle();

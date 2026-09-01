@@ -43,6 +43,10 @@ void main() {
           .map((image) => image.assetName);
 
       expect(assetNames, contains(contains('level_01_back.png')));
+      expect(
+        assetNames.where((asset) => asset.startsWith('assets/items/')),
+        isEmpty,
+      );
       expect(tester.takeException(), isNull);
     });
   }

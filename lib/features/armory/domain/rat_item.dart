@@ -8,7 +8,8 @@ class RatItem {
     this.unlockLevel,
     this.priceCredits,
     this.storeProductId,
-    this.assetPath,
+    this.previewAssetPath,
+    this.appearanceId,
   }) : assert(
          unlockLevel != null || priceCredits != null || storeProductId != null,
        );
@@ -19,12 +20,13 @@ class RatItem {
   final int? unlockLevel;
   final int? priceCredits;
   final String? storeProductId;
-  final String? assetPath;
+  final String? previewAssetPath;
+  final String? appearanceId;
 
   bool isLevelUnlocked(int level) =>
       unlockLevel != null && level >= unlockLevel!;
 
-  bool get isWearable => slot != RatItemSlot.collectible;
+  bool get hasCompleteAppearance => appearanceId != null;
 }
 
 abstract final class RatItemCatalog {
@@ -119,7 +121,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.head,
       priceCredits: 80,
       storeProductId: 'gymrat.graphite_cap',
-      assetPath: 'assets/items/graphite_cap.png',
+      previewAssetPath: 'assets/items/graphite_cap.png',
     ),
     RatItem(
       id: 'iron_chain',
@@ -127,7 +129,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.neck,
       priceCredits: 100,
       storeProductId: 'gymrat.iron_chain',
-      assetPath: 'assets/items/iron_chain.png',
+      previewAssetPath: 'assets/items/iron_chain.png',
     ),
     RatItem(
       id: 'founders_tee',
@@ -135,7 +137,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.top,
       priceCredits: 125,
       storeProductId: 'gymrat.founders_tee',
-      assetPath: 'assets/items/founders_tee.png',
+      previewAssetPath: 'assets/items/founders_tee.png',
     ),
     RatItem(
       id: 'champion_joggers',
@@ -143,7 +145,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.bottom,
       priceCredits: 145,
       storeProductId: 'gymrat.champion_joggers',
-      assetPath: 'assets/items/champion_joggers.png',
+      previewAssetPath: 'assets/items/champion_joggers.png',
     ),
     RatItem(
       id: 'arena_shorts',
@@ -151,7 +153,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.bottom,
       priceCredits: 110,
       storeProductId: 'gymrat.arena_shorts',
-      assetPath: 'assets/items/arena_shorts.png',
+      previewAssetPath: 'assets/items/arena_shorts.png',
     ),
     RatItem(
       id: 'neon_trainers',
@@ -159,7 +161,7 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.feet,
       priceCredits: 135,
       storeProductId: 'gymrat.neon_trainers',
-      assetPath: 'assets/items/neon_trainers.png',
+      previewAssetPath: 'assets/items/neon_trainers.png',
     ),
   ];
 
@@ -194,12 +196,4 @@ abstract final class RatItemCatalog {
     }
     return null;
   }
-}
-
-class RatLoadout {
-  const RatLoadout(this.items);
-
-  final Map<RatItemSlot, RatItem> items;
-
-  RatItem? operator [](RatItemSlot slot) => items[slot];
 }

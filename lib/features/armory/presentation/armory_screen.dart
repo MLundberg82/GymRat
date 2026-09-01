@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../rewards/domain/gym_upgrade.dart';
+import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
@@ -62,6 +63,15 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
   }
 
   Future<void> _purchase(ArmoryOffer offer) async {
+    final cosmetic = RatItemCatalog.byStoreProductId(offer.identifier);
+    if (cosmetic != null &&
+        (!cosmetic.hasCompleteAppearance ||
+            !RatAppearanceCatalog.isReady(cosmetic.appearanceId))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr.t('appearancePurchaseBlocked'))),
+      );
+      return;
+    }
     setState(() => _busyOffer = offer.identifier);
     final result = await ArmoryBilling.purchase(offer);
     if (!mounted) return;
@@ -98,24 +108,6 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
       ),
     );
     if (restored) await _refresh();
-  }
-
-  Future<void> _equip(RatItem item, int level) async {
-    await RatInventoryStore.equip(item, level: level);
-    if (mounted) await _refresh();
-  }
-
-  Future<void> _buyWithCredits(RatItem item, int level) async {
-    final result = await RatInventoryStore.purchase(item, level: level);
-    if (!mounted) return;
-    final key = switch (result) {
-      RatItemPurchaseResult.purchased => 'armoryCreditPurchaseComplete',
-      RatItemPurchaseResult.insufficientCredits => 'notEnoughCredits',
-      RatItemPurchaseResult.alreadyOwned => 'armoryAlreadyOwned',
-    };
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.tr.t(key))));
-    await _refresh();
   }
 
   @override
@@ -169,8 +161,6 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
               _CollectionTab(
                 player: data.player,
                 inventory: data.inventory,
-                onEquip: _equip,
-                onBuy: _buyWithCredits,
                 onRefresh: _refresh,
               ),
               _StoreTab(
@@ -192,15 +182,11 @@ class _CollectionTab extends StatelessWidget {
   const _CollectionTab({
     required this.player,
     required this.inventory,
-    required this.onEquip,
-    required this.onBuy,
     required this.onRefresh,
   });
 
   final PlayerProgress player;
   final RatInventoryState inventory;
-  final Future<void> Function(RatItem item, int level) onEquip;
-  final Future<void> Function(RatItem item, int level) onBuy;
   final Future<void> Function() onRefresh;
 
   @override
@@ -227,14 +213,12 @@ class _CollectionTab extends StatelessWidget {
             nextUpgrade: nextUpgrade,
           ),
           const SizedBox(height: 20),
-          _RatLoadoutSection(
+          _RatAppearanceSection(
             level: player.level,
             inventory: inventory,
             gender:
                 TrainingProfileStore.profile.value?.gender ??
                 RatGender.nonBinary,
-            onEquip: onEquip,
-            onBuy: onBuy,
           ),
           const SizedBox(height: 20),
           Text(
@@ -462,38 +446,30 @@ class _UpgradeCard extends StatelessWidget {
   }
 }
 
-class _RatLoadoutSection extends StatefulWidget {
-  const _RatLoadoutSection({
+class _RatAppearanceSection extends StatefulWidget {
+  const _RatAppearanceSection({
     required this.level,
     required this.inventory,
     required this.gender,
-    required this.onEquip,
-    required this.onBuy,
   });
 
   final int level;
   final RatInventoryState inventory;
   final RatGender gender;
-  final Future<void> Function(RatItem item, int level) onEquip;
-  final Future<void> Function(RatItem item, int level) onBuy;
 
   @override
-  State<_RatLoadoutSection> createState() => _RatLoadoutSectionState();
+  State<_RatAppearanceSection> createState() => _RatAppearanceSectionState();
 }
 
-class _RatLoadoutSectionState extends State<_RatLoadoutSection> {
+class _RatAppearanceSectionState extends State<_RatAppearanceSection> {
   RatItem? previewItem;
   RatCharacterView view = RatCharacterView.front;
 
   @override
   Widget build(BuildContext context) {
-    final equippedLoadout = widget.inventory.loadoutForLevel(widget.level);
-    final loadout = previewItem == null
-        ? equippedLoadout
-        : RatLoadout({
-            ...equippedLoadout.items,
-            previewItem!.slot: previewItem!,
-          });
+    final appearance = RatAppearanceCatalog.byId(
+      widget.inventory.equippedAppearanceId,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -547,7 +523,7 @@ class _RatLoadoutSectionState extends State<_RatLoadoutSection> {
                   level: widget.level,
                   gender: widget.gender,
                   view: view,
-                  loadout: loadout,
+                  appearanceId: appearance.id,
                 ),
               ),
               Positioned(
@@ -595,7 +571,7 @@ class _RatLoadoutSectionState extends State<_RatLoadoutSection> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      context.tr.t('previewItem'),
+                      context.tr.t('itemConcept'),
                       style: const TextStyle(
                         color: GymRatColors.black,
                         fontSize: 8,
@@ -613,22 +589,79 @@ class _RatLoadoutSectionState extends State<_RatLoadoutSection> {
           style: const TextStyle(color: GymRatColors.textMuted, fontSize: 10),
         ),
         const SizedBox(height: 10),
+        if (previewItem case final item?) ...[
+          _ItemConceptPreview(item: item),
+          const SizedBox(height: 10),
+        ],
         for (final item in RatItemCatalog.featuredItems) ...[
           _RatItemCard(
             item: item,
             level: widget.level,
             owned: widget.inventory.owns(item, widget.level),
-            equipped: equippedLoadout[item.slot]?.id == item.id,
             selected: previewItem?.id == item.id,
             onPreview: () => setState(() => previewItem = item),
-            onEquip: () => widget.onEquip(item, widget.level),
-            onBuy: () => widget.onBuy(item, widget.level),
           ),
           const SizedBox(height: 8),
         ],
       ],
     );
   }
+}
+
+class _ItemConceptPreview extends StatelessWidget {
+  const _ItemConceptPreview({required this.item});
+
+  final RatItem item;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: GymRatColors.surfaceElevated,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: GymRatColors.goldDark),
+    ),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 78,
+          height: 78,
+          child: item.previewAssetPath == null
+              ? Icon(
+                  _ratItemIcon(item.slot),
+                  color: GymRatColors.gold,
+                  size: 34,
+                )
+              : Image.asset(
+                  item.previewAssetPath!,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr.t(item.nameKey),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                context.tr.t('appearanceInForgeMessage'),
+                style: const TextStyle(
+                  color: GymRatColors.textSecondary,
+                  fontSize: 10,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _RankTrack extends StatelessWidget {
@@ -697,21 +730,15 @@ class _RatItemCard extends StatelessWidget {
     required this.item,
     required this.level,
     required this.owned,
-    required this.equipped,
     required this.selected,
     required this.onPreview,
-    required this.onEquip,
-    required this.onBuy,
   });
 
   final RatItem item;
   final int level;
   final bool owned;
-  final bool equipped;
   final bool selected;
   final VoidCallback onPreview;
-  final VoidCallback onEquip;
-  final VoidCallback onBuy;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -724,8 +751,6 @@ class _RatItemCard extends StatelessWidget {
         border: Border.all(
           color: selected
               ? GymRatColors.gold
-              : equipped
-              ? GymRatColors.gold
               : owned
               ? GymRatColors.greenDark
               : GymRatColors.border,
@@ -737,15 +762,15 @@ class _RatItemCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: (equipped ? GymRatColors.gold : GymRatColors.green)
+              color: (owned ? GymRatColors.gold : GymRatColors.green)
                   .withValues(alpha: .10),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: item.assetPath != null
+            child: item.previewAssetPath != null
                 ? Padding(
                     padding: const EdgeInsets.all(3),
                     child: Image.asset(
-                      item.assetPath!,
+                      item.previewAssetPath!,
                       fit: BoxFit.contain,
                       filterQuality: FilterQuality.high,
                     ),
@@ -771,7 +796,7 @@ class _RatItemCard extends StatelessWidget {
                 Text(
                   item.unlockLevel != null
                       ? '${context.tr.t('level')} ${item.unlockLevel}'
-                      : '${item.priceCredits} ${context.tr.t('armoryCredits')}',
+                      : context.tr.t('appearanceInForge'),
                   style: const TextStyle(
                     color: GymRatColors.textMuted,
                     fontSize: 9,
@@ -781,26 +806,23 @@ class _RatItemCard extends StatelessWidget {
               ],
             ),
           ),
-          if (equipped)
+          if (owned)
             Text(
-              context.tr.t('equipped'),
+              context.tr.t('armoryOwned'),
               style: const TextStyle(
                 color: GymRatColors.gold,
                 fontSize: 9,
                 fontWeight: FontWeight.w900,
               ),
             )
-          else if (owned)
-            TextButton(onPressed: onEquip, child: Text(context.tr.t('equip')))
-          else if (item.priceCredits != null)
-            FilledButton(
-              onPressed: onBuy,
-              style: FilledButton.styleFrom(
-                backgroundColor: GymRatColors.gold,
-                foregroundColor: GymRatColors.black,
-                visualDensity: VisualDensity.compact,
+          else if (item.unlockLevel == null)
+            Text(
+              context.tr.t('appearanceInForge'),
+              style: const TextStyle(
+                color: GymRatColors.textMuted,
+                fontSize: 8,
+                fontWeight: FontWeight.w900,
               ),
-              child: Text('${item.priceCredits}'),
             )
           else
             const Icon(Icons.lock_rounded, color: GymRatColors.textMuted),
@@ -837,33 +859,48 @@ class _StoreTab extends StatelessWidget {
   final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) => RefreshIndicator(
-    color: GymRatColors.premium,
-    backgroundColor: GymRatColors.surfaceElevated,
-    onRefresh: onRefresh,
-    child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-      children: [
-        _StoreHeader(
-          onRestore: onRestore,
-          canRestore: ArmoryBilling.isConfigured,
-        ),
-        const SizedBox(height: 18),
-        if (store.status == ArmoryStoreStatus.ready)
-          for (final offer in store.offers) ...[
-            _OfferCard(
-              offer: offer,
-              busy: busyOffer == offer.identifier,
-              onPurchase: () => onPurchase(offer),
-            ),
-            const SizedBox(height: 10),
-          ]
-        else
-          _StoreState(status: store.status),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final visibleOffers = store.offers
+        .where((offer) {
+          final cosmetic = RatItemCatalog.byStoreProductId(offer.identifier);
+          if (cosmetic == null) return true;
+          return cosmetic.hasCompleteAppearance &&
+              RatAppearanceCatalog.byProductId(offer.identifier) != null;
+        })
+        .toList(growable: false);
+    final visibleStatus =
+        store.status == ArmoryStoreStatus.ready && visibleOffers.isEmpty
+        ? ArmoryStoreStatus.empty
+        : store.status;
+
+    return RefreshIndicator(
+      color: GymRatColors.premium,
+      backgroundColor: GymRatColors.surfaceElevated,
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+        children: [
+          _StoreHeader(
+            onRestore: onRestore,
+            canRestore: ArmoryBilling.isConfigured,
+          ),
+          const SizedBox(height: 18),
+          if (visibleStatus == ArmoryStoreStatus.ready)
+            for (final offer in visibleOffers) ...[
+              _OfferCard(
+                offer: offer,
+                busy: busyOffer == offer.identifier,
+                onPurchase: () => onPurchase(offer),
+              ),
+              const SizedBox(height: 10),
+            ]
+          else
+            _StoreState(status: visibleStatus),
+        ],
+      ),
+    );
+  }
 }
 
 class _StoreHeader extends StatelessWidget {

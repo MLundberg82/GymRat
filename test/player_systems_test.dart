@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/features/armory/data/rat_inventory_store.dart';
 import 'package:gymrat/features/armory/domain/rat_item.dart';
 import 'package:gymrat/features/coach/domain/coach_recommendation.dart';
+import 'package:gymrat/features/character/domain/rat_appearance.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/data/training_profile_store.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
@@ -49,21 +50,24 @@ void main() {
     expect(state.claimedQuests, contains('daily-test'));
   });
 
-  test('credits buy and auto-equip a cosmetic item', () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    for (var index = 0; index < 6; index++) {
-      await RatInventoryStore.claimQuest('claim-$index', 10);
-    }
-    final item = RatItemCatalog.byId('shadow_hood')!;
+  test(
+    'incomplete cosmetic cannot spend credits or change appearance',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      for (var index = 0; index < 6; index++) {
+        await RatInventoryStore.claimQuest('claim-$index', 10);
+      }
+      final item = RatItemCatalog.byId('shadow_hood')!;
 
-    final result = await RatInventoryStore.purchase(item, level: 1);
-    final state = await RatInventoryStore.load();
+      final result = await RatInventoryStore.purchase(item, level: 1);
+      final state = await RatInventoryStore.load();
 
-    expect(result, RatItemPurchaseResult.purchased);
-    expect(state.credits, 0);
-    expect(state.ownedItems, contains(item.id));
-    expect(state.loadoutForLevel(1)[RatItemSlot.head]?.id, item.id);
-  });
+      expect(result, RatItemPurchaseResult.appearanceUnavailable);
+      expect(state.credits, 60);
+      expect(state.ownedItems, isNot(contains(item.id)));
+      expect(state.equippedAppearanceId, RatAppearanceCatalog.baseId);
+    },
+  );
 
   test('level 50 produces an Olympia-sized rat and final item', () {
     expect(
@@ -99,8 +103,8 @@ void main() {
       isA<RatItem>()
           .having((item) => item.slot, 'slot', RatItemSlot.head)
           .having(
-            (item) => item.assetPath,
-            'assetPath',
+            (item) => item.previewAssetPath,
+            'previewAssetPath',
             'assets/items/graphite_cap.png',
           ),
     );
@@ -108,7 +112,16 @@ void main() {
       RatItemCatalog.byId('founders_tee'),
       isA<RatItem>()
           .having((item) => item.slot, 'slot', RatItemSlot.top)
-          .having((item) => item.assetPath, 'assetPath', isNotNull),
+          .having(
+            (item) => item.previewAssetPath,
+            'previewAssetPath',
+            isNotNull,
+          )
+          .having(
+            (item) => item.hasCompleteAppearance,
+            'hasCompleteAppearance',
+            isFalse,
+          ),
     );
     expect(RatItemCatalog.byId('champion_joggers')?.slot, RatItemSlot.bottom);
     expect(RatItemCatalog.byId('neon_trainers')?.slot, RatItemSlot.feet);
@@ -118,9 +131,30 @@ void main() {
     );
   });
 
-  test('collection rewards are never equipped on the rat body', () {
-    final loadout = const RatInventoryState().loadoutForLevel(12);
-    expect(loadout[RatItemSlot.collectible], isNull);
+  test('base appearance has the complete identity and view matrix', () {
+    expect(RatAppearanceCatalog.base.isComplete, isTrue);
+    for (final gender in RatGender.values) {
+      final assets = RatAppearanceCatalog.base.assetsByGender[gender];
+      expect(assets, isNotNull);
+      expect(assets!.front, isNotEmpty);
+      expect(assets.back, isNotEmpty);
+    }
+  });
+
+  test('legacy slot loadout migrates safely to the base appearance', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'gymrat-rat-inventory-v1':
+          '{"version":1,"credits":25,"claimedQuests":["q1"],'
+          '"ownedItems":["graphite_cap"],'
+          '"equipped":{"head":"graphite_cap"}}',
+    });
+
+    final state = await RatInventoryStore.load();
+
+    expect(state.credits, 25);
+    expect(state.claimedQuests, contains('q1'));
+    expect(state.ownedItems, contains('graphite_cap'));
+    expect(state.equippedAppearanceId, RatAppearanceCatalog.baseId);
   });
 
   test('free history is capped while premium keeps every session', () {

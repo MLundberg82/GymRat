@@ -4,9 +4,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../../core/assets/gymrat_assets.dart';
-import '../../armory/domain/rat_item.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../../profile/domain/training_profile.dart';
+import '../domain/rat_appearance.dart';
 
 enum RatCharacterView { front, back }
 
@@ -17,14 +17,14 @@ class GymRatCharacter extends StatefulWidget {
     this.level = 1,
     this.gender = RatGender.nonBinary,
     this.view = RatCharacterView.front,
-    this.loadout = const RatLoadout(<RatItemSlot, RatItem>{}),
+    this.appearanceId = RatAppearanceCatalog.baseId,
   });
 
   final double? height;
   final int level;
   final RatGender gender;
   final RatCharacterView view;
-  final RatLoadout loadout;
+  final String appearanceId;
 
   static double breathingScaleX(double progress) =>
       1 + sin(progress * pi * 2) * .0025;
@@ -38,16 +38,15 @@ class GymRatCharacter extends StatefulWidget {
   static String assetFor({
     required RatGender gender,
     RatCharacterView view = RatCharacterView.front,
-  }) => switch ((gender, view)) {
-    (RatGender.male, RatCharacterView.front) => GymRatAssets.maleLevel1,
-    (RatGender.male, RatCharacterView.back) => GymRatAssets.maleLevel1Back,
-    (RatGender.female, RatCharacterView.front) => GymRatAssets.femaleLevel1,
-    (RatGender.female, RatCharacterView.back) => GymRatAssets.femaleLevel1Back,
-    (RatGender.nonBinary, RatCharacterView.front) =>
-      GymRatAssets.nonBinaryLevel1,
-    (RatGender.nonBinary, RatCharacterView.back) =>
-      GymRatAssets.nonBinaryLevel1Back,
-  };
+    String appearanceId = RatAppearanceCatalog.baseId,
+  }) => RatAppearanceCatalog.assetFor(
+    appearanceId: appearanceId,
+    gender: gender,
+    view: switch (view) {
+      RatCharacterView.front => RatAppearanceView.front,
+      RatCharacterView.back => RatAppearanceView.back,
+    },
+  );
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -318,8 +317,11 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     return _activeFrames[_frameIndex];
   }
 
-  String get _identityMaster =>
-      GymRatCharacter.assetFor(gender: widget.gender, view: widget.view);
+  String get _identityMaster => GymRatCharacter.assetFor(
+    gender: widget.gender,
+    view: widget.view,
+    appearanceId: widget.appearanceId,
+  );
 
   @override
   void dispose() {
@@ -334,7 +336,6 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   @override
   Widget build(BuildContext context) {
-    final aura = widget.loadout[RatItemSlot.aura];
     return Transform(
       transform: Matrix4.diagonal3Values(
         EvolutionMilestones.widthScaleForLevel(widget.level),
@@ -347,22 +348,6 @@ class _GymRatCharacterState extends State<GymRatCharacter>
         builder: (context, _) => Stack(
           alignment: Alignment.bottomCenter,
           children: [
-            if (aura != null)
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0, .10),
-                      radius: .48,
-                      colors: [
-                        _itemColor(aura).withValues(alpha: .38),
-                        _itemColor(aura).withValues(alpha: .10),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             Image.asset(
               _currentFrame,
               height: widget.height,
@@ -397,73 +382,12 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                   ),
                 ),
               ),
-            if (widget.view == RatCharacterView.front)
-              Positioned.fill(
-                child: _WearableAssetLayer(loadout: widget.loadout),
-              ),
           ],
         ),
       ),
     );
   }
 }
-
-class _WearableAssetLayer extends StatelessWidget {
-  const _WearableAssetLayer({required this.loadout});
-
-  final RatLoadout loadout;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        for (final slot in const [
-          RatItemSlot.top,
-          RatItemSlot.bottom,
-          RatItemSlot.feet,
-          RatItemSlot.neck,
-          RatItemSlot.head,
-        ])
-          if (loadout[slot] case final item?)
-            if (item.assetPath case final asset?)
-              Align(
-                alignment: _wearableAlignment(item),
-                child: FractionallySizedBox(
-                  widthFactor: _wearableWidth(item),
-                  child: Image.asset(
-                    asset,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    gaplessPlayback: true,
-                    semanticLabel: item.id,
-                  ),
-                ),
-              ),
-      ],
-    ),
-  );
-}
-
-Alignment _wearableAlignment(RatItem item) => switch (item.id) {
-  'graphite_cap' => const Alignment(0, -.76),
-  'iron_chain' => const Alignment(0, -.58),
-  'founders_tee' => const Alignment(0, -.20),
-  'champion_joggers' => const Alignment(0, .43),
-  'arena_shorts' => const Alignment(0, .26),
-  'neon_trainers' => const Alignment(0, .91),
-  _ => Alignment.center,
-};
-
-double _wearableWidth(RatItem item) => switch (item.id) {
-  'graphite_cap' => .38,
-  'iron_chain' => .36,
-  'founders_tee' => .48,
-  'champion_joggers' => .50,
-  'arena_shorts' => .53,
-  'neon_trainers' => .56,
-  _ => 0,
-};
 
 class _BreathingTorsoClipper extends CustomClipper<Rect> {
   const _BreathingTorsoClipper({required this.view});
@@ -476,16 +400,4 @@ class _BreathingTorsoClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(covariant _BreathingTorsoClipper oldClipper) =>
       oldClipper.view != view;
-}
-
-Color _itemColor(RatItem item) {
-  if (item.id.contains('void') || item.id.contains('violet')) {
-    return const Color(0xFF9B6DFF);
-  }
-  if (item.id.contains('emerald') || item.id.contains('power')) {
-    return const Color(0xFF32D071);
-  }
-  if (item.id.contains('shadow')) return const Color(0xFF7C8790);
-  if (item.id.contains('molten')) return const Color(0xFFFF6D00);
-  return const Color(0xFFFFC107);
 }

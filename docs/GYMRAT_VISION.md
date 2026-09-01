@@ -127,8 +127,13 @@ cause a runtime failure, and the rat must never be AI-regenerated.
 
 The rat grows at each evolution milestone. Growth is modest at early levels and
 ends in an intentionally massive Mr Olympia-scale silhouette at level 50.
-Equipment is layered independently from the master character, persisted as a
-slot-based loadout, and can be replaced without changing progression data.
+Cosmetics are never positioned over the rat at runtime. A wearable look is
+released only as a complete, authored full-character appearance covering male,
+female, and non-binary identities from both the front and back. Individual
+items may exist as collection rewards or separate concept art before that
+matrix is complete, but they cannot be equipped, sold, or composited onto the
+rat. The selected complete appearance is persisted independently from training
+progress. See `docs/CHARACTER_APPEARANCE_PIPELINE.md`.
 
 GymRat Premium Coach uses the training profile and persisted session history to
 recommend the next safe workout rotation, set and repetition ranges, recovery,

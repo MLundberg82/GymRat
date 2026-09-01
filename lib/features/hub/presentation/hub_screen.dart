@@ -6,7 +6,6 @@ import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../armory/presentation/armory_screen.dart';
 import '../../armory/data/rat_inventory_store.dart';
-import '../../armory/domain/rat_item.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../../history/presentation/history_screen.dart';
@@ -116,9 +115,8 @@ class _HubScreenState extends State<HubScreen> {
           level: progress?.level ?? 1,
           gender:
               TrainingProfileStore.profile.value?.gender ?? RatGender.nonBinary,
-          loadout: (inventory ?? const RatInventoryState()).loadoutForLevel(
-            progress?.level ?? 1,
-          ),
+          appearanceId:
+              (inventory ?? const RatInventoryState()).equippedAppearanceId,
           view: characterView,
         ),
         SafeArea(
@@ -218,13 +216,13 @@ class _CharacterLayer extends StatelessWidget {
   const _CharacterLayer({
     required this.level,
     required this.gender,
-    required this.loadout,
+    required this.appearanceId,
     required this.view,
   });
 
   final int level;
   final RatGender gender;
-  final RatLoadout loadout;
+  final String appearanceId;
   final RatCharacterView view;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -262,7 +260,7 @@ class _CharacterLayer extends StatelessWidget {
               height: h,
               level: level,
               gender: gender,
-              loadout: loadout,
+              appearanceId: appearanceId,
               view: view,
             ),
           ),

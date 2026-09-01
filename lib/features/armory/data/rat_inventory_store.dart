@@ -2,42 +2,31 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../character/domain/rat_appearance.dart';
 import '../domain/rat_item.dart';
 
-enum RatItemPurchaseResult { purchased, insufficientCredits, alreadyOwned }
+enum RatItemPurchaseResult {
+  purchased,
+  insufficientCredits,
+  alreadyOwned,
+  appearanceUnavailable,
+}
 
 class RatInventoryState {
   const RatInventoryState({
     this.credits = 0,
     this.claimedQuests = const <String>{},
     this.ownedItems = const <String>{},
-    this.equipped = const <RatItemSlot, String>{},
+    this.equippedAppearanceId = RatAppearanceCatalog.baseId,
   });
 
   final int credits;
   final Set<String> claimedQuests;
   final Set<String> ownedItems;
-  final Map<RatItemSlot, String> equipped;
+  final String equippedAppearanceId;
 
   bool owns(RatItem item, int level) =>
       item.isLevelUnlocked(level) || ownedItems.contains(item.id);
-
-  RatLoadout loadoutForLevel(int level) {
-    final result = <RatItemSlot, RatItem>{};
-    for (final slot in RatItemSlot.values) {
-      if (slot == RatItemSlot.collectible) continue;
-      final selected = RatItemCatalog.byId(equipped[slot] ?? '');
-      if (selected != null && owns(selected, level)) {
-        result[slot] = selected;
-        continue;
-      }
-      final levelItems = RatItemCatalog.items
-          .where((item) => item.slot == slot && item.isLevelUnlocked(level))
-          .toList();
-      if (levelItems.isNotEmpty) result[slot] = levelItems.last;
-    }
-    return RatLoadout(Map.unmodifiable(result));
-  }
 }
 
 abstract final class RatInventoryStore {
@@ -51,23 +40,19 @@ abstract final class RatInventoryStore {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return const RatInventoryState();
       final json = Map<String, dynamic>.from(decoded);
-      final equipped = <RatItemSlot, String>{};
-      final rawEquipped = json['equipped'];
-      if (rawEquipped is Map) {
-        for (final slot in RatItemSlot.values) {
-          final value = rawEquipped[slot.name];
-          if (value is String && RatItemCatalog.byId(value) != null) {
-            equipped[slot] = value;
-          }
-        }
-      }
+      final storedAppearance = json['equippedAppearanceId'];
+      final appearanceId =
+          storedAppearance is String &&
+              RatAppearanceCatalog.isReady(storedAppearance)
+          ? storedAppearance
+          : RatAppearanceCatalog.baseId;
       return RatInventoryState(
         credits: (json['credits'] as num?)?.toInt().clamp(0, 1000000) ?? 0,
         claimedQuests: _strings(json['claimedQuests']),
         ownedItems: _strings(json['ownedItems'])
             .where((id) => RatItemCatalog.byId(id) != null)
             .toSet(),
-        equipped: Map.unmodifiable(equipped),
+        equippedAppearanceId: appearanceId,
       );
     } catch (_) {
       return const RatInventoryState();
@@ -82,7 +67,7 @@ abstract final class RatInventoryStore {
         credits: state.credits + reward,
         claimedQuests: {...state.claimedQuests, claimId},
         ownedItems: state.ownedItems,
-        equipped: state.equipped,
+        equippedAppearanceId: state.equippedAppearanceId,
       ),
     );
     return true;
@@ -92,6 +77,10 @@ abstract final class RatInventoryStore {
     RatItem item, {
     required int level,
   }) async {
+    if (!item.hasCompleteAppearance ||
+        !RatAppearanceCatalog.isReady(item.appearanceId)) {
+      return RatItemPurchaseResult.appearanceUnavailable;
+    }
     final state = await load();
     if (state.owns(item, level)) return RatItemPurchaseResult.alreadyOwned;
     final price = item.priceCredits ?? 0;
@@ -103,38 +92,45 @@ abstract final class RatInventoryStore {
         credits: state.credits - price,
         claimedQuests: state.claimedQuests,
         ownedItems: {...state.ownedItems, item.id},
-        equipped: item.isWearable
-            ? {...state.equipped, item.slot: item.id}
-            : state.equipped,
+        equippedAppearanceId: item.appearanceId!,
       ),
     );
     return RatItemPurchaseResult.purchased;
   }
 
-  static Future<void> equip(RatItem item, {required int level}) async {
-    if (!item.isWearable) return;
+  static Future<void> equipAppearance(
+    String appearanceId, {
+    required int level,
+  }) async {
+    if (!RatAppearanceCatalog.isReady(appearanceId)) return;
     final state = await load();
-    if (!state.owns(item, level)) return;
+    final appearance = RatAppearanceCatalog.byId(appearanceId);
+    final item = RatItemCatalog.items
+        .where((candidate) => candidate.appearanceId == appearance.id)
+        .firstOrNull;
+    if (item != null && !state.owns(item, level)) return;
     await _save(
       RatInventoryState(
         credits: state.credits,
         claimedQuests: state.claimedQuests,
         ownedItems: state.ownedItems,
-        equipped: {...state.equipped, item.slot: item.id},
+        equippedAppearanceId: appearance.id,
       ),
     );
   }
 
   static Future<void> grantPurchased(RatItem item) async {
+    if (!item.hasCompleteAppearance ||
+        !RatAppearanceCatalog.isReady(item.appearanceId)) {
+      return;
+    }
     final state = await load();
     await _save(
       RatInventoryState(
         credits: state.credits,
         claimedQuests: state.claimedQuests,
         ownedItems: {...state.ownedItems, item.id},
-        equipped: item.isWearable
-            ? {...state.equipped, item.slot: item.id}
-            : state.equipped,
+        equippedAppearanceId: item.appearanceId!,
       ),
     );
   }
@@ -144,13 +140,11 @@ abstract final class RatInventoryStore {
     await preferences.setString(
       _stateKey,
       jsonEncode(<String, Object>{
-        'version': 1,
+        'version': 2,
         'credits': state.credits,
         'claimedQuests': state.claimedQuests.toList(),
         'ownedItems': state.ownedItems.toList(),
-        'equipped': state.equipped.map(
-          (slot, itemId) => MapEntry(slot.name, itemId),
-        ),
+        'equippedAppearanceId': state.equippedAppearanceId,
       }),
     );
   }

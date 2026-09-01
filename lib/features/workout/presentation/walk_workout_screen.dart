@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../armory/data/rat_inventory_store.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_models.dart';
 import 'workout_complete_screen.dart';
@@ -47,15 +48,27 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
       running = false;
       finishing = true;
     });
+    final inventoryFuture = RatInventoryStore.load();
     final result = await WorkoutSessionStore.complete(
       workoutName: widget.preset.title,
       walk: true,
       durationSeconds: elapsed,
       exercises: const [],
     );
+    RatInventoryState inventory;
+    try {
+      inventory = await inventoryFuture;
+    } catch (_) {
+      inventory = const RatInventoryState();
+    }
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => WorkoutCompleteScreen(result: result)),
+      MaterialPageRoute(
+        builder: (_) => WorkoutCompleteScreen(
+          result: result,
+          appearanceId: inventory.equippedAppearanceId,
+        ),
+      ),
     );
   }
 

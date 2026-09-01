@@ -1,4 +1,5 @@
 import '../../../core/assets/gymrat_assets.dart';
+import '../../evolution/domain/evolution_milestones.dart';
 import '../../profile/domain/training_profile.dart';
 
 enum RatAppearanceView { front, back }
@@ -16,25 +17,45 @@ class RatAppearanceAssets {
 }
 
 class RatAppearance {
-  const RatAppearance({
-    required this.id,
-    required this.assetsByGender,
-    this.productId,
-  });
+  const RatAppearance({required this.id, required this.stages, this.productId});
 
   final String id;
-  final Map<RatGender, RatAppearanceAssets> assetsByGender;
+  final Map<int, Map<RatGender, RatAppearanceAssets>> stages;
   final String? productId;
 
-  bool get isComplete => RatGender.values.every((gender) {
-    final assets = assetsByGender[gender];
-    return assets != null && assets.front.isNotEmpty && assets.back.isNotEmpty;
-  });
+  Map<RatGender, RatAppearanceAssets> get assetsByGender => stages[1] ?? {};
 
-  String assetFor(RatGender gender, RatAppearanceView view) {
-    final assets = assetsByGender[gender];
+  bool get isComplete =>
+      stages.containsKey(1) &&
+      stages.entries.every((entry) {
+        if (!EvolutionMilestones.stages.contains(entry.key)) return false;
+        return RatGender.values.every((gender) {
+          final assets = entry.value[gender];
+          return assets != null &&
+              assets.front.isNotEmpty &&
+              assets.back.isNotEmpty;
+        });
+      });
+
+  List<int> get approvedStages => stages.keys.toList()..sort();
+
+  int approvedStageForLevel(int level) {
+    var approvedStage = 1;
+    for (final stage in approvedStages) {
+      if (stage > level) break;
+      approvedStage = stage;
+    }
+    return approvedStage;
+  }
+
+  String assetFor(RatGender gender, RatAppearanceView view, {int level = 1}) {
+    final stage = approvedStageForLevel(level);
+    final assets = stages[stage]?[gender];
     if (assets == null || !isComplete) {
-      return RatAppearanceCatalog.base.assetFor(gender, view);
+      if (id == RatAppearanceCatalog.baseId) {
+        return RatAppearanceCatalog.base.assetsByGender[gender]!.forView(view);
+      }
+      return RatAppearanceCatalog.base.assetFor(gender, view, level: level);
     }
     return assets.forView(view);
   }
@@ -45,40 +66,51 @@ abstract final class RatAppearanceCatalog {
 
   static const RatAppearance base = RatAppearance(
     id: baseId,
-    assetsByGender: {
-      RatGender.male: RatAppearanceAssets(
-        front: GymRatAssets.maleLevel1,
-        back: GymRatAssets.maleLevel1Back,
-      ),
-      RatGender.female: RatAppearanceAssets(
-        front: GymRatAssets.femaleLevel1,
-        back: GymRatAssets.femaleLevel1Back,
-      ),
-      RatGender.nonBinary: RatAppearanceAssets(
-        front: GymRatAssets.nonBinaryLevel1,
-        back: GymRatAssets.nonBinaryLevel1Back,
-      ),
+    stages: {
+      1: {
+        RatGender.male: RatAppearanceAssets(
+          front: GymRatAssets.maleLevel1,
+          back: GymRatAssets.maleLevel1Back,
+        ),
+        RatGender.female: RatAppearanceAssets(
+          front: GymRatAssets.femaleLevel1,
+          back: GymRatAssets.femaleLevel1Back,
+        ),
+        RatGender.nonBinary: RatAppearanceAssets(
+          front: GymRatAssets.nonBinaryLevel1,
+          back: GymRatAssets.nonBinaryLevel1Back,
+        ),
+      },
     },
   );
 
   // Add an appearance only when all six approved full-character renders exist:
-  // male/female/non-binary, each from the front and back.
+  // male/female/non-binary, front and back, for every base milestone stage.
   static const List<RatAppearance> all = [base];
+
+  static bool _isReleaseComplete(RatAppearance appearance) {
+    if (!appearance.isComplete) return false;
+    return base.approvedStages.every(appearance.stages.containsKey);
+  }
 
   static RatAppearance byId(String? id) {
     for (final appearance in all) {
-      if (appearance.id == id && appearance.isComplete) return appearance;
+      if (appearance.id == id && _isReleaseComplete(appearance)) {
+        return appearance;
+      }
     }
     return base;
   }
 
   static bool isReady(String? id) =>
       id != null &&
-      all.any((appearance) => appearance.id == id && appearance.isComplete);
+      all.any(
+        (appearance) => appearance.id == id && _isReleaseComplete(appearance),
+      );
 
   static RatAppearance? byProductId(String productId) {
     for (final appearance in all) {
-      if (appearance.productId == productId && appearance.isComplete) {
+      if (appearance.productId == productId && _isReleaseComplete(appearance)) {
         return appearance;
       }
     }
@@ -89,5 +121,11 @@ abstract final class RatAppearanceCatalog {
     required String? appearanceId,
     required RatGender gender,
     required RatAppearanceView view,
-  }) => byId(appearanceId).assetFor(gender, view);
+    int level = 1,
+  }) => byId(appearanceId).assetFor(gender, view, level: level);
+
+  static int approvedStageForLevel({
+    required String? appearanceId,
+    required int level,
+  }) => byId(appearanceId).approvedStageForLevel(level);
 }

@@ -95,6 +95,10 @@ void main() {
       'premiumBenefitHistory',
       'contactSupport',
       'supportTitle',
+      'characterLab',
+      'characterLabHelp',
+      'approvedAssetStage',
+      'scalePreview',
     ];
 
     for (final locale in AppLanguageStore.supported) {

@@ -121,9 +121,10 @@ The first launch creates a durable training profile containing:
 
 The profile can be edited later and is the input for future Premium coaching.
 Gender identity must not change workout access, XP, rewards, or progression.
-Until separate approved character masters exist, every identity deliberately
-uses the accepted rat master. Missing female or non-binary assets must never
-cause a runtime failure, and the rat must never be AI-regenerated.
+Male, female, and non-binary now each have approved level-1 front and back
+masters. Every later stage must preserve its own approved identity and must
+never be generated as a new rat from scratch. Missing milestone assets must
+fall back safely to the latest complete approved stage.
 
 The rat grows at each evolution milestone. Growth is modest at early levels and
 ends in an intentionally massive Mr Olympia-scale silhouette at level 50.
@@ -134,6 +135,8 @@ items may exist as collection rewards or separate concept art before that
 matrix is complete, but they cannot be equipped, sold, or composited onto the
 rat. The selected complete appearance is persisted independently from training
 progress. See `docs/CHARACTER_APPEARANCE_PIPELINE.md`.
+The milestone physique, file, and review contract is defined in
+`docs/CHARACTER_EVOLUTION_ART_DIRECTION.md`.
 
 GymRat Premium Coach uses the training profile and persisted session history to
 recommend the next safe workout rotation, set and repetition ranges, recovery,

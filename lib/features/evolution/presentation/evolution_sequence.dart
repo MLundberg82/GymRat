@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../character/domain/rat_appearance.dart';
 import '../../profile/domain/training_profile.dart';
 import 'evolution_morph.dart';
 
@@ -10,6 +11,7 @@ class EvolutionSequence extends StatelessWidget {
     required this.newLevel,
     required this.gender,
     required this.onComplete,
+    this.appearanceId = RatAppearanceCatalog.baseId,
   });
 
   static const Duration duration = Duration(milliseconds: 6400);
@@ -17,6 +19,7 @@ class EvolutionSequence extends StatelessWidget {
   final int previousLevel;
   final int newLevel;
   final RatGender gender;
+  final String appearanceId;
   final VoidCallback onComplete;
 
   @override
@@ -24,6 +27,7 @@ class EvolutionSequence extends StatelessWidget {
     previousLevel: previousLevel,
     newLevel: newLevel,
     gender: gender,
+    appearanceId: appearanceId,
     duration: duration,
     onComplete: onComplete,
   );

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../armory/domain/rat_item.dart';
+import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/gym_upgrade.dart';
@@ -20,6 +21,7 @@ class LevelUpCelebration extends StatefulWidget {
     required this.isEvolution,
     required this.gender,
     required this.upgrade,
+    this.appearanceId = RatAppearanceCatalog.baseId,
     this.ratItem,
   });
 
@@ -31,6 +33,7 @@ class LevelUpCelebration extends StatefulWidget {
   final bool isEvolution;
   final RatGender gender;
   final GymUpgrade upgrade;
+  final String appearanceId;
   final RatItem? ratItem;
 
   Duration get playDuration => isEvolution ? evolutionDuration : duration;
@@ -307,7 +310,11 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
     final image = ColorFiltered(
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       child: Image.asset(
-        GymRatCharacter.assetFor(gender: widget.gender),
+        GymRatCharacter.assetFor(
+          gender: widget.gender,
+          level: widget.newLevel,
+          appearanceId: widget.appearanceId,
+        ),
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),

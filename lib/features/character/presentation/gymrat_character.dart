@@ -39,6 +39,7 @@ class GymRatCharacter extends StatefulWidget {
     required RatGender gender,
     RatCharacterView view = RatCharacterView.front,
     String appearanceId = RatAppearanceCatalog.baseId,
+    int level = 1,
   }) => RatAppearanceCatalog.assetFor(
     appearanceId: appearanceId,
     gender: gender,
@@ -46,7 +47,23 @@ class GymRatCharacter extends StatefulWidget {
       RatCharacterView.front => RatAppearanceView.front,
       RatCharacterView.back => RatAppearanceView.back,
     },
+    level: level,
   );
+
+  static bool usesAuthoredSpriteFrames({
+    required RatGender gender,
+    required RatCharacterView view,
+    required int level,
+    String appearanceId = RatAppearanceCatalog.baseId,
+  }) =>
+      gender == RatGender.male &&
+      view == RatCharacterView.front &&
+      appearanceId == RatAppearanceCatalog.baseId &&
+      RatAppearanceCatalog.approvedStageForLevel(
+            appearanceId: appearanceId,
+            level: level,
+          ) ==
+          1;
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -93,21 +110,32 @@ class _GymRatCharacterState extends State<GymRatCharacter>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _precacheAssets();
+  }
 
+  void _precacheAssets() {
     if (_assetsPrecached) return;
     _assetsPrecached = true;
 
     final allFrames = <String>{
-      GymRatAssets.maleLevel1,
-      GymRatAssets.maleLevel1Back,
-      GymRatAssets.femaleLevel1,
-      GymRatAssets.femaleLevel1Back,
-      GymRatAssets.nonBinaryLevel1,
-      GymRatAssets.nonBinaryLevel1Back,
-      ...GymRatAssets.maleLevel1IdleFrames,
-      ...GymRatAssets.maleLevel1BlinkFrames,
-      ...GymRatAssets.maleLevel1TailFrames,
+      GymRatCharacter.assetFor(
+        gender: widget.gender,
+        view: RatCharacterView.front,
+        appearanceId: widget.appearanceId,
+        level: widget.level,
+      ),
+      GymRatCharacter.assetFor(
+        gender: widget.gender,
+        view: RatCharacterView.back,
+        appearanceId: widget.appearanceId,
+        level: widget.level,
+      ),
     };
+    if (_usesAuthoredSpriteFrames) {
+      allFrames.addAll(GymRatAssets.maleLevel1IdleFrames);
+      allFrames.addAll(GymRatAssets.maleLevel1BlinkFrames);
+      allFrames.addAll(GymRatAssets.maleLevel1TailFrames);
+    }
 
     for (final frame in allFrames) {
       precacheImage(
@@ -115,6 +143,31 @@ class _GymRatCharacterState extends State<GymRatCharacter>
         context,
       );
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant GymRatCharacter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gender == widget.gender &&
+        oldWidget.view == widget.view &&
+        oldWidget.level == widget.level &&
+        oldWidget.appearanceId == widget.appearanceId) {
+      return;
+    }
+
+    _animationTimer?.cancel();
+    _blinkScheduleTimer?.cancel();
+    _tailScheduleTimer?.cancel();
+    _activeFrames = <String>[];
+    _frameIndex = 0;
+    _action = _IdleAction.neutral;
+    _assetsPrecached = false;
+    _precacheAssets();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scheduleBlink(initial: true);
+      _scheduleTail(initial: true);
+    });
   }
 
   void _scheduleBreath({bool initial = false}) {
@@ -153,8 +206,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       return;
     }
 
-    if (widget.gender != RatGender.male ||
-        widget.view == RatCharacterView.back) {
+    if (!_usesAuthoredSpriteFrames) {
       _action = _IdleAction.breathing;
       _breathingController.forward(from: 0).whenComplete(() {
         if (!mounted) return;
@@ -175,6 +227,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   void _scheduleBlink({bool initial = false}) {
     _blinkScheduleTimer?.cancel();
+    if (!_usesAuthoredSpriteFrames) return;
 
     final delay = initial
         ? 2500 + _random.nextInt(3000)
@@ -237,6 +290,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   void _scheduleTail({bool initial = false}) {
     _tailScheduleTimer?.cancel();
+    if (!_usesAuthoredSpriteFrames) return;
 
     final delay = initial
         ? 3500 + _random.nextInt(3500)
@@ -308,8 +362,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
   }
 
   String get _currentFrame {
-    if (widget.view == RatCharacterView.back) return _identityMaster;
-    if (widget.gender != RatGender.male) return _identityMaster;
+    if (!_usesAuthoredSpriteFrames) return _identityMaster;
     if (_action == _IdleAction.neutral || _activeFrames.isEmpty) {
       return _identityMaster;
     }
@@ -321,7 +374,16 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     gender: widget.gender,
     view: widget.view,
     appearanceId: widget.appearanceId,
+    level: widget.level,
   );
+
+  bool get _usesAuthoredSpriteFrames =>
+      GymRatCharacter.usesAuthoredSpriteFrames(
+        gender: widget.gender,
+        view: widget.view,
+        level: widget.level,
+        appearanceId: widget.appearanceId,
+      );
 
   @override
   void dispose() {
@@ -358,9 +420,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
               cacheHeight: _cacheHeight,
               semanticLabel: widget.gender.name,
             ),
-            if (_action == _IdleAction.breathing &&
-                (widget.gender != RatGender.male ||
-                    widget.view == RatCharacterView.back))
+            if (_action == _IdleAction.breathing && !_usesAuthoredSpriteFrames)
               Positioned.fill(
                 child: ClipRect(
                   clipper: _BreathingTorsoClipper(view: widget.view),

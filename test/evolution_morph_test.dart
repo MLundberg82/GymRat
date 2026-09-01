@@ -22,6 +22,7 @@ void main() {
           newLevel: 5,
           duration: const Duration(seconds: 1),
           gender: RatGender.female,
+          appearanceId: 'missing-appearance',
           onComplete: () {},
         ),
       ),

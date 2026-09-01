@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/evolution_milestones.dart';
@@ -21,12 +22,14 @@ class EvolutionMorph extends StatefulWidget {
     required this.duration,
     required this.gender,
     required this.onComplete,
+    this.appearanceId = RatAppearanceCatalog.baseId,
   });
 
   final int previousLevel;
   final int newLevel;
   final Duration duration;
   final RatGender gender;
+  final String appearanceId;
   final VoidCallback onComplete;
 
   @override
@@ -41,9 +44,17 @@ class _EvolutionMorphState extends State<EvolutionMorph>
   final List<Timer> _hapticTimers = <Timer>[];
   bool _started = false;
 
-  String get _sourceAsset => GymRatCharacter.assetFor(gender: widget.gender);
+  String get _sourceAsset => GymRatCharacter.assetFor(
+    gender: widget.gender,
+    level: EvolutionMilestones.previousStageFor(widget.newLevel),
+    appearanceId: widget.appearanceId,
+  );
 
-  String get _targetAsset => GymRatCharacter.assetFor(gender: widget.gender);
+  String get _targetAsset => GymRatCharacter.assetFor(
+    gender: widget.gender,
+    level: widget.newLevel,
+    appearanceId: widget.appearanceId,
+  );
 
   @override
   void initState() {

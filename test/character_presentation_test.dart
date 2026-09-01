@@ -17,6 +17,41 @@ void main() {
     expect(torso.height, lessThan(600 / 3));
   });
 
+  test('authored level-1 frames never leak across identity or view', () {
+    expect(
+      GymRatCharacter.usesAuthoredSpriteFrames(
+        gender: RatGender.male,
+        view: RatCharacterView.front,
+        level: 1,
+      ),
+      isTrue,
+    );
+    expect(
+      GymRatCharacter.usesAuthoredSpriteFrames(
+        gender: RatGender.female,
+        view: RatCharacterView.front,
+        level: 1,
+      ),
+      isFalse,
+    );
+    expect(
+      GymRatCharacter.usesAuthoredSpriteFrames(
+        gender: RatGender.nonBinary,
+        view: RatCharacterView.front,
+        level: 1,
+      ),
+      isFalse,
+    );
+    expect(
+      GymRatCharacter.usesAuthoredSpriteFrames(
+        gender: RatGender.male,
+        view: RatCharacterView.back,
+        level: 1,
+      ),
+      isFalse,
+    );
+  });
+
   for (final gender in RatGender.values) {
     testWidgets('${gender.name} supports front and back breathing views', (
       tester,

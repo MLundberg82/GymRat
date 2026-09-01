@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../character/domain/rat_appearance.dart';
 import '../../hub/presentation/hub_screen.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
@@ -10,9 +11,14 @@ import '../data/workout_session_store.dart';
 import '../domain/workout_result.dart';
 
 class WorkoutCompleteScreen extends StatefulWidget {
-  const WorkoutCompleteScreen({super.key, required this.result});
+  const WorkoutCompleteScreen({
+    super.key,
+    required this.result,
+    this.appearanceId = RatAppearanceCatalog.baseId,
+  });
 
   final WorkoutResult result;
+  final String appearanceId;
 
   @override
   State<WorkoutCompleteScreen> createState() => _WorkoutCompleteScreenState();
@@ -62,6 +68,7 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                     gender:
                         TrainingProfileStore.profile.value?.gender ??
                         RatGender.nonBinary,
+                    appearanceId: widget.appearanceId,
                     onComplete: _showWorkoutSummary,
                   ),
           ),

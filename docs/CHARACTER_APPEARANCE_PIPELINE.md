@@ -7,6 +7,11 @@ images over the rat at runtime. Flutter renders one complete character asset at
 a time. This prevents drifting equipment during breathing, incorrect placement
 across identities, and front-facing clothing appearing in the back view.
 
+The equipped appearance ID follows the character through the hub, level-up,
+reward, and evolution sequences. Every surface resolves the same approved stage
+for the player's current level; an unknown or incomplete appearance falls back
+to the base catalog before rendering.
+
 The existing item PNG files are product concept thumbnails only. They may be
 shown beside the character in Gym Armory, but never inside the character stack.
 
@@ -21,10 +26,11 @@ full-character renders:
 | Female | Required | Required |
 | Non-binary | Required | Required |
 
-When milestone-specific masters are introduced, the same six-file matrix is
-required for every supported evolution stage. Until then, the complete base
-appearance is used at all milestones and growth is applied by the existing
-progression scale.
+The same six-file matrix is required for every supported evolution stage. The
+stage plan and visual acceptance rules live in
+`docs/CHARACTER_EVOLUTION_ART_DIRECTION.md`. Until a complete stage is approved,
+the catalog selects the latest approved stage and the existing progression
+scale supplies visual growth. Partial stages are never reachable at runtime.
 
 ## Acceptance criteria
 
@@ -37,7 +43,14 @@ An appearance may be added to `RatAppearanceCatalog.all` only when:
 4. breathing and level/evolution scaling do not expose seams or clipped pixels;
 5. all six assets are declared in Flutter and covered by catalog tests;
 6. its store product is configured in both Apple and Google stores through
-   RevenueCat before the product identifier is added to code.
+   RevenueCat before the product identifier is added to code;
+7. its Android and iOS bundle-size impact has been measured. Drafts and source
+   masters must stay outside Flutter's bundled asset directories, and source
+   plus runtime exports must never both ship in the app.
+
+The base appearance defines the required release stages. When a new base stage
+is activated, every purchasable appearance must provide that same complete
+six-file stage before it can remain purchasable or equipable.
 
 Incomplete appearances remain collection concepts. The app must not spend
 Armory Credits, initiate a store purchase, or change the equipped appearance

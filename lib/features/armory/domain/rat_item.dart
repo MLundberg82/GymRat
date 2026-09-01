@@ -1,4 +1,4 @@
-enum RatItemSlot { head, neck, belt, aura }
+enum RatItemSlot { head, neck, top, bottom, feet, belt, collectible, aura }
 
 class RatItem {
   const RatItem({
@@ -7,20 +7,40 @@ class RatItem {
     required this.slot,
     this.unlockLevel,
     this.priceCredits,
-  }) : assert(unlockLevel != null || priceCredits != null);
+    this.storeProductId,
+    this.assetPath,
+  }) : assert(
+         unlockLevel != null || priceCredits != null || storeProductId != null,
+       );
 
   final String id;
   final String nameKey;
   final RatItemSlot slot;
   final int? unlockLevel;
   final int? priceCredits;
+  final String? storeProductId;
+  final String? assetPath;
 
   bool isLevelUnlocked(int level) =>
       unlockLevel != null && level >= unlockLevel!;
+
+  bool get isWearable => slot != RatItemSlot.collectible;
 }
 
 abstract final class RatItemCatalog {
-  static const items = <RatItem>[
+  static final rankRewards = List<RatItem>.unmodifiable(
+    List.generate(
+      49,
+      (index) => RatItem(
+        id: 'rank_mark_${index + 2}',
+        nameKey: 'itemRankMark',
+        slot: RatItemSlot.collectible,
+        unlockLevel: index + 2,
+      ),
+    ),
+  );
+
+  static const featuredItems = <RatItem>[
     RatItem(
       id: 'rookie_headband',
       nameKey: 'itemRookieHeadband',
@@ -93,18 +113,84 @@ abstract final class RatItemCatalog {
       slot: RatItemSlot.aura,
       priceCredits: 180,
     ),
+    RatItem(
+      id: 'graphite_cap',
+      nameKey: 'itemGraphiteCap',
+      slot: RatItemSlot.head,
+      priceCredits: 80,
+      storeProductId: 'gymrat.graphite_cap',
+      assetPath: 'assets/items/graphite_cap.png',
+    ),
+    RatItem(
+      id: 'iron_chain',
+      nameKey: 'itemIronChain',
+      slot: RatItemSlot.neck,
+      priceCredits: 100,
+      storeProductId: 'gymrat.iron_chain',
+      assetPath: 'assets/items/iron_chain.png',
+    ),
+    RatItem(
+      id: 'founders_tee',
+      nameKey: 'itemFoundersTee',
+      slot: RatItemSlot.top,
+      priceCredits: 125,
+      storeProductId: 'gymrat.founders_tee',
+      assetPath: 'assets/items/founders_tee.png',
+    ),
+    RatItem(
+      id: 'champion_joggers',
+      nameKey: 'itemChampionJoggers',
+      slot: RatItemSlot.bottom,
+      priceCredits: 145,
+      storeProductId: 'gymrat.champion_joggers',
+      assetPath: 'assets/items/champion_joggers.png',
+    ),
+    RatItem(
+      id: 'arena_shorts',
+      nameKey: 'itemArenaShorts',
+      slot: RatItemSlot.bottom,
+      priceCredits: 110,
+      storeProductId: 'gymrat.arena_shorts',
+      assetPath: 'assets/items/arena_shorts.png',
+    ),
+    RatItem(
+      id: 'neon_trainers',
+      nameKey: 'itemNeonTrainers',
+      slot: RatItemSlot.feet,
+      priceCredits: 135,
+      storeProductId: 'gymrat.neon_trainers',
+      assetPath: 'assets/items/neon_trainers.png',
+    ),
   ];
 
+  static final items = List<RatItem>.unmodifiable([
+    ...rankRewards,
+    ...featuredItems,
+  ]);
+
   static RatItem? forLevel(int level) {
+    RatItem? rank;
     for (final item in items) {
-      if (item.unlockLevel == level) return item;
+      if (item.unlockLevel != level) continue;
+      if (item.slot != RatItemSlot.collectible) return item;
+      rank = item;
     }
-    return null;
+    return rank;
   }
+
+  static List<RatItem> itemsForLevel(int level) =>
+      List.unmodifiable(items.where((item) => item.unlockLevel == level));
 
   static RatItem? byId(String id) {
     for (final item in items) {
       if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  static RatItem? byStoreProductId(String id) {
+    for (final item in items) {
+      if (item.storeProductId == id) return item;
     }
     return null;
   }

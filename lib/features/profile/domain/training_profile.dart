@@ -21,6 +21,22 @@ class TrainingProfile {
   final int sessionsPerWeek;
   final TrainingGoal goal;
 
+  TrainingProfile copyWith({
+    RatGender? gender,
+    TrainingExperience? experience,
+    int? heightCm,
+    double? weightKg,
+    int? sessionsPerWeek,
+    TrainingGoal? goal,
+  }) => TrainingProfile(
+    gender: gender ?? this.gender,
+    experience: experience ?? this.experience,
+    heightCm: heightCm ?? this.heightCm,
+    weightKg: weightKg ?? this.weightKg,
+    sessionsPerWeek: sessionsPerWeek ?? this.sessionsPerWeek,
+    goal: goal ?? this.goal,
+  );
+
   static const starter = TrainingProfile(
     gender: RatGender.nonBinary,
     experience: TrainingExperience.beginner,

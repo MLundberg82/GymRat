@@ -5,6 +5,7 @@ import 'package:gymrat/features/coach/domain/coach_recommendation.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/data/training_profile_store.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
+import 'package:gymrat/features/premium/data/premium_access.dart';
 import 'package:gymrat/features/workout/data/workout_session_store.dart';
 import 'package:gymrat/features/workout/domain/workout_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -74,6 +75,83 @@ void main() {
       greaterThanOrEqualTo(1.2),
     );
     expect(RatItemCatalog.forLevel(50)?.id, 'olympia_aura');
+  });
+
+  test('every level after level one unlocks a character reward', () {
+    for (var level = 2; level <= 50; level++) {
+      expect(
+        RatItemCatalog.itemsForLevel(level),
+        isNotEmpty,
+        reason: 'level $level must have a reward beyond the gym upgrade',
+      );
+      expect(
+        RatItemCatalog.itemsForLevel(level),
+        contains(
+          predicate<RatItem>((item) => item.slot == RatItemSlot.collectible),
+        ),
+      );
+    }
+  });
+
+  test('store cosmetics cover clothing and footwear slots', () {
+    expect(
+      RatItemCatalog.byId('graphite_cap'),
+      isA<RatItem>()
+          .having((item) => item.slot, 'slot', RatItemSlot.head)
+          .having(
+            (item) => item.assetPath,
+            'assetPath',
+            'assets/items/graphite_cap.png',
+          ),
+    );
+    expect(
+      RatItemCatalog.byId('founders_tee'),
+      isA<RatItem>()
+          .having((item) => item.slot, 'slot', RatItemSlot.top)
+          .having((item) => item.assetPath, 'assetPath', isNotNull),
+    );
+    expect(RatItemCatalog.byId('champion_joggers')?.slot, RatItemSlot.bottom);
+    expect(RatItemCatalog.byId('neon_trainers')?.slot, RatItemSlot.feet);
+    expect(
+      RatItemCatalog.byStoreProductId('gymrat.neon_trainers')?.id,
+      'neon_trainers',
+    );
+  });
+
+  test('collection rewards are never equipped on the rat body', () {
+    final loadout = const RatInventoryState().loadoutForLevel(12);
+    expect(loadout[RatItemSlot.collectible], isNull);
+  });
+
+  test('free history is capped while premium keeps every session', () {
+    final workouts = List.generate(
+      14,
+      (index) => _workout('CHEST', DateTime(2026, 8, index + 1)),
+    ).reversed.toList();
+    final history = TrainingHistorySnapshot(
+      workouts: workouts,
+      personalBests: const [],
+    );
+
+    expect(
+      PremiumAccess.visibleHistory(history, isPremium: false).workouts,
+      hasLength(PremiumAccess.freeHistoryLimit),
+    );
+    expect(
+      PremiumAccess.visibleHistory(history, isPremium: true).workouts,
+      hasLength(14),
+    );
+  });
+
+  test('changing rat identity preserves training profile data', () {
+    final changed = profile.copyWith(gender: RatGender.nonBinary);
+
+    expect(changed.gender, RatGender.nonBinary);
+    expect(changed.experience, profile.experience);
+    expect(changed.heightCm, profile.heightCm);
+    expect(changed.weightKg, profile.weightKg);
+    expect(changed.sessionsPerWeek, profile.sessionsPerWeek);
+    expect(changed.goal, profile.goal);
   });
 
   test('coach rotates toward the least recently trained area', () {

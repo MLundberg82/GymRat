@@ -8,19 +8,46 @@ import '../../armory/domain/rat_item.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../../profile/domain/training_profile.dart';
 
+enum RatCharacterView { front, back }
+
 class GymRatCharacter extends StatefulWidget {
   const GymRatCharacter({
     super.key,
     this.height,
     this.level = 1,
     this.gender = RatGender.nonBinary,
+    this.view = RatCharacterView.front,
     this.loadout = const RatLoadout(<RatItemSlot, RatItem>{}),
   });
 
   final double? height;
   final int level;
   final RatGender gender;
+  final RatCharacterView view;
   final RatLoadout loadout;
+
+  static double breathingScaleX(double progress) =>
+      1 + sin(progress * pi * 2) * .0025;
+
+  static Rect breathingTorsoRect(Size size, RatCharacterView view) {
+    final top = size.height * (view == RatCharacterView.front ? .20 : .19);
+    final bottom = size.height * (view == RatCharacterView.front ? .48 : .47);
+    return Rect.fromLTRB(0, top, size.width, bottom);
+  }
+
+  static String assetFor({
+    required RatGender gender,
+    RatCharacterView view = RatCharacterView.front,
+  }) => switch ((gender, view)) {
+    (RatGender.male, RatCharacterView.front) => GymRatAssets.maleLevel1,
+    (RatGender.male, RatCharacterView.back) => GymRatAssets.maleLevel1Back,
+    (RatGender.female, RatCharacterView.front) => GymRatAssets.femaleLevel1,
+    (RatGender.female, RatCharacterView.back) => GymRatAssets.femaleLevel1Back,
+    (RatGender.nonBinary, RatCharacterView.front) =>
+      GymRatAssets.nonBinaryLevel1,
+    (RatGender.nonBinary, RatCharacterView.back) =>
+      GymRatAssets.nonBinaryLevel1Back,
+  };
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -28,7 +55,8 @@ class GymRatCharacter extends StatefulWidget {
 
 enum _IdleAction { neutral, breathing, blinking, tail }
 
-class _GymRatCharacterState extends State<GymRatCharacter> {
+class _GymRatCharacterState extends State<GymRatCharacter>
+    with SingleTickerProviderStateMixin {
   static const int _cacheHeight = 800;
 
   final Random _random = Random();
@@ -44,10 +72,15 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
   int _frameIndex = 0;
 
   bool _assetsPrecached = false;
+  late final AnimationController _breathingController;
 
   @override
   void initState() {
     super.initState();
+    _breathingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -67,6 +100,11 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
 
     final allFrames = <String>{
       GymRatAssets.maleLevel1,
+      GymRatAssets.maleLevel1Back,
+      GymRatAssets.femaleLevel1,
+      GymRatAssets.femaleLevel1Back,
+      GymRatAssets.nonBinaryLevel1,
+      GymRatAssets.nonBinaryLevel1Back,
       ...GymRatAssets.maleLevel1IdleFrames,
       ...GymRatAssets.maleLevel1BlinkFrames,
       ...GymRatAssets.maleLevel1TailFrames,
@@ -113,6 +151,18 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
         const Duration(milliseconds: 300),
         _tryStartBreathing,
       );
+      return;
+    }
+
+    if (widget.gender != RatGender.male ||
+        widget.view == RatCharacterView.back) {
+      _action = _IdleAction.breathing;
+      _breathingController.forward(from: 0).whenComplete(() {
+        if (!mounted) return;
+        _breathingController.reset();
+        _action = _IdleAction.neutral;
+        _scheduleBreath();
+      });
       return;
     }
 
@@ -259,6 +309,7 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
   }
 
   String get _currentFrame {
+    if (widget.view == RatCharacterView.back) return _identityMaster;
     if (widget.gender != RatGender.male) return _identityMaster;
     if (_action == _IdleAction.neutral || _activeFrames.isEmpty) {
       return _identityMaster;
@@ -267,11 +318,8 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
     return _activeFrames[_frameIndex];
   }
 
-  String get _identityMaster => switch (widget.gender) {
-    RatGender.male => GymRatAssets.maleLevel1,
-    RatGender.female => GymRatAssets.femaleLevel1,
-    RatGender.nonBinary => GymRatAssets.nonBinaryLevel1,
-  };
+  String get _identityMaster =>
+      GymRatCharacter.assetFor(gender: widget.gender, view: widget.view);
 
   @override
   void dispose() {
@@ -279,6 +327,7 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
     _blinkScheduleTimer?.cancel();
     _tailScheduleTimer?.cancel();
     _animationTimer?.cancel();
+    _breathingController.dispose();
 
     super.dispose();
   }
@@ -293,94 +342,140 @@ class _GymRatCharacterState extends State<GymRatCharacter> {
         1,
       ),
       alignment: Alignment.bottomCenter,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          if (aura != null)
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0, .10),
-                    radius: .48,
-                    colors: [
-                      _itemColor(aura).withValues(alpha: .38),
-                      _itemColor(aura).withValues(alpha: .10),
-                      Colors.transparent,
-                    ],
+      child: AnimatedBuilder(
+        animation: _breathingController,
+        builder: (context, _) => Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            if (aura != null)
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0, .10),
+                      radius: .48,
+                      colors: [
+                        _itemColor(aura).withValues(alpha: .38),
+                        _itemColor(aura).withValues(alpha: .10),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
+            Image.asset(
+              _currentFrame,
+              height: widget.height,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              gaplessPlayback: true,
+              filterQuality: FilterQuality.high,
+              cacheHeight: _cacheHeight,
+              semanticLabel: widget.gender.name,
             ),
-          Image.asset(
-            _currentFrame,
-            height: widget.height,
-            fit: BoxFit.contain,
-            alignment: Alignment.bottomCenter,
-            gaplessPlayback: true,
-            filterQuality: FilterQuality.high,
-            cacheHeight: _cacheHeight,
-            semanticLabel: widget.gender.name,
-          ),
-          Positioned.fill(child: _EquipmentOverlay(loadout: widget.loadout)),
-        ],
+            if (_action == _IdleAction.breathing &&
+                (widget.gender != RatGender.male ||
+                    widget.view == RatCharacterView.back))
+              Positioned.fill(
+                child: ClipRect(
+                  clipper: _BreathingTorsoClipper(view: widget.view),
+                  child: Transform.scale(
+                    alignment: const Alignment(0, -.26),
+                    scaleX: GymRatCharacter.breathingScaleX(
+                      _breathingController.value,
+                    ),
+                    scaleY: 1,
+                    child: Image.asset(
+                      _identityMaster,
+                      height: widget.height,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.bottomCenter,
+                      gaplessPlayback: true,
+                      filterQuality: FilterQuality.high,
+                      cacheHeight: _cacheHeight,
+                    ),
+                  ),
+                ),
+              ),
+            if (widget.view == RatCharacterView.front)
+              Positioned.fill(
+                child: _WearableAssetLayer(loadout: widget.loadout),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _EquipmentOverlay extends StatelessWidget {
-  const _EquipmentOverlay({required this.loadout});
+class _WearableAssetLayer extends StatelessWidget {
+  const _WearableAssetLayer({required this.loadout});
 
   final RatLoadout loadout;
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
     child: Stack(
+      fit: StackFit.expand,
       children: [
-        if (loadout[RatItemSlot.head] case final item?)
-          Align(
-            alignment: const Alignment(0, -.82),
-            child: _EquipmentBadge(item: item, size: 36),
-          ),
-        if (loadout[RatItemSlot.neck] case final item?)
-          Align(
-            alignment: const Alignment(0, -.25),
-            child: _EquipmentBadge(item: item, size: 27),
-          ),
-        if (loadout[RatItemSlot.belt] case final item?)
-          Align(
-            alignment: const Alignment(0, .30),
-            child: _EquipmentBadge(item: item, size: 30),
-          ),
+        for (final slot in const [
+          RatItemSlot.top,
+          RatItemSlot.bottom,
+          RatItemSlot.feet,
+          RatItemSlot.neck,
+          RatItemSlot.head,
+        ])
+          if (loadout[slot] case final item?)
+            if (item.assetPath case final asset?)
+              Align(
+                alignment: _wearableAlignment(item),
+                child: FractionallySizedBox(
+                  widthFactor: _wearableWidth(item),
+                  child: Image.asset(
+                    asset,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    gaplessPlayback: true,
+                    semanticLabel: item.id,
+                  ),
+                ),
+              ),
       ],
     ),
   );
 }
 
-class _EquipmentBadge extends StatelessWidget {
-  const _EquipmentBadge({required this.item, required this.size});
+Alignment _wearableAlignment(RatItem item) => switch (item.id) {
+  'graphite_cap' => const Alignment(0, -.76),
+  'iron_chain' => const Alignment(0, -.58),
+  'founders_tee' => const Alignment(0, -.20),
+  'champion_joggers' => const Alignment(0, .43),
+  'arena_shorts' => const Alignment(0, .26),
+  'neon_trainers' => const Alignment(0, .91),
+  _ => Alignment.center,
+};
 
-  final RatItem item;
-  final double size;
+double _wearableWidth(RatItem item) => switch (item.id) {
+  'graphite_cap' => .38,
+  'iron_chain' => .36,
+  'founders_tee' => .48,
+  'champion_joggers' => .50,
+  'arena_shorts' => .53,
+  'neon_trainers' => .56,
+  _ => 0,
+};
+
+class _BreathingTorsoClipper extends CustomClipper<Rect> {
+  const _BreathingTorsoClipper({required this.view});
+
+  final RatCharacterView view;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      gradient: RadialGradient(
-        colors: [Colors.white, _itemColor(item), Colors.black],
-        stops: const [0, .42, 1],
-      ),
-      border: Border.all(color: _itemColor(item), width: 2),
-      boxShadow: [
-        BoxShadow(color: _itemColor(item), blurRadius: 13, spreadRadius: 1),
-      ],
-    ),
-    child: Icon(_itemIcon(item), color: Colors.black, size: size * .58),
-  );
+  Rect getClip(Size size) => GymRatCharacter.breathingTorsoRect(size, view);
+
+  @override
+  bool shouldReclip(covariant _BreathingTorsoClipper oldClipper) =>
+      oldClipper.view != view;
 }
 
 Color _itemColor(RatItem item) {
@@ -394,13 +489,3 @@ Color _itemColor(RatItem item) {
   if (item.id.contains('molten')) return const Color(0xFFFF6D00);
   return const Color(0xFFFFC107);
 }
-
-IconData _itemIcon(RatItem item) => switch (item.slot) {
-  RatItemSlot.head =>
-    item.id.contains('crown')
-        ? Icons.workspace_premium_rounded
-        : Icons.sports_martial_arts_rounded,
-  RatItemSlot.neck => Icons.link_rounded,
-  RatItemSlot.belt => Icons.shield_rounded,
-  RatItemSlot.aura => Icons.auto_awesome_rounded,
-};

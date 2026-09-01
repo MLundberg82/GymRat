@@ -8,6 +8,7 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../../armory/domain/rat_item.dart';
 import '../../evolution/presentation/evolution_sequence.dart';
+import '../../profile/domain/training_profile.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../domain/gym_upgrade.dart';
@@ -21,9 +22,11 @@ class RewardSequence extends StatefulWidget {
     super.key,
     required this.result,
     required this.onComplete,
+    required this.gender,
   });
   final WorkoutResult result;
   final VoidCallback onComplete;
+  final RatGender gender;
   @override
   State<RewardSequence> createState() => _RewardSequenceState();
 }
@@ -125,6 +128,7 @@ class _RewardSequenceState extends State<RewardSequence> {
           previousLevel: celebrationLevel - 1,
           newLevel: celebrationLevel,
           isEvolution: false,
+          gender: widget.gender,
           upgrade: GymUpgradeCatalog.forLevel(celebrationLevel),
           ratItem: RatItemCatalog.forLevel(celebrationLevel),
         ),
@@ -132,6 +136,7 @@ class _RewardSequenceState extends State<RewardSequence> {
           key: ValueKey('evolution-$evolutionLevel'),
           previousLevel: evolutionLevel - 1,
           newLevel: evolutionLevel,
+          gender: widget.gender,
           onComplete: _completeEvolution,
         ),
       },

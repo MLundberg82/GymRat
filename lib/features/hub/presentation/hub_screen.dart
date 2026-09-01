@@ -17,6 +17,7 @@ import '../../progress/presentation/progress_screen.dart';
 import '../../quests/domain/quest_progress.dart';
 import '../../quests/presentation/quest_board_screen.dart';
 import '../../rewards/presentation/gym_upgrade_layer.dart';
+import '../../support/presentation/contact_screen.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/presentation/workout_screen.dart';
 
@@ -32,6 +33,7 @@ class _HubScreenState extends State<HubScreen> {
   QuestSnapshot? quests;
   RatInventoryState? inventory;
   int animationFromXP = 0, animationVersion = 0;
+  RatCharacterView characterView = RatCharacterView.front;
   int? get previousGymLevel => widget.unlockedUpgradeLevel == null
       ? null
       : WorkoutSessionStore.levelFromXP(animationFromXP);
@@ -97,6 +99,7 @@ class _HubScreenState extends State<HubScreen> {
       onMissions: () => _open(const QuestBoardScreen()),
       onArmory: () => _open(const ArmoryScreen()),
       onProfile: () => _open(const ProfileScreen()),
+      onContact: () => _open(const ContactScreen()),
       onPremium: () => _open(const CoachScreen()),
     ),
     body: Stack(
@@ -115,6 +118,16 @@ class _HubScreenState extends State<HubScreen> {
               TrainingProfileStore.profile.value?.gender ?? RatGender.nonBinary,
           loadout: (inventory ?? const RatInventoryState()).loadoutForLevel(
             progress?.level ?? 1,
+          ),
+          view: characterView,
+        ),
+        SafeArea(
+          child: Align(
+            alignment: const Alignment(.92, -.55),
+            child: _CharacterViewToggle(
+              view: characterView,
+              onChanged: (view) => setState(() => characterView = view),
+            ),
           ),
         ),
         const _ForegroundHaze(),
@@ -206,11 +219,13 @@ class _CharacterLayer extends StatelessWidget {
     required this.level,
     required this.gender,
     required this.loadout,
+    required this.view,
   });
 
   final int level;
   final RatGender gender;
   final RatLoadout loadout;
+  final RatCharacterView view;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
@@ -248,11 +263,69 @@ class _CharacterLayer extends StatelessWidget {
               level: level,
               gender: gender,
               loadout: loadout,
+              view: view,
             ),
           ),
         ),
       );
     },
+  );
+}
+
+class _CharacterViewToggle extends StatelessWidget {
+  const _CharacterViewToggle({required this.view, required this.onChanged});
+
+  final RatCharacterView view;
+  final ValueChanged<RatCharacterView> onChanged;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: GymRatColors.black.withValues(alpha: .78),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: GymRatColors.border),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _ViewButton(
+          selected: view == RatCharacterView.front,
+          icon: Icons.accessibility_new_rounded,
+          tooltip: context.tr.t('frontView'),
+          onTap: () => onChanged(RatCharacterView.front),
+        ),
+        _ViewButton(
+          selected: view == RatCharacterView.back,
+          icon: Icons.rotate_90_degrees_ccw_rounded,
+          tooltip: context.tr.t('backView'),
+          onTap: () => onChanged(RatCharacterView.back),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ViewButton extends StatelessWidget {
+  const _ViewButton({
+    required this.selected,
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    onPressed: onTap,
+    tooltip: tooltip,
+    visualDensity: VisualDensity.compact,
+    iconSize: 18,
+    color: selected ? GymRatColors.gold : GymRatColors.textMuted,
+    icon: Icon(icon),
   );
 }
 
@@ -575,6 +648,7 @@ class _GymRatMenu extends StatelessWidget {
     required this.onMissions,
     required this.onArmory,
     required this.onProfile,
+    required this.onContact,
     required this.onPremium,
   });
   final VoidCallback onWorkout,
@@ -583,10 +657,10 @@ class _GymRatMenu extends StatelessWidget {
       onMissions,
       onArmory,
       onProfile,
+      onContact,
       onPremium;
   void _open(BuildContext context, VoidCallback action) {
-    Navigator.of(context).pop();
-    Future<void>.delayed(const Duration(milliseconds: 240), action);
+    action();
   }
 
   @override
@@ -627,41 +701,52 @@ class _GymRatMenu extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 26),
-              _MenuItem(
-                icon: Icons.fitness_center_rounded,
-                title: context.tr.t('workout'),
-                onTap: () => _open(context, onWorkout),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _MenuItem(
+                      icon: Icons.fitness_center_rounded,
+                      title: context.tr.t('workout'),
+                      onTap: () => _open(context, onWorkout),
+                    ),
+                    _MenuItem(
+                      icon: Icons.show_chart_rounded,
+                      title: context.tr.t('progress'),
+                      onTap: () => _open(context, onProgress),
+                    ),
+                    _MenuItem(
+                      icon: Icons.history_rounded,
+                      title: context.tr.t('history'),
+                      onTap: () => _open(context, onHistory),
+                    ),
+                    _MenuItem(
+                      icon: Icons.assignment_turned_in_outlined,
+                      title: context.tr.t('missions'),
+                      onTap: () => _open(context, onMissions),
+                    ),
+                    _MenuItem(
+                      icon: Icons.restaurant_rounded,
+                      title: context.tr.t('nutrition'),
+                    ),
+                    _MenuItem(
+                      icon: Icons.inventory_2_outlined,
+                      title: context.tr.t('inventoryShop'),
+                      onTap: () => _open(context, onArmory),
+                    ),
+                    _MenuItem(
+                      icon: Icons.person_outline_rounded,
+                      title: context.tr.t('profileSettings'),
+                      onTap: () => _open(context, onProfile),
+                    ),
+                    _MenuItem(
+                      icon: Icons.support_agent_rounded,
+                      title: context.tr.t('contactSupport'),
+                      onTap: () => _open(context, onContact),
+                    ),
+                  ],
+                ),
               ),
-              _MenuItem(
-                icon: Icons.show_chart_rounded,
-                title: context.tr.t('progress'),
-                onTap: () => _open(context, onProgress),
-              ),
-              _MenuItem(
-                icon: Icons.history_rounded,
-                title: context.tr.t('history'),
-                onTap: () => _open(context, onHistory),
-              ),
-              _MenuItem(
-                icon: Icons.assignment_turned_in_outlined,
-                title: context.tr.t('missions'),
-                onTap: () => _open(context, onMissions),
-              ),
-              _MenuItem(
-                icon: Icons.restaurant_rounded,
-                title: context.tr.t('nutrition'),
-              ),
-              _MenuItem(
-                icon: Icons.inventory_2_outlined,
-                title: context.tr.t('inventoryShop'),
-                onTap: () => _open(context, onArmory),
-              ),
-              _MenuItem(
-                icon: Icons.person_outline_rounded,
-                title: context.tr.t('profileSettings'),
-                onTap: () => _open(context, onProfile),
-              ),
-              const Spacer(),
               const Divider(),
               _MenuItem(
                 icon: Icons.workspace_premium_outlined,

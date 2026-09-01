@@ -7,6 +7,8 @@ abstract final class GymRatAssets {
   }
 
   static const String maleLevel1 = 'assets/characters/male/level_01.png';
+  static const String maleLevel1Back =
+      'assets/characters/male/level_01_back.png';
 
   static String maleForLevel(int level) {
     return switch (level) {
@@ -56,9 +58,13 @@ abstract final class GymRatAssets {
   ];
 
   static const String femaleLevel1 = 'assets/characters/female/level_01.png';
+  static const String femaleLevel1Back =
+      'assets/characters/female/level_01_back.png';
 
   static const String nonBinaryLevel1 =
       'assets/characters/non_binary/level_01.png';
+  static const String nonBinaryLevel1Back =
+      'assets/characters/non_binary/level_01_back.png';
 
   static const String effectsRoot = 'assets/effects/';
   static const String itemsRoot = 'assets/items/';

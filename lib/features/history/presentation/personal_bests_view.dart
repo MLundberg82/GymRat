@@ -5,16 +5,19 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../../progress/domain/training_analytics.dart';
 import '../../progress/presentation/progress_line_chart.dart';
 import '../../progress/presentation/training_detail_screen.dart';
+import '../../premium/presentation/premium_gate_card.dart';
 import '../../workout/data/workout_session_store.dart';
 
 class PersonalBestsView extends StatelessWidget {
   const PersonalBestsView({
     super.key,
     required this.history,
+    required this.isPremium,
     required this.onRefresh,
   });
 
   final TrainingHistorySnapshot history;
+  final bool isPremium;
   final Future<void> Function() onRefresh;
 
   List<PersonalBestRecord> get records => history.personalBests;
@@ -49,6 +52,7 @@ class PersonalBestsView extends StatelessWidget {
               ),
               const SizedBox(height: 12),
             ],
+          if (!isPremium) const PremiumGateCard(),
         ],
       ),
     );

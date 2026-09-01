@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../hub/presentation/hub_screen.dart';
+import '../../profile/data/training_profile_store.dart';
+import '../../profile/domain/training_profile.dart';
 import '../../rewards/presentation/reward_sequence.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_result.dart';
@@ -57,6 +59,9 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                 : RewardSequence(
                     key: const ValueKey('reward-sequence'),
                     result: widget.result,
+                    gender:
+                        TrainingProfileStore.profile.value?.gender ??
+                        RatGender.nonBinary,
                     onComplete: _showWorkoutSummary,
                   ),
           ),

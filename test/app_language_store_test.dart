@@ -82,6 +82,15 @@ void main() {
       'claimReward',
       'premiumCoach',
       'coachNextMission',
+      'frontView',
+      'backView',
+      'changeRatIdentity',
+      'levelRewards',
+      'itemFoundersTee',
+      'premiumBlueprint',
+      'premiumBenefitHistory',
+      'contactSupport',
+      'supportTitle',
     ];
 
     for (final locale in AppLanguageStore.supported) {

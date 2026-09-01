@@ -88,6 +88,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: GymRatColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: GymRatColors.goldDark),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.t('changeRatIdentity'),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    t.t('changeRatIdentityHelp'),
+                    style: const TextStyle(
+                      color: GymRatColors.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<RatGender>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final gender in RatGender.values)
+                        ButtonSegment(
+                          value: gender,
+                          label: Text(t.t(_genderKey(gender))),
+                        ),
+                    ],
+                    selected: {profile.gender},
+                    onSelectionChanged: (selection) async {
+                      await TrainingProfileStore.save(
+                        profile.copyWith(gender: selection.first),
+                      );
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: () async {
                 await Navigator.of(context).push(

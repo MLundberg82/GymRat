@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../premium/data/premium_access.dart';
+import '../../premium/presentation/premium_gate_card.dart';
 import '../../workout/data/workout_session_store.dart';
 import 'personal_bests_view.dart';
 import 'workout_history_detail_sheet.dart';
@@ -13,17 +15,34 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
+class _HistoryData {
+  const _HistoryData({required this.history, required this.isPremium});
+  final TrainingHistorySnapshot history;
+  final bool isPremium;
+}
+
 class _HistoryScreenState extends State<HistoryScreen> {
-  late Future<TrainingHistorySnapshot> _history;
+  late Future<_HistoryData> _history;
 
   @override
   void initState() {
     super.initState();
-    _history = WorkoutSessionStore.getTrainingHistory();
+    _history = _load();
+  }
+
+  Future<_HistoryData> _load() async {
+    final values = await Future.wait<Object>([
+      WorkoutSessionStore.getTrainingHistory(),
+      PremiumAccess.isActive(),
+    ]);
+    return _HistoryData(
+      history: values[0] as TrainingHistorySnapshot,
+      isPremium: values[1] as bool,
+    );
   }
 
   Future<void> _refresh() async {
-    final next = WorkoutSessionStore.getTrainingHistory();
+    final next = _load();
     setState(() => _history = next);
     await next;
   }
@@ -64,7 +83,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
           ),
         ),
-        body: FutureBuilder<TrainingHistorySnapshot>(
+        body: FutureBuilder<_HistoryData>(
           future: _history,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
@@ -80,11 +99,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               );
             }
-            final history = snapshot.requireData;
+            final data = snapshot.requireData;
+            final history = PremiumAccess.visibleHistory(
+              data.history,
+              isPremium: data.isPremium,
+            );
             return TabBarView(
               children: [
-                _CombatLog(history: history, onRefresh: _refresh),
-                PersonalBestsView(history: history, onRefresh: _refresh),
+                _CombatLog(
+                  history: history,
+                  isPremium: data.isPremium,
+                  onRefresh: _refresh,
+                ),
+                PersonalBestsView(
+                  history: history,
+                  isPremium: data.isPremium,
+                  onRefresh: _refresh,
+                ),
               ],
             );
           },
@@ -95,9 +126,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 }
 
 class _CombatLog extends StatelessWidget {
-  const _CombatLog({required this.history, required this.onRefresh});
+  const _CombatLog({
+    required this.history,
+    required this.isPremium,
+    required this.onRefresh,
+  });
 
   final TrainingHistorySnapshot history;
+  final bool isPremium;
   final Future<void> Function() onRefresh;
 
   @override
@@ -125,6 +161,10 @@ class _CombatLog extends StatelessWidget {
             ),
             const SizedBox(height: 10),
           ],
+        if (!isPremium) ...[
+          const SizedBox(height: 12),
+          const PremiumGateCard(),
+        ],
       ],
     ),
   );

@@ -78,7 +78,11 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
         ),
       ),
     );
-    if (result == ArmoryPurchaseStatus.purchased) await _refresh();
+    if (result == ArmoryPurchaseStatus.purchased) {
+      final item = RatItemCatalog.byStoreProductId(offer.identifier);
+      if (item != null) await RatInventoryStore.grantPurchased(item);
+      if (mounted) await _refresh();
+    }
   }
 
   Future<void> _restore() async {
@@ -458,7 +462,7 @@ class _UpgradeCard extends StatelessWidget {
   }
 }
 
-class _RatLoadoutSection extends StatelessWidget {
+class _RatLoadoutSection extends StatefulWidget {
   const _RatLoadoutSection({
     required this.level,
     required this.inventory,
@@ -474,8 +478,22 @@ class _RatLoadoutSection extends StatelessWidget {
   final Future<void> Function(RatItem item, int level) onBuy;
 
   @override
+  State<_RatLoadoutSection> createState() => _RatLoadoutSectionState();
+}
+
+class _RatLoadoutSectionState extends State<_RatLoadoutSection> {
+  RatItem? previewItem;
+  RatCharacterView view = RatCharacterView.front;
+
+  @override
   Widget build(BuildContext context) {
-    final loadout = inventory.loadoutForLevel(level);
+    final equippedLoadout = widget.inventory.loadoutForLevel(widget.level);
+    final loadout = previewItem == null
+        ? equippedLoadout
+        : RatLoadout({
+            ...equippedLoadout.items,
+            previewItem!.slot: previewItem!,
+          });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -498,7 +516,7 @@ class _RatLoadoutSection extends StatelessWidget {
             ),
             const SizedBox(width: 5),
             Text(
-              '${inventory.credits}',
+              '${widget.inventory.credits}',
               style: const TextStyle(
                 color: GymRatColors.gold,
                 fontWeight: FontWeight.w900,
@@ -507,6 +525,8 @@ class _RatLoadoutSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
+        _RankTrack(level: widget.level),
+        const SizedBox(height: 12),
         Container(
           height: 300,
           decoration: BoxDecoration(
@@ -519,11 +539,72 @@ class _RatLoadoutSection extends StatelessWidget {
               colors: [Color(0xFF253021), GymRatColors.surface],
             ),
           ),
-          child: GymRatCharacter(
-            height: 285,
-            level: level,
-            gender: gender,
-            loadout: loadout,
+          child: Stack(
+            children: [
+              Center(
+                child: GymRatCharacter(
+                  height: 285,
+                  level: widget.level,
+                  gender: widget.gender,
+                  view: view,
+                  loadout: loadout,
+                ),
+              ),
+              Positioned(
+                right: 10,
+                top: 10,
+                child: SegmentedButton<RatCharacterView>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  segments: [
+                    ButtonSegment(
+                      value: RatCharacterView.front,
+                      icon: const Icon(
+                        Icons.accessibility_new_rounded,
+                        size: 17,
+                      ),
+                      tooltip: context.tr.t('frontView'),
+                    ),
+                    ButtonSegment(
+                      value: RatCharacterView.back,
+                      icon: const Icon(
+                        Icons.rotate_90_degrees_ccw_rounded,
+                        size: 17,
+                      ),
+                      tooltip: context.tr.t('backView'),
+                    ),
+                  ],
+                  selected: {view},
+                  onSelectionChanged: (value) =>
+                      setState(() => view = value.first),
+                ),
+              ),
+              if (previewItem != null)
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: GymRatColors.gold,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      context.tr.t('previewItem'),
+                      style: const TextStyle(
+                        color: GymRatColors.black,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -532,14 +613,16 @@ class _RatLoadoutSection extends StatelessWidget {
           style: const TextStyle(color: GymRatColors.textMuted, fontSize: 10),
         ),
         const SizedBox(height: 10),
-        for (final item in RatItemCatalog.items) ...[
+        for (final item in RatItemCatalog.featuredItems) ...[
           _RatItemCard(
             item: item,
-            level: level,
-            owned: inventory.owns(item, level),
-            equipped: loadout[item.slot]?.id == item.id,
-            onEquip: () => onEquip(item, level),
-            onBuy: () => onBuy(item, level),
+            level: widget.level,
+            owned: widget.inventory.owns(item, widget.level),
+            equipped: equippedLoadout[item.slot]?.id == item.id,
+            selected: previewItem?.id == item.id,
+            onPreview: () => setState(() => previewItem = item),
+            onEquip: () => widget.onEquip(item, widget.level),
+            onBuy: () => widget.onBuy(item, widget.level),
           ),
           const SizedBox(height: 8),
         ],
@@ -548,12 +631,75 @@ class _RatLoadoutSection extends StatelessWidget {
   }
 }
 
+class _RankTrack extends StatelessWidget {
+  const _RankTrack({required this.level});
+
+  final int level;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+    decoration: BoxDecoration(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.circular(17),
+      border: Border.all(color: GymRatColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${context.tr.t('levelRewards')} · ${level.clamp(1, 50)} / 50',
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 9),
+        SizedBox(
+          height: 31,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 49,
+            separatorBuilder: (_, _) => const SizedBox(width: 5),
+            itemBuilder: (context, index) {
+              final rewardLevel = index + 2;
+              final unlocked = rewardLevel <= level;
+              return Container(
+                width: 31,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: unlocked
+                      ? GymRatColors.gold.withValues(alpha: .16)
+                      : GymRatColors.surfaceElevated,
+                  border: Border.all(
+                    color: unlocked ? GymRatColors.gold : GymRatColors.border,
+                  ),
+                ),
+                child: Text(
+                  '$rewardLevel',
+                  style: TextStyle(
+                    color: unlocked
+                        ? GymRatColors.gold
+                        : GymRatColors.textMuted,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _RatItemCard extends StatelessWidget {
   const _RatItemCard({
     required this.item,
     required this.level,
     required this.owned,
     required this.equipped,
+    required this.selected,
+    required this.onPreview,
     required this.onEquip,
     required this.onBuy,
   });
@@ -562,88 +708,104 @@ class _RatItemCard extends StatelessWidget {
   final int level;
   final bool owned;
   final bool equipped;
+  final bool selected;
+  final VoidCallback onPreview;
   final VoidCallback onEquip;
   final VoidCallback onBuy;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: GymRatColors.surface,
-      borderRadius: BorderRadius.circular(17),
-      border: Border.all(
-        color: equipped
-            ? GymRatColors.gold
-            : owned
-            ? GymRatColors.greenDark
-            : GymRatColors.border,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onPreview,
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: GymRatColors.surface,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: selected
+              ? GymRatColors.gold
+              : equipped
+              ? GymRatColors.gold
+              : owned
+              ? GymRatColors.greenDark
+              : GymRatColors.border,
+        ),
       ),
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: (equipped ? GymRatColors.gold : GymRatColors.green)
-                .withValues(alpha: .10),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            _ratItemIcon(item.slot),
-            color: owned ? GymRatColors.gold : GymRatColors.textMuted,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.tr.t(item.nameKey),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                item.unlockLevel != null
-                    ? '${context.tr.t('level')} ${item.unlockLevel}'
-                    : '${item.priceCredits} ${context.tr.t('armoryCredits')}',
-                style: const TextStyle(
-                  color: GymRatColors.textMuted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (equipped)
-          Text(
-            context.tr.t('equipped'),
-            style: const TextStyle(
-              color: GymRatColors.gold,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: (equipped ? GymRatColors.gold : GymRatColors.green)
+                  .withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(12),
             ),
-          )
-        else if (owned)
-          TextButton(onPressed: onEquip, child: Text(context.tr.t('equip')))
-        else if (item.priceCredits != null)
-          FilledButton(
-            onPressed: onBuy,
-            style: FilledButton.styleFrom(
-              backgroundColor: GymRatColors.gold,
-              foregroundColor: GymRatColors.black,
-              visualDensity: VisualDensity.compact,
+            child: item.assetPath != null
+                ? Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Image.asset(
+                      item.assetPath!,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  )
+                : Icon(
+                    _ratItemIcon(item.slot),
+                    color: owned ? GymRatColors.gold : GymRatColors.textMuted,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr.t(item.nameKey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  item.unlockLevel != null
+                      ? '${context.tr.t('level')} ${item.unlockLevel}'
+                      : '${item.priceCredits} ${context.tr.t('armoryCredits')}',
+                  style: const TextStyle(
+                    color: GymRatColors.textMuted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
-            child: Text('${item.priceCredits}'),
-          )
-        else
-          const Icon(Icons.lock_rounded, color: GymRatColors.textMuted),
-      ],
+          ),
+          if (equipped)
+            Text(
+              context.tr.t('equipped'),
+              style: const TextStyle(
+                color: GymRatColors.gold,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
+            )
+          else if (owned)
+            TextButton(onPressed: onEquip, child: Text(context.tr.t('equip')))
+          else if (item.priceCredits != null)
+            FilledButton(
+              onPressed: onBuy,
+              style: FilledButton.styleFrom(
+                backgroundColor: GymRatColors.gold,
+                foregroundColor: GymRatColors.black,
+                visualDensity: VisualDensity.compact,
+              ),
+              child: Text('${item.priceCredits}'),
+            )
+          else
+            const Icon(Icons.lock_rounded, color: GymRatColors.textMuted),
+        ],
+      ),
     ),
   );
 }
@@ -651,7 +813,11 @@ class _RatItemCard extends StatelessWidget {
 IconData _ratItemIcon(RatItemSlot slot) => switch (slot) {
   RatItemSlot.head => Icons.sports_martial_arts_rounded,
   RatItemSlot.neck => Icons.link_rounded,
+  RatItemSlot.top => Icons.checkroom_rounded,
+  RatItemSlot.bottom => Icons.dry_cleaning_rounded,
+  RatItemSlot.feet => Icons.directions_run_rounded,
   RatItemSlot.belt => Icons.shield_rounded,
+  RatItemSlot.collectible => Icons.military_tech_rounded,
   RatItemSlot.aura => Icons.auto_awesome_rounded,
 };
 

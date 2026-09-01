@@ -342,6 +342,89 @@ void main() {
     expect(find.text('AUTOMATISK VÄXLING'), findsOneWidget);
     expect(find.text('Växla automatiskt mellan set och vila.'), findsOneWidget);
   });
+
+  testWidgets('rat view, identity settings and support are user controlled', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Back view'));
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.byTooltip('Front view'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    final drawerList = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Profile & Settings'),
+      180,
+      scrollable: drawerList,
+    );
+    await tester.tap(find.text('Profile & Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('CHANGE RAT IDENTITY'), findsOneWidget);
+    await tester.tap(find.text('Male'));
+    await tester.pump();
+    expect(TrainingProfileStore.profile.value?.gender, RatGender.male);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsOneWidget);
+    expect(find.text('Profile & Settings'), findsOneWidget);
+    final supportDrawerList = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Contact & Support'),
+      180,
+      scrollable: supportDrawerList,
+    );
+    await tester.tap(find.text('Contact & Support'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TALK TO THE GYMRAT TEAM'), findsOneWidget);
+    expect(find.text('COPY EMAIL'), findsOneWidget);
+  });
+
+  testWidgets('back from history returns to the open menu', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('History'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TRAINING HISTORY'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Drawer), findsOneWidget);
+    expect(find.text('History'), findsOneWidget);
+  });
 }
 
 Future<WorkoutResult> _completeHistoryWorkout(double weight) {

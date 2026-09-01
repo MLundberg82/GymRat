@@ -3,15 +3,22 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../../premium/data/premium_access.dart';
+import '../../premium/presentation/premium_gate_card.dart';
 import '../domain/training_analytics.dart';
 import 'progress_line_chart.dart';
 import 'training_detail_screen.dart';
 
 class _ProgressData {
-  const _ProgressData({required this.snapshot, required this.history});
+  const _ProgressData({
+    required this.snapshot,
+    required this.history,
+    required this.isPremium,
+  });
 
   final ProgressSnapshot snapshot;
   final TrainingHistorySnapshot history;
+  final bool isPremium;
 }
 
 class ProgressScreen extends StatefulWidget {
@@ -34,10 +41,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final values = await Future.wait<Object>([
       WorkoutSessionStore.getProgressSnapshot(),
       WorkoutSessionStore.getTrainingHistory(),
+      PremiumAccess.isActive(),
     ]);
     return _ProgressData(
       snapshot: values[0] as ProgressSnapshot,
       history: values[1] as TrainingHistorySnapshot,
+      isPremium: values[2] as bool,
     );
   }
 
@@ -80,7 +89,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
           }
           return _ProgressContent(
             data: snapshot.requireData.snapshot,
-            history: snapshot.requireData.history,
+            history: PremiumAccess.visibleHistory(
+              snapshot.requireData.history,
+              isPremium: snapshot.requireData.isPremium,
+            ),
+            isPremium: snapshot.requireData.isPremium,
             onRefresh: _refresh,
           );
         },
@@ -93,11 +106,13 @@ class _ProgressContent extends StatelessWidget {
   const _ProgressContent({
     required this.data,
     required this.history,
+    required this.isPremium,
     required this.onRefresh,
   });
 
   final ProgressSnapshot data;
   final TrainingHistorySnapshot history;
+  final bool isPremium;
   final Future<void> Function() onRefresh;
 
   @override
@@ -176,6 +191,10 @@ class _ProgressContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
+          ],
+          if (!isPremium) ...[
+            const SizedBox(height: 4),
+            const PremiumGateCard(),
           ],
           const SizedBox(height: 18),
           Text(

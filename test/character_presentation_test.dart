@@ -1,0 +1,49 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:gymrat/features/character/presentation/gymrat_character.dart';
+import 'package:gymrat/features/profile/domain/training_profile.dart';
+
+void main() {
+  test('shared breathing curve expands and contracts', () {
+    expect(GymRatCharacter.breathingScaleX(.25), greaterThan(1));
+    expect(GymRatCharacter.breathingScaleX(.75), lessThan(1));
+
+    final torso = GymRatCharacter.breathingTorsoRect(
+      const Size(320, 600),
+      RatCharacterView.front,
+    );
+    expect(torso.top, greaterThan(0));
+    expect(torso.bottom, lessThan(600));
+    expect(torso.height, lessThan(600 / 3));
+  });
+
+  for (final gender in RatGender.values) {
+    testWidgets('${gender.name} supports front and back breathing views', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GymRatCharacter(
+              height: 400,
+              gender: gender,
+              view: RatCharacterView.back,
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 850));
+
+      final images = tester.widgetList<Image>(find.byType(Image));
+      final assetNames = images
+          .map((image) => image.image)
+          .whereType<ResizeImage>()
+          .map((image) => image.imageProvider)
+          .whereType<AssetImage>()
+          .map((image) => image.assetName);
+
+      expect(assetNames, contains(contains('level_01_back.png')));
+      expect(tester.takeException(), isNull);
+    });
+  }
+}

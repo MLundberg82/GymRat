@@ -25,6 +25,7 @@ class RatInventoryState {
   RatLoadout loadoutForLevel(int level) {
     final result = <RatItemSlot, RatItem>{};
     for (final slot in RatItemSlot.values) {
+      if (slot == RatItemSlot.collectible) continue;
       final selected = RatItemCatalog.byId(equipped[slot] ?? '');
       if (selected != null && owns(selected, level)) {
         result[slot] = selected;
@@ -102,13 +103,16 @@ abstract final class RatInventoryStore {
         credits: state.credits - price,
         claimedQuests: state.claimedQuests,
         ownedItems: {...state.ownedItems, item.id},
-        equipped: {...state.equipped, item.slot: item.id},
+        equipped: item.isWearable
+            ? {...state.equipped, item.slot: item.id}
+            : state.equipped,
       ),
     );
     return RatItemPurchaseResult.purchased;
   }
 
   static Future<void> equip(RatItem item, {required int level}) async {
+    if (!item.isWearable) return;
     final state = await load();
     if (!state.owns(item, level)) return;
     await _save(
@@ -117,6 +121,20 @@ abstract final class RatInventoryStore {
         claimedQuests: state.claimedQuests,
         ownedItems: state.ownedItems,
         equipped: {...state.equipped, item.slot: item.id},
+      ),
+    );
+  }
+
+  static Future<void> grantPurchased(RatItem item) async {
+    final state = await load();
+    await _save(
+      RatInventoryState(
+        credits: state.credits,
+        claimedQuests: state.claimedQuests,
+        ownedItems: {...state.ownedItems, item.id},
+        equipped: item.isWearable
+            ? {...state.equipped, item.slot: item.id}
+            : state.equipped,
       ),
     );
   }

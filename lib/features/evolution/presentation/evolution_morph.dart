@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../character/presentation/gymrat_character.dart';
+import '../../profile/domain/training_profile.dart';
 import '../domain/evolution_milestones.dart';
 import 'evolution_energy_painter.dart';
 
@@ -17,12 +19,14 @@ class EvolutionMorph extends StatefulWidget {
     required this.previousLevel,
     required this.newLevel,
     required this.duration,
+    required this.gender,
     required this.onComplete,
   });
 
   final int previousLevel;
   final int newLevel;
   final Duration duration;
+  final RatGender gender;
   final VoidCallback onComplete;
 
   @override
@@ -37,11 +41,9 @@ class _EvolutionMorphState extends State<EvolutionMorph>
   final List<Timer> _hapticTimers = <Timer>[];
   bool _started = false;
 
-  String get _sourceAsset => GymRatAssets.maleForLevel(
-    EvolutionMilestones.previousStageFor(widget.newLevel),
-  );
+  String get _sourceAsset => GymRatCharacter.assetFor(gender: widget.gender);
 
-  String get _targetAsset => GymRatAssets.maleForLevel(widget.newLevel);
+  String get _targetAsset => GymRatCharacter.assetFor(gender: widget.gender);
 
   @override
   void initState() {

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
-import '../../armory/data/armory_billing.dart';
-import '../../armory/presentation/armory_screen.dart';
+import '../../premium/data/premium_access.dart';
+import '../../premium/presentation/premium_gate_card.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
 import '../../workout/data/workout_session_store.dart';
@@ -37,7 +37,7 @@ class _CoachScreenState extends State<CoachScreen> {
         TrainingProfileStore.profile.value ?? TrainingProfile.starter;
     final results = await Future.wait<Object>([
       WorkoutSessionStore.getTrainingHistory(),
-      ArmoryBilling.hasActiveEntitlement('premium'),
+      PremiumAccess.isActive(),
     ]);
     return _CoachData(
       recommendation: CoachRecommendationEngine.build(
@@ -116,7 +116,7 @@ class _CoachScreenState extends State<CoachScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    recommendation.workoutName,
+                    data.isPremium ? recommendation.workoutName : '•••',
                     style: const TextStyle(
                       color: GymRatColors.premium,
                       fontSize: 32,
@@ -125,7 +125,11 @@ class _CoachScreenState extends State<CoachScreen> {
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    context.tr.t(recommendation.reasonKey),
+                    context.tr.t(
+                      data.isPremium
+                          ? recommendation.reasonKey
+                          : 'premiumCoachLockedHelp',
+                    ),
                     style: const TextStyle(
                       color: GymRatColors.textSecondary,
                       fontSize: 11,
@@ -141,14 +145,14 @@ class _CoachScreenState extends State<CoachScreen> {
                 Expanded(
                   child: _CoachMetric(
                     label: context.tr.t('recommendedSets'),
-                    value: recommendation.setRange,
+                    value: data.isPremium ? recommendation.setRange : '—',
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _CoachMetric(
                     label: context.tr.t('recommendedReps'),
-                    value: recommendation.repRange,
+                    value: data.isPremium ? recommendation.repRange : '—',
                   ),
                 ),
               ],
@@ -199,19 +203,7 @@ class _CoachScreenState extends State<CoachScreen> {
             ),
             if (!data.isPremium) ...[
               const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ArmoryScreen(initialTab: 1),
-                  ),
-                ),
-                icon: const Icon(Icons.workspace_premium_rounded),
-                label: Text(context.tr.t('viewPremium')),
-                style: FilledButton.styleFrom(
-                  backgroundColor: GymRatColors.premium,
-                  foregroundColor: GymRatColors.black,
-                ),
-              ),
+              const PremiumGateCard(),
             ],
           ],
         );

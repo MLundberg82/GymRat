@@ -5,10 +5,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/assets/gymrat_assets.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../armory/domain/rat_item.dart';
+import '../../character/presentation/gymrat_character.dart';
+import '../../profile/domain/training_profile.dart';
 import '../domain/gym_upgrade.dart';
 
 class LevelUpCelebration extends StatefulWidget {
@@ -17,6 +18,7 @@ class LevelUpCelebration extends StatefulWidget {
     required this.previousLevel,
     required this.newLevel,
     required this.isEvolution,
+    required this.gender,
     required this.upgrade,
     this.ratItem,
   });
@@ -27,6 +29,7 @@ class LevelUpCelebration extends StatefulWidget {
   final int previousLevel;
   final int newLevel;
   final bool isEvolution;
+  final RatGender gender;
   final GymUpgrade upgrade;
   final RatItem? ratItem;
 
@@ -304,7 +307,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
     final image = ColorFiltered(
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       child: Image.asset(
-        GymRatAssets.maleLevel1,
+        GymRatCharacter.assetFor(gender: widget.gender),
         fit: BoxFit.contain,
         filterQuality: FilterQuality.high,
       ),
@@ -473,7 +476,8 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                   const SizedBox(height: 4),
                   Text(
                     '+ ${context.tr.t('ratItemUnlocked')}: '
-                    '${context.tr.t(item.nameKey)}',
+                    '${context.tr.t(item.nameKey)}'
+                    '${item.slot == RatItemSlot.collectible ? ' ${item.unlockLevel}' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

@@ -140,13 +140,17 @@ The milestone physique, file, and review contract is defined in
 
 GymRat Premium Coach uses the training profile and persisted session history to
 recommend the next safe workout rotation, set and repetition ranges, recovery,
-and weekly frequency. Recommendations must never prescribe medical treatment,
-force personal records, or increase load from assumptions. Pain, illness, and
-professional medical guidance always override the recommendation engine.
+and weekly frequency. Its weekly campaign shows completed and remaining
+missions, while recovery windows and volume changes explain the recommendation
+without prescribing a load increase. Premium users can enter the matching free
+workout preview directly from the recommendation. Recommendations must never
+prescribe medical treatment, force personal records, or increase load from
+assumptions. Pain, illness, and professional medical guidance always override
+the recommendation engine.
 
 ## Verified implementation baseline
 
-As verified from the repository on 2026-08-28:
+As verified from the repository on 2026-09-02:
 
 - The hub is hero-first and uses an end drawer instead of bottom navigation.
 - `WorkoutPresets.free` contains Chest, Back, Legs, Arms, and Walk.
@@ -157,8 +161,20 @@ As verified from the repository on 2026-08-28:
 - `WorkoutSessionStore` persists progress through `shared_preferences` and uses
   prior history to distinguish a baseline from a later PB.
 - `EvolutionMilestones.unlockLevels` contains 5, 10, 15, 20, 30, 40, and 50.
-- `GymRatAssets.maleForLevel` currently resolves every level to the accepted
-  `maleLevel1` master.
+- Male, female, and non-binary level-1 front/back masters are active, and the
+  stage-aware appearance catalog falls back to the latest complete approved
+  stage whenever a later milestone matrix is missing.
+- Premium Coach derives an order-independent mission rotation, weekly campaign,
+  recovery signal, and volume trend from the training profile and persisted
+  history. Guided missions carry the conservative set count and repetition
+  range into workout preview and the active workout without inventing a load
+  target.
+- Progress shows the exact XP distance to the next evolution milestone and its
+  featured collection reward. Level 50 is represented as the completed final
+  form rather than a fictional next stage.
+- Workout and exercise names remain stable canonical values in persisted
+  history and PB calculations, while every presentation layer resolves them
+  through `GymRatLocalizations` in all five supported languages.
 - The theme already defines the graphite/black, action green, reward gold, and
   Premium purple roles.
 - The iOS runner targets iOS 15, uses Flutter's Swift Package Manager plugin
@@ -184,6 +200,19 @@ The approved shield-and-barbell source master is preserved at
 `assets/branding/gymrat_app_icon_master_v1.png`; keep it unchanged until the
 platform icon exports are deliberately generated and reviewed. Never generate
 the rat with AI for this purpose.
+
+## Store release signing
+
+Android release builds must never fall back to the debug signing identity. A
+developer or CI environment may copy `android/key.properties.example` to the
+ignored `android/key.properties` and provide the real upload-keystore path and
+credentials locally. Keystores and populated credentials must never be
+committed. Without that local file, debug builds remain available while the
+release variant stays unsigned.
+
+iOS signing remains owned by the selected Apple development team in Xcode. The
+RevenueCat public SDK keys are build-time values and are independent of native
+code signing on both platforms.
 
 ## Engineering standard
 

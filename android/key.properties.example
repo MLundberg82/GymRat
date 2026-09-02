@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties and keep the real file local.
+# The repository ignores key.properties, *.jks and *.keystore files.
+storeFile=C:/absolute/path/to/upload-keystore.jks
+storePassword=replace-locally
+keyAlias=upload
+keyPassword=replace-locally

@@ -4,6 +4,13 @@ abstract final class EvolutionMilestones {
 
   static bool isMilestone(int level) => unlockLevels.contains(level);
 
+  static int? nextMilestoneAfter(int level) {
+    for (final milestone in unlockLevels) {
+      if (milestone > level) return milestone;
+    }
+    return null;
+  }
+
   static int stageForLevel(int level) {
     var stage = 1;
     for (final milestone in unlockLevels) {

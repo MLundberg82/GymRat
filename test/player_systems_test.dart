@@ -81,6 +81,21 @@ void main() {
     expect(RatItemCatalog.forLevel(50)?.id, 'olympia_aura');
   });
 
+  test('evolution roadmap uses exact progression thresholds', () {
+    expect(WorkoutSessionStore.totalXPToReachLevel(1), 0);
+    expect(WorkoutSessionStore.totalXPToReachLevel(2), 90);
+    expect(WorkoutSessionStore.totalXPToReachLevel(5), 480);
+    expect(
+      WorkoutSessionStore.levelFromXP(
+        WorkoutSessionStore.totalXPToReachLevel(10),
+      ),
+      10,
+    );
+    expect(EvolutionMilestones.nextMilestoneAfter(1), 5);
+    expect(EvolutionMilestones.nextMilestoneAfter(5), 10);
+    expect(EvolutionMilestones.nextMilestoneAfter(50), isNull);
+  });
+
   test('every level after level one unlocks a character reward', () {
     for (var level = 2; level <= 50; level++) {
       expect(
@@ -208,6 +223,106 @@ void main() {
     expect(recommendation.setRange, '4–5');
     expect(recommendation.repRange, '8–12');
     expect(recommendation.weeklyTarget, 4);
+    expect(recommendation.weeklyRemaining, 4);
+    expect(recommendation.rotationQueue.first, 'ARMS');
+    expect(recommendation.missionMode, CoachMissionMode.strength);
+  });
+
+  test('coach rotation is independent of history storage order', () {
+    final history = TrainingHistorySnapshot(
+      personalBests: const [],
+      workouts: [
+        _workout('CHEST', DateTime(2026, 8, 10)),
+        _workout('BACK', DateTime(2026, 8, 30)),
+        _workout('LEGS', DateTime(2026, 8, 29)),
+        _workout('ARMS', DateTime(2026, 8, 28)),
+        _workout('CHEST', DateTime(2026, 8, 31)),
+      ],
+    );
+
+    final recommendation = CoachRecommendationEngine.build(
+      profile: profile,
+      history: history,
+      now: DateTime(2026, 9, 2, 10),
+    );
+
+    expect(recommendation.workoutName, 'ARMS');
+    expect(recommendation.rotationQueue, ['ARMS', 'LEGS', 'BACK', 'CHEST']);
+    expect(recommendation.recoveryDays, 5);
+  });
+
+  test('coach protects recovery after the weekly target is complete', () {
+    final history = TrainingHistorySnapshot(
+      personalBests: const [],
+      workouts: [
+        _workout('CHEST', DateTime(2026, 8, 31, 8)),
+        _workout('BACK', DateTime(2026, 8, 31, 18)),
+        _workout('LEGS', DateTime(2026, 9, 1, 8)),
+        _workout('ARMS', DateTime(2026, 9, 1, 18)),
+      ],
+    );
+
+    final recommendation = CoachRecommendationEngine.build(
+      profile: profile,
+      history: history,
+      now: DateTime(2026, 9, 2, 10),
+    );
+
+    expect(recommendation.workoutName, 'WALK');
+    expect(recommendation.weeklyCompleted, 4);
+    expect(recommendation.weeklyRemaining, 0);
+    expect(recommendation.recoveryRecommended, isTrue);
+    expect(recommendation.missionMode, CoachMissionMode.activeRecovery);
+    expect(recommendation.reasonKey, 'coachWeeklyTargetReachedReason');
+  });
+
+  test('a walk does not replace a safe strength mission', () {
+    final history = TrainingHistorySnapshot(
+      personalBests: const [],
+      workouts: [
+        WorkoutHistoryEntry(
+          id: 'walk-today',
+          workoutName: 'WALK',
+          completedAt: DateTime(2026, 9, 2, 8),
+          durationSeconds: 1800,
+          isWalk: true,
+          exercises: const [],
+        ),
+      ],
+    );
+
+    final recommendation = CoachRecommendationEngine.build(
+      profile: profile,
+      history: history,
+      now: DateTime(2026, 9, 2, 10),
+    );
+
+    expect(recommendation.workoutName, 'CHEST');
+    expect(recommendation.weeklyRemaining, 3);
+    expect(recommendation.recoveryRecommended, isFalse);
+  });
+
+  test('coach reports volume change without prescribing more load', () {
+    final history = TrainingHistorySnapshot(
+      personalBests: const [],
+      workouts: [
+        _volumeWorkout('CHEST', DateTime(2026, 8, 20), 120),
+        _workout('BACK', DateTime(2026, 8, 25)),
+        _workout('LEGS', DateTime(2026, 8, 26)),
+        _workout('ARMS', DateTime(2026, 8, 27)),
+        _volumeWorkout('CHEST', DateTime(2026, 8, 10), 100),
+      ],
+    );
+
+    final recommendation = CoachRecommendationEngine.build(
+      profile: profile,
+      history: history,
+      now: DateTime(2026, 8, 31, 10),
+    );
+
+    expect(recommendation.workoutName, 'CHEST');
+    expect(recommendation.latestVolume, 120);
+    expect(recommendation.volumeChangePercent, closeTo(20, .001));
   });
 }
 
@@ -219,5 +334,26 @@ WorkoutHistoryEntry _workout(String name, DateTime completedAt) {
     durationSeconds: 1800,
     isWalk: false,
     exercises: const <WorkoutExerciseResult>[],
+  );
+}
+
+WorkoutHistoryEntry _volumeWorkout(
+  String name,
+  DateTime completedAt,
+  double volume,
+) {
+  return WorkoutHistoryEntry(
+    id: '$name-${completedAt.millisecondsSinceEpoch}',
+    workoutName: name,
+    completedAt: completedAt,
+    durationSeconds: 1800,
+    isWalk: false,
+    exercises: [
+      WorkoutExerciseResult(
+        name: '$name exercise',
+        muscleGroup: name.toLowerCase(),
+        sets: [WorkoutSetResult(weight: volume, reps: 1)],
+      ),
+    ],
   );
 }

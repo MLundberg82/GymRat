@@ -27,6 +27,12 @@ Completed sessions are also available through the Training History combat log.
 Its Records tab derives earned personal bests from persisted history: the first
 result remains a baseline, and only a later improvement unlocks a record.
 
+GymRat Premium Coach turns the training profile and workout archive into a safe
+weekly mission rotation with recovery and volume signals. A recommended mission
+opens the matching workout preview and carries its set and repetition guidance
+into the active session without automatically increasing weight. The Progress
+screen tracks exact XP distance and the featured reward for the next evolution.
+
 ## Project structure
 
 - `lib/app`: application shell and routing entry point

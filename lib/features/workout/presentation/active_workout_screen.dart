@@ -10,11 +10,17 @@ import '../domain/workout_models.dart';
 import '../domain/workout_result.dart';
 import '../domain/workout_timer_settings.dart';
 import 'timer_settings_screen.dart';
+import 'workout_copy.dart';
 import 'workout_complete_screen.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
-  const ActiveWorkoutScreen({super.key, required this.preset});
+  const ActiveWorkoutScreen({
+    super.key,
+    required this.preset,
+    this.coachGuidance,
+  });
   final WorkoutPreset preset;
+  final WorkoutCoachGuidance? coachGuidance;
   @override
   State<ActiveWorkoutScreen> createState() => _ActiveWorkoutScreenState();
 }
@@ -48,7 +54,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     timerSettings = WorkoutTimerStore.current;
     remainingSeconds = timerSettings.restSeconds;
     for (final e in widget.preset.exercises) {
-      sets[e.name] = List.generate(e.defaultSets, (_) => _SetEntry());
+      sets[e.name] = List.generate(
+        widget.coachGuidance?.setCount ?? e.defaultSets,
+        (_) => _SetEntry(),
+      );
     }
     workoutTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => elapsedSeconds++);
@@ -216,7 +225,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         child: Column(
           children: [
             _TopBar(
-              title: widget.preset.title,
+              title: WorkoutCopy.workout(context, widget.preset.title),
               time: sessionTime,
               onBack: () => Navigator.of(context).pop(),
             ),
@@ -245,7 +254,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    exercise.name,
+                    WorkoutCopy.exercise(context, exercise.name),
                     style: const TextStyle(
                       color: GymRatColors.textPrimary,
                       fontSize: 27,
@@ -253,6 +262,31 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       letterSpacing: -.7,
                     ),
                   ),
+                  if (widget.coachGuidance case final guidance?) ...[
+                    const SizedBox(height: 9),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: GymRatColors.premium,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${context.tr.t('coachTargetLabel')}  '
+                            '${guidance.setCount} ${context.tr.t('sets')} · '
+                            '${guidance.repRange} ${context.tr.t('reps')}',
+                            style: const TextStyle(
+                              color: GymRatColors.premium,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   const _SetHeader(),
                   for (var i = 0; i < currentSets.length; i++)

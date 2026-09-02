@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../workout/domain/workout_result.dart';
+import '../../workout/presentation/workout_copy.dart';
 
 class PrCelebration extends StatefulWidget {
   const PrCelebration({
@@ -271,7 +272,10 @@ class _PrCelebrationState extends State<PrCelebration>
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    widget.pr.exercise.toUpperCase(),
+                    WorkoutCopy.exercise(
+                      context,
+                      widget.pr.exercise,
+                    ).toUpperCase(),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

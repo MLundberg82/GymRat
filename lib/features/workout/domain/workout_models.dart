@@ -1,5 +1,17 @@
 enum WorkoutType { strength, walk }
 
+class WorkoutCoachGuidance {
+  const WorkoutCoachGuidance({
+    required this.setCount,
+    required this.repRange,
+    required this.activeRecovery,
+  }) : assert(setCount > 0);
+
+  final int setCount;
+  final String repRange;
+  final bool activeRecovery;
+}
+
 class WorkoutExercise {
   const WorkoutExercise({required this.name, this.defaultSets = 4});
   final String name;

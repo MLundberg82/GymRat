@@ -7,6 +7,7 @@ import '../../progress/presentation/progress_line_chart.dart';
 import '../../progress/presentation/training_detail_screen.dart';
 import '../../premium/presentation/premium_gate_card.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../../workout/presentation/workout_copy.dart';
 
 class PersonalBestsView extends StatelessWidget {
   const PersonalBestsView({
@@ -205,7 +206,7 @@ class _RecordCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          record.exerciseName,
+                          WorkoutCopy.exercise(context, record.exerciseName),
                           style: const TextStyle(
                             color: GymRatColors.textPrimary,
                             fontSize: 16,

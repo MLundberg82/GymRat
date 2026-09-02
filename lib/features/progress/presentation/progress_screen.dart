@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../armory/domain/rat_item.dart';
+import '../../evolution/domain/evolution_milestones.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../../workout/presentation/workout_copy.dart';
 import '../../premium/data/premium_access.dart';
 import '../../premium/presentation/premium_gate_card.dart';
 import '../domain/training_analytics.dart';
@@ -128,6 +131,8 @@ class _ProgressContent extends StatelessWidget {
         children: [
           _LevelCard(player: player),
           const SizedBox(height: 12),
+          _EvolutionRoadmapCard(player: player),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -220,6 +225,149 @@ class _ProgressContent extends StatelessWidget {
   }
 }
 
+class _EvolutionRoadmapCard extends StatelessWidget {
+  const _EvolutionRoadmapCard({required this.player});
+
+  final PlayerProgress player;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentStage = EvolutionMilestones.stageForLevel(player.level);
+    final nextMilestone = EvolutionMilestones.nextMilestoneAfter(player.level);
+    final startXP = WorkoutSessionStore.totalXPToReachLevel(currentStage);
+    final targetXP = nextMilestone == null
+        ? player.totalXP
+        : WorkoutSessionStore.totalXPToReachLevel(nextMilestone);
+    final span = targetXP - startXP;
+    final progress = nextMilestone == null || span <= 0
+        ? 1.0
+        : ((player.totalXP - startXP) / span).clamp(0.0, 1.0).toDouble();
+    final remainingXP = nextMilestone == null || targetXP <= player.totalXP
+        ? 0
+        : targetXP - player.totalXP;
+    final reward = nextMilestone == null
+        ? null
+        : RatItemCatalog.forLevel(nextMilestone);
+
+    return Container(
+      padding: const EdgeInsets.all(19),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF332707), GymRatColors.surface, Color(0xFF0B0C0C)],
+        ),
+        border: Border.all(color: GymRatColors.goldDark),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: GymRatColors.gold.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.shield_rounded,
+                  color: GymRatColors.gold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr.t('evolutionRoadmap'),
+                      style: const TextStyle(
+                        color: GymRatColors.gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      nextMilestone == null
+                          ? context.tr.t('finalEvolutionReached')
+                          : '${context.tr.t('level')} $currentStage  →  '
+                                '${context.tr.t('level')} $nextMilestone',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: progress,
+              color: GymRatColors.gold,
+              backgroundColor: GymRatColors.surfaceElevated,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            nextMilestone == null
+                ? context.tr.t('olympiaFormComplete')
+                : '$remainingXP XP ${context.tr.t('untilEvolution')}',
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (reward != null) ...[
+            const SizedBox(height: 13),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+              decoration: BoxDecoration(
+                color: GymRatColors.black.withValues(alpha: .38),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: GymRatColors.gold.withValues(alpha: .24),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.lock_open_rounded,
+                    size: 15,
+                    color: GymRatColors.gold,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${context.tr.t('nextEvolutionReward')}: '
+                      '${context.tr.t(reward.nameKey)}',
+                      style: const TextStyle(
+                        color: GymRatColors.textSecondary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({required this.category, required this.onTap});
 
@@ -265,7 +413,7 @@ class _CategoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category.name,
+                    WorkoutCopy.workout(context, category.name),
                     style: const TextStyle(
                       color: GymRatColors.textPrimary,
                       fontSize: 15,
@@ -289,7 +437,7 @@ class _CategoryCard extends StatelessWidget {
               child: ProgressLineChart(
                 points: category.primaryMetric,
                 height: 62,
-                semanticLabel: category.name,
+                semanticLabel: WorkoutCopy.workout(context, category.name),
               ),
             ),
             const Icon(
@@ -500,7 +648,7 @@ class _WorkoutCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  workout.workoutName,
+                  WorkoutCopy.workout(context, workout.workoutName),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

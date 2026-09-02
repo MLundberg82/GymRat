@@ -5,18 +5,24 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../domain/workout_models.dart';
 import 'active_workout_screen.dart';
 import 'walk_workout_screen.dart';
+import 'workout_copy.dart';
 
 class WorkoutPreviewScreen extends StatelessWidget {
-  const WorkoutPreviewScreen({super.key, required this.preset});
+  const WorkoutPreviewScreen({
+    super.key,
+    required this.preset,
+    this.coachGuidance,
+  });
 
   final WorkoutPreset preset;
+  final WorkoutCoachGuidance? coachGuidance;
 
   void _start(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => preset.isWalk
             ? WalkWorkoutScreen(preset: preset)
-            : ActiveWorkoutScreen(preset: preset),
+            : ActiveWorkoutScreen(preset: preset, coachGuidance: coachGuidance),
       ),
     );
   }
@@ -29,7 +35,7 @@ class WorkoutPreviewScreen extends StatelessWidget {
         child: Column(
           children: [
             _Header(
-              title: preset.title,
+              title: WorkoutCopy.workout(context, preset.title),
               onBack: () => Navigator.of(context).pop(),
             ),
             Expanded(
@@ -37,7 +43,7 @@ class WorkoutPreviewScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
                 children: [
                   Text(
-                    preset.title,
+                    WorkoutCopy.workout(context, preset.title),
                     style: const TextStyle(
                       color: GymRatColors.textPrimary,
                       fontSize: 34,
@@ -46,9 +52,13 @@ class WorkoutPreviewScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    preset.subtitle,
+                    WorkoutCopy.subtitle(context, preset),
                     style: const TextStyle(color: GymRatColors.textSecondary),
                   ),
+                  if (coachGuidance case final guidance?) ...[
+                    const SizedBox(height: 18),
+                    _CoachMissionBanner(guidance: guidance),
+                  ],
                   const SizedBox(height: 28),
                   if (preset.isWalk)
                     const _WalkPreview()
@@ -57,6 +67,7 @@ class WorkoutPreviewScreen extends StatelessWidget {
                       _ExerciseRow(
                         number: i + 1,
                         exercise: preset.exercises[i],
+                        setCount: coachGuidance?.setCount,
                       ),
                 ],
               ),
@@ -117,10 +128,15 @@ class _Header extends StatelessWidget {
 }
 
 class _ExerciseRow extends StatelessWidget {
-  const _ExerciseRow({required this.number, required this.exercise});
+  const _ExerciseRow({
+    required this.number,
+    required this.exercise,
+    this.setCount,
+  });
 
   final int number;
   final WorkoutExercise exercise;
+  final int? setCount;
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +159,7 @@ class _ExerciseRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              exercise.name,
+              WorkoutCopy.exercise(context, exercise.name),
               style: const TextStyle(
                 color: GymRatColors.textPrimary,
                 fontWeight: FontWeight.w800,
@@ -151,7 +167,7 @@ class _ExerciseRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${exercise.defaultSets} ${context.tr.t('sets')}',
+            '${setCount ?? exercise.defaultSets} ${context.tr.t('sets')}',
             style: const TextStyle(
               color: GymRatColors.textMuted,
               fontSize: 9,
@@ -162,6 +178,58 @@ class _ExerciseRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CoachMissionBanner extends StatelessWidget {
+  const _CoachMissionBanner({required this.guidance});
+
+  final WorkoutCoachGuidance guidance;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF30204F), GymRatColors.surface],
+      ),
+      borderRadius: BorderRadius.circular(17),
+      border: Border.all(color: GymRatColors.premium.withValues(alpha: .5)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.psychology_alt_rounded, color: GymRatColors.premium),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr.t('coachMissionLabel'),
+                style: const TextStyle(
+                  color: GymRatColors.premium,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                guidance.activeRecovery
+                    ? context.tr.t('coachRecoveryMissionHelp')
+                    : '${guidance.setCount} ${context.tr.t('sets')} · '
+                          '${guidance.repRange} ${context.tr.t('reps')}',
+                style: const TextStyle(
+                  color: GymRatColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _WalkPreview extends StatelessWidget {

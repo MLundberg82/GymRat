@@ -4,6 +4,7 @@ import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../data/workout_presets.dart';
 import '../domain/workout_models.dart';
+import 'workout_copy.dart';
 import 'workout_preview_screen.dart';
 
 class WorkoutScreen extends StatelessWidget {
@@ -125,7 +126,9 @@ class _WorkoutRow extends StatelessWidget {
       return context.tr.t('timedWalkStreak');
     }
 
-    return preset.exercises.map((exercise) => exercise.name).join(' · ');
+    return preset.exercises
+        .map((exercise) => WorkoutCopy.exercise(context, exercise.name))
+        .join(' · ');
   }
 
   @override
@@ -159,7 +162,7 @@ class _WorkoutRow extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        preset.title,
+                        WorkoutCopy.workout(context, preset.title),
                         style: const TextStyle(
                           color: GymRatColors.textPrimary,
                           fontSize: 16,
@@ -173,7 +176,7 @@ class _WorkoutRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    preset.subtitle,
+                    WorkoutCopy.subtitle(context, preset),
                     style: const TextStyle(
                       color: GymRatColors.textSecondary,
                       fontSize: 12,

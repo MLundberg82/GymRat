@@ -260,6 +260,15 @@ abstract final class WorkoutSessionStore {
     return l;
   }
 
+  static int totalXPToReachLevel(int level) {
+    final target = level < 1 ? 1 : level;
+    var total = 0;
+    for (var current = 1; current < target; current++) {
+      total += levelSpan(current);
+    }
+    return total;
+  }
+
   static int currentLevelXP(int xp) {
     var r = xp < 0 ? 0 : xp, l = 1;
     while (r >= levelSpan(l)) {

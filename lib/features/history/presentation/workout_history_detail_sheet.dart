@@ -4,6 +4,7 @@ import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/domain/workout_result.dart';
+import '../../workout/presentation/workout_copy.dart';
 
 Future<void> showWorkoutHistoryDetails(
   BuildContext context,
@@ -94,7 +95,7 @@ class _WorkoutHistoryDetailSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        workout.workoutName,
+                        WorkoutCopy.workout(context, workout.workoutName),
                         style: const TextStyle(
                           color: GymRatColors.textPrimary,
                           fontSize: 24,
@@ -235,7 +236,7 @@ class _ExerciseCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                exercise.name,
+                WorkoutCopy.exercise(context, exercise.name),
                 style: const TextStyle(
                   color: GymRatColors.textPrimary,
                   fontSize: 14,

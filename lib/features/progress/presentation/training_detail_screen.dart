@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../../workout/presentation/workout_copy.dart';
 import '../domain/training_analytics.dart';
 import 'progress_line_chart.dart';
 
@@ -25,7 +26,7 @@ class WorkoutCategoryDetailScreen extends StatelessWidget {
         backgroundColor: GymRatColors.black,
         foregroundColor: GymRatColors.textPrimary,
         title: Text(
-          category.name,
+          WorkoutCopy.workout(context, category.name),
           style: const TextStyle(
             fontWeight: FontWeight.w900,
             letterSpacing: 1.1,
@@ -82,7 +83,7 @@ class ExerciseProgressScreen extends StatelessWidget {
       backgroundColor: GymRatColors.black,
       foregroundColor: GymRatColors.textPrimary,
       title: Text(
-        trend.exerciseName,
+        WorkoutCopy.exercise(context, trend.exerciseName),
         style: const TextStyle(fontWeight: FontWeight.w900),
       ),
     ),
@@ -216,7 +217,7 @@ class _HeroPanel extends StatelessWidget {
         const SizedBox(height: 10),
         ProgressLineChart(
           points: category.primaryMetric,
-          semanticLabel: category.name,
+          semanticLabel: WorkoutCopy.workout(context, category.name),
         ),
       ],
     ),
@@ -247,7 +248,7 @@ class _ExerciseTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    trend.exerciseName,
+                    WorkoutCopy.exercise(context, trend.exerciseName),
                     style: const TextStyle(
                       color: GymRatColors.textPrimary,
                       fontWeight: FontWeight.w900,

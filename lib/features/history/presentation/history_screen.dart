@@ -5,6 +5,7 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../../premium/data/premium_access.dart';
 import '../../premium/presentation/premium_gate_card.dart';
 import '../../workout/data/workout_session_store.dart';
+import '../../workout/presentation/workout_copy.dart';
 import 'personal_bests_view.dart';
 import 'workout_history_detail_sheet.dart';
 
@@ -362,7 +363,7 @@ class _HistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      workout.workoutName,
+                      WorkoutCopy.workout(context, workout.workoutName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

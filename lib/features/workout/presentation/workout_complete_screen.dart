@@ -9,6 +9,7 @@ import '../../profile/domain/training_profile.dart';
 import '../../rewards/presentation/reward_sequence.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_result.dart';
+import 'workout_copy.dart';
 
 class WorkoutCompleteScreen extends StatefulWidget {
   const WorkoutCompleteScreen({
@@ -119,7 +120,7 @@ class _WorkoutSummary extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            result.workoutName,
+            WorkoutCopy.workout(context, result.workoutName),
             textAlign: TextAlign.center,
             style: const TextStyle(color: GymRatColors.textSecondary),
           ),

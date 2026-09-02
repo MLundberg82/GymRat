@@ -88,6 +88,9 @@ void main() {
 
     expect(find.text('UTVECKLING'), findsOneWidget);
     expect(find.text('NIVÅ 1'), findsOneWidget);
+    expect(find.text('UTVECKLINGSRESA'), findsOneWidget);
+    expect(find.text('NIVÅ 1  →  NIVÅ 5'), findsOneWidget);
+    expect(find.text('480 XP TILL NÄSTA UTVECKLING'), findsOneWidget);
     expect(find.text('TOTAL XP'), findsOneWidget);
     expect(find.text('PASS'), findsOneWidget);
     expect(find.text('SVIT'), findsOneWidget);
@@ -183,6 +186,8 @@ void main() {
 
     expect(find.text('PROGRESS'), findsOneWidget);
     expect(find.text('TRAINING BY AREA'), findsOneWidget);
+    await tester.ensureVisible(find.text('CHEST').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('CHEST').first);
     await tester.pumpAndSettle();
     expect(find.text('VOLUME TREND'), findsOneWidget);
@@ -286,7 +291,7 @@ void main() {
     expect(find.text('Träna. Tjäna XP. Gå upp i nivå.'), findsOneWidget);
     expect(find.text('TRÄNING'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('WALK'), 300);
+    await tester.scrollUntilVisible(find.text('PROMENAD'), 300);
 
     expect(find.text('SVIT'), findsOneWidget);
     expect(
@@ -294,10 +299,10 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('WALK'));
+    await tester.tap(find.text('PROMENAD'));
     await tester.pumpAndSettle();
 
-    expect(find.text('WALK'), findsWidgets);
+    expect(find.text('PROMENAD'), findsWidgets);
     expect(find.text('STARTA PROMENAD'), findsOneWidget);
     expect(find.text('TIDSINSTÄLLD PROMENAD'), findsOneWidget);
     expect(
@@ -326,12 +331,13 @@ void main() {
 
     await tester.tap(find.text('STARTA TRÄNING'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('CHEST'));
+    await tester.tap(find.text('BRÖST'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('STARTA TRÄNING'));
     await tester.pumpAndSettle();
 
     expect(find.text('ÖVNING 1 / 4'), findsOneWidget);
+    expect(find.text('Bänkpress'), findsOneWidget);
     expect(find.text('VILA'), findsOneWidget);
     expect(find.text('REPS'), findsOneWidget);
     expect(find.text('NÄSTA ÖVNING'), findsOneWidget);

@@ -5,6 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../domain/workout_result.dart';
 
+String _normalizedSessionNote(Object? value) {
+  final note = value is String ? value.trim() : '';
+  return note.length <= 240 ? note : note.substring(0, 240);
+}
+
 class PlayerProgress {
   const PlayerProgress({
     required this.totalXP,
@@ -26,6 +31,8 @@ class WorkoutHistoryEntry {
     required this.durationSeconds,
     required this.isWalk,
     required this.exercises,
+    this.sessionNote = '',
+    this.effortRating,
   });
 
   final String id;
@@ -34,6 +41,12 @@ class WorkoutHistoryEntry {
   final int durationSeconds;
   final bool isWalk;
   final List<WorkoutExerciseResult> exercises;
+  final String sessionNote;
+  final int? effortRating;
+
+  int? get sessionLoad => effortRating == null
+      ? null
+      : ((durationSeconds / 60).round().clamp(1, 999999) * effortRating!);
 
   int get exerciseCount => exercises.length;
   double get volume =>
@@ -75,6 +88,11 @@ class WorkoutHistoryEntry {
       durationSeconds: rawDuration is num ? rawDuration.toInt() : 0,
       isWalk: rawWalk is bool ? rawWalk : exercises.isEmpty,
       exercises: List.unmodifiable(exercises),
+      sessionNote: _normalizedSessionNote(json['sessionNote']),
+      effortRating: switch (json['effortRating']) {
+        final num value when value >= 1 && value <= 5 => value.toInt(),
+        _ => null,
+      },
     );
   }
 }
@@ -316,8 +334,11 @@ abstract final class WorkoutSessionStore {
     required bool walk,
     required int durationSeconds,
     required List<WorkoutExerciseResult> exercises,
+    String sessionNote = '',
+    int? effortRating,
   }) async {
     final now = DateTime.now(), p = await SharedPreferences.getInstance();
+    final normalizedNote = _normalizedSessionNote(sessionNote);
     final prs = <WorkoutPR>[];
 
     if (!walk) {
@@ -380,6 +401,8 @@ abstract final class WorkoutSessionStore {
       'durationSeconds': durationSeconds,
       'walk': walk,
       'exercises': exercises.map((e) => e.toJson()).toList(),
+      'sessionNote': normalizedNote,
+      'effortRating': effortRating?.clamp(1, 5),
     });
     await p.setString(_historyKey, jsonEncode(history));
     await p.setInt(_xpKey, totalXP);
@@ -399,6 +422,8 @@ abstract final class WorkoutSessionStore {
       totalXP: totalXP,
       streak: streak,
       milestoneUnlocked: unlocked,
+      sessionNote: normalizedNote,
+      effortRating: effortRating?.clamp(1, 5),
     );
   }
 

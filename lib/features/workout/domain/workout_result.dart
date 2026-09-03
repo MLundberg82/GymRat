@@ -82,6 +82,8 @@ class WorkoutResult {
     required this.totalXP,
     required this.streak,
     required this.milestoneUnlocked,
+    this.sessionNote = '',
+    this.effortRating,
   });
   final String workoutName;
   final DateTime completedAt;
@@ -91,6 +93,8 @@ class WorkoutResult {
   final XPBreakdown xp;
   final int previousLevel, newLevel, totalXP, streak;
   final int? milestoneUnlocked;
+  final String sessionNote;
+  final int? effortRating;
   double get volume => exercises.fold(0, (s, e) => s + e.volume);
   int get exercisesCompleted => exercises.length;
   bool get leveledUp => newLevel > previousLevel;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../progress/domain/training_analytics.dart';
 import '../../progress/presentation/progress_line_chart.dart';
 import '../../progress/presentation/training_detail_screen.dart';
@@ -229,7 +230,7 @@ class _RecordCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${_weight(record.weight)} kg',
+                        WeightUnitStore.formatKilograms(record.weight),
                         style: const TextStyle(
                           color: GymRatColors.gold,
                           fontSize: 24,
@@ -237,7 +238,7 @@ class _RecordCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '+${_weight(record.totalImprovement)} kg',
+                        '+${WeightUnitStore.formatKilograms(record.totalImprovement)}',
                         style: const TextStyle(
                           color: GymRatColors.green,
                           fontSize: 11,
@@ -280,13 +281,17 @@ class _RecordCard extends StatelessWidget {
                   Expanded(
                     child: _RecordMetric(
                       label: context.tr.t('baseline'),
-                      value: '${_weight(record.baselineWeight)} kg',
+                      value: WeightUnitStore.formatKilograms(
+                        record.baselineWeight,
+                      ),
                     ),
                   ),
                   Expanded(
                     child: _RecordMetric(
                       label: context.tr.t('previousBest'),
-                      value: '${_weight(record.previousBest)} kg',
+                      value: WeightUnitStore.formatKilograms(
+                        record.previousBest,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -303,10 +308,6 @@ class _RecordCard extends StatelessWidget {
       ),
     );
   }
-
-  static String _weight(double value) => value == value.roundToDouble()
-      ? value.toStringAsFixed(0)
-      : value.toStringAsFixed(1);
 }
 
 class _RecordMetric extends StatelessWidget {

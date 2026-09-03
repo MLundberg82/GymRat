@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../character/domain/rat_appearance.dart';
 import '../../character/domain/rat_character_view.dart';
 import '../../hub/presentation/hub_screen.dart';
@@ -147,11 +148,50 @@ class _WorkoutSummary extends StatelessWidget {
               _Stat(label: translations.t('time'), value: duration),
               _Stat(
                 label: translations.t('volume'),
-                value: result.volume == 0 ? '—' : '${result.volume.round()} kg',
+                value: result.volume == 0
+                    ? '—'
+                    : WeightUnitStore.formatVolume(result.volume),
               ),
               _Stat(label: translations.t('streak'), value: '${result.streak}'),
             ],
           ),
+          if (result.effortRating != null || result.sessionNote.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: GymRatColors.gold.withValues(alpha: .07),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: GymRatColors.goldDark),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${translations.t('sessionEffort')}: '
+                    '${result.effortRating == null ? translations.t('notRated') : '${result.effortRating}/5'}',
+                    style: const TextStyle(
+                      color: GymRatColors.gold,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  if (result.sessionNote.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      result.sessionNote,
+                      style: const TextStyle(
+                        color: GymRatColors.textSecondary,
+                        fontSize: 11,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 32),
           _XPPanel(
             gained: result.xp.totalXP,
@@ -274,8 +314,6 @@ class _PRRow extends StatelessWidget {
 
   final WorkoutPR pr;
 
-  String _weight(double value) => value.toStringAsFixed(value % 1 == 0 ? 0 : 1);
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -303,7 +341,8 @@ class _PRRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${_weight(pr.previousBest)} → ${_weight(pr.newWeight)} kg',
+            '${WeightUnitStore.formatKilograms(pr.previousBest, includeUnit: false)} '
+            '→ ${WeightUnitStore.formatKilograms(pr.newWeight)}',
             style: const TextStyle(
               color: GymRatColors.gold,
               fontWeight: FontWeight.w900,

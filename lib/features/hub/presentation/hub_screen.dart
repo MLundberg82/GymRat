@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../armory/presentation/armory_screen.dart';
 import '../../armory/data/rat_inventory_store.dart';
 import '../../character/presentation/character_lab_screen.dart';
@@ -510,11 +511,11 @@ class _GymRecordSheet extends StatelessWidget {
           children: [
             _RecordMetric(
               label: context.tr.t('baseline'),
-              value: '${_recordWeight(trend.baseline)} kg',
+              value: WeightUnitStore.formatKilograms(trend.baseline),
             ),
             _RecordMetric(
               label: context.tr.t('personalBest'),
-              value: '${_recordWeight(trend.currentBest)} kg',
+              value: WeightUnitStore.formatKilograms(trend.currentBest),
               highlighted: recordBreaks > 0,
             ),
             _RecordMetric(
@@ -581,10 +582,6 @@ class _RecordMetric extends StatelessWidget {
     ),
   );
 }
-
-String _recordWeight(double value) => value == value.roundToDouble()
-    ? value.toStringAsFixed(0)
-    : value.toStringAsFixed(1);
 
 class _CharacterViewToggle extends StatelessWidget {
   const _CharacterViewToggle({required this.view, required this.onChanged});

@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../armory/data/rat_inventory_store.dart';
+import '../data/workout_draft_store.dart';
 import '../data/workout_session_store.dart';
+import '../domain/workout_draft.dart';
 import '../domain/workout_models.dart';
+import 'session_journal_card.dart';
 import 'workout_complete_screen.dart';
 
 class WalkWorkoutScreen extends StatefulWidget {
@@ -18,8 +22,63 @@ class WalkWorkoutScreen extends StatefulWidget {
 
 class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
   Timer? timer;
+  Timer? draftSaveTimer;
+  final TextEditingController noteController = TextEditingController();
+  Future<void> draftSave = Future<void>.value();
   int elapsed = 0;
+  int? effortRating;
   bool running = false, finishing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreDraft();
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await WorkoutDraftStore.loadForPreset(widget.preset.id);
+    if (!mounted || draft == null) return;
+    setState(() {
+      elapsed = draft.elapsedSeconds.clamp(0, 60 * 60 * 24);
+      noteController.text = draft.sessionNote;
+      effortRating = draft.effortRating;
+    });
+    if (draft.hasEnteredData || draft.elapsedSeconds > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr.t('workoutRestored'))),
+        );
+      });
+    }
+  }
+
+  WorkoutDraft _draft() => WorkoutDraft(
+    presetId: widget.preset.id,
+    exerciseIndex: 0,
+    elapsedSeconds: elapsed,
+    savedAt: DateTime.now(),
+    sets: const <String, List<WorkoutSetDraft>>{},
+    sessionNote: noteController.text,
+    effortRating: effortRating,
+    weightUnit: WeightUnitStore.codeFor(WeightUnitStore.current),
+  );
+
+  Future<void> _saveDraft() {
+    final snapshot = _draft();
+    draftSave = draftSave
+        .then((_) => WorkoutDraftStore.save(snapshot))
+        .catchError((_) {});
+    return draftSave;
+  }
+
+  void _scheduleDraftSave() {
+    draftSaveTimer?.cancel();
+    draftSaveTimer = Timer(
+      const Duration(milliseconds: 350),
+      () => unawaited(_saveDraft()),
+    );
+  }
 
   String get display {
     final h = elapsed ~/ 3600, m = (elapsed % 3600) ~/ 60, s = elapsed % 60;
@@ -37,13 +96,16 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
     }
     setState(() => running = true);
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => elapsed++);
+      if (!mounted) return;
+      setState(() => elapsed++);
+      if (elapsed % 10 == 0) unawaited(_saveDraft());
     });
   }
 
   Future<void> _finish() async {
     if (finishing) return;
     timer?.cancel();
+    draftSaveTimer?.cancel();
     setState(() {
       running = false;
       finishing = true;
@@ -54,7 +116,15 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
       walk: true,
       durationSeconds: elapsed,
       exercises: const [],
+      sessionNote: noteController.text,
+      effortRating: effortRating,
     );
+    try {
+      await draftSave;
+      await WorkoutDraftStore.clear();
+    } catch (_) {
+      // A stale draft must never block an otherwise completed walk.
+    }
     RatInventoryState inventory;
     try {
       inventory = await inventoryFuture;
@@ -76,6 +146,9 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
   @override
   void dispose() {
     timer?.cancel();
+    draftSaveTimer?.cancel();
+    if (!finishing) unawaited(_saveDraft());
+    noteController.dispose();
     super.dispose();
   }
 
@@ -113,6 +186,13 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.3,
               ),
+            ),
+            const SizedBox(height: 22),
+            SessionJournalCard(
+              noteController: noteController,
+              effortRating: effortRating,
+              onEffortChanged: (value) => setState(() => effortRating = value),
+              onChanged: _scheduleDraftSave,
             ),
             const Spacer(),
             Row(

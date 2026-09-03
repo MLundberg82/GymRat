@@ -146,6 +146,17 @@ void main() {
       'characterLabHelp',
       'approvedAssetStage',
       'scalePreview',
+      'workoutWeightUnit',
+      'sessionJournal',
+      'effortRating',
+      'sessionNote',
+      'trainingLoad',
+      'readinessRecover',
+      'coachEffortRecoveryReason',
+      'achievementVault',
+      'achievementFirstSession',
+      'achievementFiveRecords',
+      'achievementFirstEvolution',
     ];
 
     for (final locale in AppLanguageStore.supported) {

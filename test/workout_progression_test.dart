@@ -115,6 +115,26 @@ void main() {
       expect(snapshot.recentWorkouts.last.exercises.single.sets.single.reps, 5);
     });
 
+    test(
+      'persists optional journal metadata without changing old sessions',
+      () async {
+        await WorkoutSessionStore.complete(
+          workoutName: 'WALK',
+          walk: true,
+          durationSeconds: 1200,
+          exercises: const <WorkoutExerciseResult>[],
+          sessionNote: 'Easy recovery lap',
+          effortRating: 2,
+        );
+
+        final workout =
+            (await WorkoutSessionStore.getTrainingHistory()).workouts.single;
+        expect(workout.sessionNote, 'Easy recovery lap');
+        expect(workout.effortRating, 2);
+        expect(workout.sessionLoad, 40);
+      },
+    );
+
     test('ignores corrupt history without failing progress', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'gymrat-workout-history': jsonEncode(<Object>[

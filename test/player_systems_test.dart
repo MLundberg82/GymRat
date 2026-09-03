@@ -313,6 +313,23 @@ void main() {
     expect(recommendation.recoveryRecommended, isFalse);
   });
 
+  test('coach protects recovery after a recently rated hard session', () {
+    final history = TrainingHistorySnapshot(
+      personalBests: const [],
+      workouts: [_workout('LEGS', DateTime(2026, 9, 1, 20), effortRating: 5)],
+    );
+
+    final recommendation = CoachRecommendationEngine.build(
+      profile: profile,
+      history: history,
+      now: DateTime(2026, 9, 2, 10),
+    );
+
+    expect(recommendation.workoutName, 'WALK');
+    expect(recommendation.recoveryRecommended, isTrue);
+    expect(recommendation.reasonKey, 'coachEffortRecoveryReason');
+  });
+
   test('coach reports volume change without prescribing more load', () {
     final history = TrainingHistorySnapshot(
       personalBests: const [],
@@ -337,7 +354,11 @@ void main() {
   });
 }
 
-WorkoutHistoryEntry _workout(String name, DateTime completedAt) {
+WorkoutHistoryEntry _workout(
+  String name,
+  DateTime completedAt, {
+  int? effortRating,
+}) {
   return WorkoutHistoryEntry(
     id: '$name-${completedAt.millisecondsSinceEpoch}',
     workoutName: name,
@@ -345,6 +366,7 @@ WorkoutHistoryEntry _workout(String name, DateTime completedAt) {
     durationSeconds: 1800,
     isWalk: false,
     exercises: const <WorkoutExerciseResult>[],
+    effortRating: effortRating,
   );
 }
 

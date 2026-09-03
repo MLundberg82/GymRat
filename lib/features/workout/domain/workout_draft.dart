@@ -23,21 +23,31 @@ class WorkoutDraft {
     required this.elapsedSeconds,
     required this.savedAt,
     required this.sets,
+    this.sessionNote = '',
+    this.effortRating,
+    this.weightUnit = 'kg',
   });
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
 
   final String presetId;
   final int exerciseIndex;
   final int elapsedSeconds;
   final DateTime savedAt;
   final Map<String, List<WorkoutSetDraft>> sets;
+  final String sessionNote;
+  final int? effortRating;
+  final String weightUnit;
 
-  bool get hasEnteredData => sets.values.any(
-    (entries) => entries.any(
-      (entry) => entry.weight.trim().isNotEmpty || entry.reps.trim().isNotEmpty,
-    ),
-  );
+  bool get hasEnteredData =>
+      sessionNote.trim().isNotEmpty ||
+      effortRating != null ||
+      sets.values.any(
+        (entries) => entries.any(
+          (entry) =>
+              entry.weight.trim().isNotEmpty || entry.reps.trim().isNotEmpty,
+        ),
+      );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'version': schemaVersion,
@@ -45,6 +55,9 @@ class WorkoutDraft {
     'exerciseIndex': exerciseIndex,
     'elapsedSeconds': elapsedSeconds,
     'savedAt': savedAt.toIso8601String(),
+    'sessionNote': sessionNote,
+    'effortRating': effortRating,
+    'weightUnit': weightUnit,
     'sets': sets.map(
       (name, entries) => MapEntry(
         name,
@@ -81,6 +94,17 @@ class WorkoutDraft {
       elapsedSeconds: elapsedSeconds is num ? elapsedSeconds.toInt() : 0,
       savedAt: savedAt,
       sets: parsedSets,
+      sessionNote: _normalizedNote(json['sessionNote']),
+      effortRating: switch (json['effortRating']) {
+        final num value when value >= 1 && value <= 5 => value.toInt(),
+        _ => null,
+      },
+      weightUnit: json['weightUnit'] == 'lb' ? 'lb' : 'kg',
     );
+  }
+
+  static String _normalizedNote(Object? value) {
+    final note = value is String ? value.trim() : '';
+    return note.length <= 240 ? note : note.substring(0, 240);
   }
 }

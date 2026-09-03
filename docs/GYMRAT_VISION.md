@@ -50,6 +50,11 @@ Persistence is local through `shared_preferences`. `WorkoutSessionStore` owns
 workout history, XP, level calculation, streaks, and personal-best comparison.
 Changes to stored data must remain backward-compatible.
 
+Workout loads are stored canonically in kilograms, while the user may choose
+kg or lb for workout entry and presentation. A session may contain an optional
+1–5 whole-session effort rating and a short journal note. Effort is used only
+for recovery and workload context; it never automatically increases load.
+
 A user's first recorded result for an exercise establishes the baseline. It is
 never awarded as a personal best. A PB is awarded only when a later result is
 strictly greater than the stored baseline.
@@ -187,6 +192,14 @@ As verified from the repository on 2026-09-02:
   while earned hub record stations open the same canonical history.
 - Users can copy a local JSON export and erase GymRat-owned local data from
   settings without removing unrelated host preferences or store purchases.
+- Workout weights can be entered and viewed in kg or lb without changing the
+  canonical kilogram history used by PB and progression calculations.
+- Strength and walk sessions persist an optional effort rating and journal
+  note, including through interrupted-session recovery. Premium load insights
+  and Coach recovery decisions use that explicit rating.
+- The Progress achievement vault derives honors from canonical workout count,
+  current streak, PB improvements, and level; it adds no second progression
+  store.
 
 ## iOS verification on macOS
 

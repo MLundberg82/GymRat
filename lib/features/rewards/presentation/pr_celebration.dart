@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../../workout/presentation/workout_copy.dart';
 
@@ -71,8 +72,6 @@ class _PrCelebrationState extends State<PrCelebration>
     if (p <= start || p >= end) return 0;
     return math.sin((p - start) / (end - start) * math.pi);
   }
-
-  String _weight(double value) => value.toStringAsFixed(value % 1 == 0 ? 0 : 1);
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +289,8 @@ class _PrCelebrationState extends State<PrCelebration>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                        '${_weight(widget.pr.previousBest)} KG',
+                        '${WeightUnitStore.formatKilograms(widget.pr.previousBest, includeUnit: false)} '
+                        '${WeightUnitStore.symbolUpper}',
                         style: const TextStyle(
                           color: GymRatColors.textMuted,
                           fontSize: 20,
@@ -309,7 +309,8 @@ class _PrCelebrationState extends State<PrCelebration>
                       Transform.scale(
                         scale: .38 + reward * .62,
                         child: Text(
-                          '${_weight(widget.pr.newWeight)} KG',
+                          '${WeightUnitStore.formatKilograms(widget.pr.newWeight, includeUnit: false)} '
+                          '${WeightUnitStore.symbolUpper}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 36,

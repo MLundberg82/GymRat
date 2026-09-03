@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/app_language_store.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../data/training_profile_store.dart';
 import '../data/local_data_archive.dart';
 import '../domain/training_profile.dart';
@@ -58,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed != true) return;
     await LocalDataArchive.clear();
     await AppLanguageStore.initialize();
+    await WeightUnitStore.initialize();
     await TrainingProfileStore.initialize();
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -190,6 +192,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 28),
           ],
+          Text(
+            t.t('workoutWeightUnit'),
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t.t('workoutWeightUnitHelp'),
+            style: const TextStyle(
+              color: GymRatColors.textMuted,
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ValueListenableBuilder<WeightUnit>(
+            valueListenable: WeightUnitStore.unit,
+            builder: (context, unit, _) => SegmentedButton<WeightUnit>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: WeightUnit.kilograms, label: Text('KG')),
+                ButtonSegment(value: WeightUnit.pounds, label: Text('LB')),
+              ],
+              selected: {unit},
+              onSelectionChanged: (selection) =>
+                  WeightUnitStore.setUnit(selection.first),
+            ),
+          ),
+          const SizedBox(height: 28),
           Text(
             t.t('appLanguage'),
             style: const TextStyle(

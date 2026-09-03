@@ -58,9 +58,13 @@ Run the following on Android and iOS, on narrow and large phones:
 - rat power-flex and breathing without image drift;
 - Chest, Back, Legs, Arms, and Walk from preview through completion;
 - active strength workout restored after forced app termination;
+- active walk time and journal restored after forced app termination;
+- kg/lb entry produces the same canonical PB and volume history;
+- session effort and notes persist into completion and history detail;
 - baseline session awards no PB, followed by a genuine PB reward;
 - level-up and milestone evolution in both character views;
 - category, exercise, PB, estimated-strength, and volume charts;
+- Premium workload/recovery signals and derived achievement progress;
 - clickable hub record stations and their full progress route;
 - Premium locked, purchased, expired, offline, and restored states;
 - Armory Credits and quest claims remain idempotent;

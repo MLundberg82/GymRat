@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../../workout/presentation/workout_copy.dart';
@@ -141,11 +142,19 @@ class _WorkoutHistoryDetailSheet extends StatelessWidget {
                 Expanded(
                   child: _DetailStat(
                     label: context.tr.t('volume'),
-                    value: '${workout.volume.round()} kg',
+                    value: WeightUnitStore.formatVolume(workout.volume),
                   ),
                 ),
               ],
             ),
+            if (workout.effortRating != null ||
+                workout.sessionNote.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _JournalSummary(
+                effortRating: workout.effortRating,
+                note: workout.sessionNote,
+              ),
+            ],
             const SizedBox(height: 28),
             Text(
               context.tr.t('exerciseBreakdown'),
@@ -169,6 +178,58 @@ class _WorkoutHistoryDetailSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+class _JournalSummary extends StatelessWidget {
+  const _JournalSummary({required this.effortRating, required this.note});
+
+  final int? effortRating;
+  final String note;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(15),
+    decoration: BoxDecoration(
+      color: GymRatColors.gold.withValues(alpha: .07),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: GymRatColors.goldDark),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.auto_stories_rounded,
+              color: GymRatColors.gold,
+              size: 17,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${context.tr.t('sessionEffort')}: '
+              '${effortRating == null ? context.tr.t('notRated') : '$effortRating/5'}',
+              style: const TextStyle(
+                color: GymRatColors.gold,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        if (note.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            note,
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 class _DetailStat extends StatelessWidget {
@@ -245,7 +306,7 @@ class _ExerciseCard extends StatelessWidget {
               ),
             ),
             Text(
-              '${exercise.volume.round()} kg',
+              WeightUnitStore.formatVolume(exercise.volume),
               style: const TextStyle(
                 color: GymRatColors.gold,
                 fontSize: 11,
@@ -284,7 +345,7 @@ class _SetRow extends StatelessWidget {
       ),
       const Spacer(),
       Text(
-        '${set.weight.toStringAsFixed(set.weight == set.weight.roundToDouble() ? 0 : 1)} kg',
+        WeightUnitStore.formatKilograms(set.weight),
         style: const TextStyle(
           color: GymRatColors.textPrimary,
           fontSize: 12,

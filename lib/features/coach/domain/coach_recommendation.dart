@@ -59,6 +59,11 @@ abstract final class CoachRecommendationEngine {
           date.month == today.month &&
           date.day == today.day;
     });
+    final recentHardSession = usableWorkouts.any((workout) {
+      if (workout.isWalk || (workout.effortRating ?? 0) < 4) return false;
+      final hours = localNow.difference(workout.completedAt.toLocal()).inHours;
+      return hours >= 0 && hours < 36;
+    });
 
     const candidates = <String>['CHEST', 'BACK', 'LEGS', 'ARMS'];
     final lastTrained = <String, DateTime>{};
@@ -92,7 +97,8 @@ abstract final class CoachRecommendationEngine {
       7,
     );
     final weeklyTargetReached = weeklyRemaining == 0;
-    final activeRecovery = trainedStrengthToday || weeklyTargetReached;
+    final activeRecovery =
+        recentHardSession || trainedStrengthToday || weeklyTargetReached;
 
     final (sets, setCount, reps) = switch (profile.experience) {
       TrainingExperience.beginner => ('2–3', 2, '8–12'),
@@ -139,7 +145,9 @@ abstract final class CoachRecommendationEngine {
       weeklyTarget: profile.sessionsPerWeek,
       weeklyRemaining: weeklyRemaining,
       recoveryRecommended: activeRecovery,
-      reasonKey: trainedStrengthToday
+      reasonKey: recentHardSession
+          ? 'coachEffortRecoveryReason'
+          : trainedStrengthToday
           ? 'coachRecoveryReason'
           : weeklyTargetReached
           ? 'coachWeeklyTargetReachedReason'

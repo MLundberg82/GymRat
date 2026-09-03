@@ -54,6 +54,32 @@ class ExerciseTrend {
             .reduce((left, right) => left > right ? left : right);
 }
 
+enum TrainingReadiness { noData, ready, balanced, recover }
+
+class TrainingLoadInsight {
+  const TrainingLoadInsight({
+    required this.weeklyLoad,
+    required this.currentWeekLoad,
+    required this.previousWeekLoad,
+    required this.ratedSessions,
+    required this.latestEffort,
+    required this.readiness,
+  });
+
+  final List<TrainingPoint> weeklyLoad;
+  final int currentWeekLoad;
+  final int previousWeekLoad;
+  final int ratedSessions;
+  final int? latestEffort;
+  final TrainingReadiness readiness;
+
+  double? get weeklyChangePercent => previousWeekLoad <= 0
+      ? null
+      : ((currentWeekLoad - previousWeekLoad) / previousWeekLoad * 100)
+            .clamp(-999.0, 999.0)
+            .toDouble();
+}
+
 abstract final class TrainingAnalytics {
   static const categoryNames = <String>[
     'CHEST',
@@ -158,6 +184,71 @@ abstract final class TrainingAnalytics {
       personalBestPath: List.unmodifiable(personalBestPath),
       sessionVolumes: List.unmodifiable(sessionVolumes),
       estimatedStrength: List.unmodifiable(estimatedStrength),
+    );
+  }
+
+  static TrainingLoadInsight loadInsight(
+    TrainingHistorySnapshot history, {
+    DateTime? now,
+  }) {
+    final localNow = (now ?? DateTime.now()).toLocal();
+    final today = DateTime(localNow.year, localNow.month, localNow.day);
+    final currentWeek = today.subtract(Duration(days: today.weekday - 1));
+    final firstWeek = currentWeek.subtract(const Duration(days: 35));
+    final loads = <DateTime, int>{
+      for (var offset = 0; offset < 6; offset++)
+        firstWeek.add(Duration(days: offset * 7)): 0,
+    };
+    final rated =
+        history.workouts
+            .where((workout) => workout.sessionLoad != null)
+            .toList()
+          ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
+
+    for (final workout in rated) {
+      final date = workout.completedAt.toLocal();
+      if (date.isAfter(localNow)) continue;
+      final day = DateTime(date.year, date.month, date.day);
+      final week = day.subtract(Duration(days: day.weekday - 1));
+      if (loads.containsKey(week)) {
+        loads[week] = loads[week]! + workout.sessionLoad!;
+      }
+    }
+
+    final points = loads.entries
+        .map(
+          (entry) =>
+              TrainingPoint(date: entry.key, value: entry.value.toDouble()),
+        )
+        .toList(growable: false);
+    final current = loads[currentWeek] ?? 0;
+    final previous = loads[currentWeek.subtract(const Duration(days: 7))] ?? 0;
+    final completedRated = rated
+        .where((workout) => !workout.completedAt.toLocal().isAfter(localNow))
+        .toList(growable: false);
+    final latestEffort = completedRated.isEmpty
+        ? null
+        : completedRated.last.effortRating;
+    final latestDate = completedRated.isEmpty
+        ? null
+        : completedRated.last.completedAt.toLocal();
+    final latestIsRecent =
+        latestDate != null && localNow.difference(latestDate).inHours < 36;
+    final readiness = completedRated.isEmpty
+        ? TrainingReadiness.noData
+        : latestIsRecent && latestEffort != null && latestEffort >= 4
+        ? TrainingReadiness.recover
+        : current > 0 && previous > 0 && current > previous * 1.35
+        ? TrainingReadiness.balanced
+        : TrainingReadiness.ready;
+
+    return TrainingLoadInsight(
+      weeklyLoad: List.unmodifiable(points),
+      currentWeekLoad: current,
+      previousWeekLoad: previous,
+      ratedSessions: completedRated.length,
+      latestEffort: latestEffort,
+      readiness: readiness,
     );
   }
 }

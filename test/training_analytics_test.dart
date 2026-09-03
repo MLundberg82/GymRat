@@ -10,12 +10,14 @@ void main() {
     required String name,
     required double weight,
     int reps = 10,
+    int? effortRating,
   }) => WorkoutHistoryEntry(
     id: id,
     workoutName: 'CHEST',
     completedAt: date,
     durationSeconds: 1800,
     isWalk: false,
+    effortRating: effortRating,
     exercises: [
       WorkoutExerciseResult(
         name: name,
@@ -49,6 +51,35 @@ void main() {
     expect(chest.sessions.map((entry) => entry.id), ['old', 'new']);
     expect(chest.primaryMetric.map((point) => point.value), [600, 700]);
     expect(chest.exerciseNames, ['Bench Press']);
+  });
+
+  test('training load uses duration and user-rated effort', () {
+    final now = DateTime(2026, 9, 3, 12);
+    final history = TrainingHistorySnapshot(
+      workouts: [
+        workout(
+          id: 'hard',
+          date: now.subtract(const Duration(hours: 12)),
+          name: 'Squat',
+          weight: 100,
+          effortRating: 5,
+        ),
+        workout(
+          id: 'unrated',
+          date: now.subtract(const Duration(days: 2)),
+          name: 'Bench Press',
+          weight: 70,
+        ),
+      ],
+      personalBests: const [],
+    );
+
+    final insight = TrainingAnalytics.loadInsight(history, now: now);
+
+    expect(insight.currentWeekLoad, 150);
+    expect(insight.ratedSessions, 1);
+    expect(insight.latestEffort, 5);
+    expect(insight.readiness, TrainingReadiness.recover);
   });
 
   test('PB path starts with baseline and never moves backwards', () {

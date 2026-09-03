@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/presentation/workout_copy.dart';
 import '../domain/training_analytics.dart';
@@ -19,7 +20,9 @@ class WorkoutCategoryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unit = category.isWalk ? context.tr.t('minutesShort') : 'KG';
+    final unit = category.isWalk
+        ? context.tr.t('minutesShort')
+        : WeightUnitStore.symbolUpper;
     return Scaffold(
       backgroundColor: GymRatColors.black,
       appBar: AppBar(
@@ -102,11 +105,13 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     return points.where((point) => !point.date.isBefore(cutoff)).toList();
   }
 
-  List<TrainingPoint> get _metricPoints => _visible(switch (metric) {
-    _ExerciseMetricType.personalBest => trend.personalBestPath,
-    _ExerciseMetricType.estimatedStrength => trend.estimatedStrength,
-    _ExerciseMetricType.volume => trend.sessionVolumes,
-  });
+  List<TrainingPoint> get _metricPoints => _visible(
+    switch (metric) {
+      _ExerciseMetricType.personalBest => trend.personalBestPath,
+      _ExerciseMetricType.estimatedStrength => trend.estimatedStrength,
+      _ExerciseMetricType.volume => trend.sessionVolumes,
+    }.map(_displayWeightPoint).toList(growable: false),
+  );
 
   Color get _metricColor => switch (metric) {
     _ExerciseMetricType.personalBest => GymRatColors.gold,
@@ -171,15 +176,20 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
                 children: [
                   _Metric(
                     label: context.tr.t('personalBest'),
-                    value: '${_weight(trend.currentBest)} kg',
+                    value: WeightUnitStore.formatKilograms(trend.currentBest),
                   ),
                   _Metric(
                     label: context.tr.t('estimatedStrength'),
-                    value: '${_weight(trend.currentEstimatedStrength)} kg',
+                    value: WeightUnitStore.formatKilograms(
+                      trend.currentEstimatedStrength,
+                    ),
                   ),
                   _Metric(
                     label: context.tr.t('sessionVolume'),
-                    value: '${_compact(trend.latestVolume)} kg',
+                    value: WeightUnitStore.formatVolume(
+                      trend.latestVolume,
+                      compact: true,
+                    ),
                   ),
                 ],
               ),
@@ -220,7 +230,8 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
         for (final point in _visible(trend.sessionBests).reversed)
           _PointTile(
             point: point,
-            isPersonalBest: point.value == trend.currentBest,
+            isPersonalBest:
+                point.value == WeightUnitStore.fromKilograms(trend.currentBest),
           ),
       ],
     ),
@@ -340,7 +351,12 @@ class _HeroPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '${_compact(category.latestValue)} $unit',
+          category.isWalk
+              ? '${_compact(category.latestValue)} $unit'
+              : WeightUnitStore.formatVolume(
+                  category.latestValue,
+                  compact: true,
+                ),
           style: const TextStyle(
             color: GymRatColors.textPrimary,
             fontSize: 28,
@@ -349,7 +365,11 @@ class _HeroPanel extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         ProgressLineChart(
-          points: category.primaryMetric,
+          points: category.isWalk
+              ? category.primaryMetric
+              : category.primaryMetric
+                    .map(_displayWeightPoint)
+                    .toList(growable: false),
           semanticLabel: WorkoutCopy.workout(context, category.name),
         ),
       ],
@@ -389,7 +409,8 @@ class _ExerciseTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${trend.sessionBests.length} ${context.tr.t('sessions')} · +${_weight(trend.totalGain)} kg',
+                    '${trend.sessionBests.length} ${context.tr.t('sessions')} · '
+                    '+${WeightUnitStore.formatKilograms(trend.totalGain)}',
                     style: const TextStyle(
                       color: GymRatColors.textSecondary,
                       fontSize: 10,
@@ -399,7 +420,7 @@ class _ExerciseTile extends StatelessWidget {
               ),
             ),
             Text(
-              '${_weight(trend.currentBest)} kg',
+              WeightUnitStore.formatKilograms(trend.currentBest),
               style: const TextStyle(
                 color: GymRatColors.gold,
                 fontWeight: FontWeight.w900,
@@ -447,7 +468,7 @@ class _SessionTile extends StatelessWidget {
           Text(
             session.isWalk
                 ? '${(session.durationSeconds / 60).round()} ${context.tr.t('minutesShort')}'
-                : '${_compact(session.volume)} kg',
+                : WeightUnitStore.formatVolume(session.volume, compact: true),
             style: const TextStyle(
               color: GymRatColors.green,
               fontWeight: FontWeight.w900,
@@ -488,7 +509,7 @@ class _PointTile extends StatelessWidget {
             ),
           ),
           Text(
-            '${_weight(point.value)} kg',
+            '${_weight(point.value)} ${WeightUnitStore.symbol}',
             style: TextStyle(
               color: isPersonalBest
                   ? GymRatColors.gold
@@ -579,3 +600,8 @@ String _compact(double value) {
   if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
   return _weight(value);
 }
+
+TrainingPoint _displayWeightPoint(TrainingPoint point) => TrainingPoint(
+  date: point.date,
+  value: WeightUnitStore.fromKilograms(point.value),
+);

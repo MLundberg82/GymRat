@@ -16,6 +16,9 @@ void main() {
         exerciseIndex: 1,
         elapsedSeconds: 312,
         savedAt: savedAt,
+        sessionNote: 'Strong tempo',
+        effortRating: 4,
+        weightUnit: 'lb',
         sets: const <String, List<WorkoutSetDraft>>{
           'Bench Press': <WorkoutSetDraft>[
             WorkoutSetDraft(weight: '82,5', reps: '8'),
@@ -31,6 +34,9 @@ void main() {
     expect(restored.elapsedSeconds, 312);
     expect(restored.savedAt, savedAt);
     expect(restored.sets['Bench Press']!.single.weight, '82,5');
+    expect(restored.sessionNote, 'Strong tempo');
+    expect(restored.effortRating, 4);
+    expect(restored.weightUnit, 'lb');
     expect(restored.hasEnteredData, isTrue);
     expect(await WorkoutDraftStore.loadForPreset('back'), isNull);
   });
@@ -49,5 +55,20 @@ void main() {
     await WorkoutDraftStore.clear();
 
     expect(await WorkoutDraftStore.load(), isNull);
+  });
+
+  test('legacy drafts default safely to kilograms without a journal', () {
+    final draft = WorkoutDraft.tryParse(<String, dynamic>{
+      'presetId': 'chest',
+      'exerciseIndex': 0,
+      'elapsedSeconds': 12,
+      'savedAt': '2026-09-03T10:00:00.000',
+      'sets': <String, Object>{},
+    });
+
+    expect(draft, isNotNull);
+    expect(draft!.weightUnit, 'kg');
+    expect(draft.sessionNote, isEmpty);
+    expect(draft.effortRating, isNull);
   });
 }

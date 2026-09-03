@@ -39,7 +39,8 @@ void main() {
 
     expect(find.textContaining('COACH TARGET'), findsOneWidget);
     expect(find.textContaining('2 SETS · 8–12 REPS'), findsOneWidget);
-    expect(find.byType(TextField), findsNWidgets(4));
+    expect(find.byType(TextField), findsNWidgets(5));
+    expect(find.text('SESSION JOURNAL'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

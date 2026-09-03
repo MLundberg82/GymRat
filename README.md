@@ -32,6 +32,10 @@ weekly mission rotation with recovery and volume signals. A recommended mission
 opens the matching workout preview and carries its set and repetition guidance
 into the active session without automatically increasing weight. The Progress
 screen tracks exact XP distance and the featured reward for the next evolution.
+Workout weights may be entered in kg or lb while remaining canonical in kg for
+PB calculations. Optional session effort and journal notes power Premium
+workload/recovery insight, and the achievement vault derives RPG honors from
+real workouts, streaks, PB improvements, and evolution.
 
 ## Project structure
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../premium/data/premium_access.dart';
 import '../../premium/presentation/premium_gate_card.dart';
 import '../../workout/data/workout_session_store.dart';
@@ -253,7 +254,10 @@ class _ArchiveHeader extends StatelessWidget {
             ),
             Expanded(
               child: _ArchiveMetric(
-                value: '${_compact(history.totalVolume)} kg',
+                value: WeightUnitStore.formatVolume(
+                  history.totalVolume,
+                  compact: true,
+                ),
                 label: context.tr.t('totalVolume'),
               ),
             ),
@@ -262,12 +266,6 @@ class _ArchiveHeader extends StatelessWidget {
       ],
     ),
   );
-
-  static String _compact(double value) {
-    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}K';
-    return value.round().toString();
-  }
 }
 
 class _ArchiveMetric extends StatelessWidget {
@@ -383,7 +381,8 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 7),
                     Text(
-                      '$minutes ${context.tr.t('minutesShort')}  ·  ${workout.volume.round()} kg',
+                      '$minutes ${context.tr.t('minutesShort')}  ·  '
+                      '${WeightUnitStore.formatVolume(workout.volume)}',
                       style: const TextStyle(
                         color: GymRatColors.textMuted,
                         fontSize: 9,

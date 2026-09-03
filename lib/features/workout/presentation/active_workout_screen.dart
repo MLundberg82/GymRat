@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../../armory/data/rat_inventory_store.dart';
 import '../data/workout_draft_store.dart';
 import '../data/workout_session_store.dart';
@@ -12,6 +13,7 @@ import '../domain/workout_draft.dart';
 import '../domain/workout_models.dart';
 import '../domain/workout_result.dart';
 import '../domain/workout_timer_settings.dart';
+import 'session_journal_card.dart';
 import 'timer_settings_screen.dart';
 import 'workout_copy.dart';
 import 'workout_complete_screen.dart';
@@ -43,10 +45,13 @@ class _SetEntry {
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   final Map<String, List<_SetEntry>> sets = {};
+  final TextEditingController noteController = TextEditingController();
   Timer? workoutTimer, intervalTimer;
   Timer? draftSaveTimer;
   Future<void> draftSave = Future<void>.value();
+  late final WeightUnit weightUnit;
   int exerciseIndex = 0, elapsedSeconds = 0;
+  int? effortRating;
   late WorkoutTimerSettings timerSettings;
   late int remainingSeconds;
   _TimerMode timerMode = _TimerMode.rest;
@@ -56,6 +61,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    weightUnit = WeightUnitStore.current;
     timerSettings = WorkoutTimerStore.current;
     remainingSeconds = timerSettings.restSeconds;
     for (final e in widget.preset.exercises) {
@@ -85,7 +91,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       sets[exercise.name] = saved
           .map(
             (value) => _SetEntry()
-              ..weight.text = value.weight
+              ..weight.text = _restoredWeight(value.weight, draft.weightUnit)
               ..reps.text = value.reps,
           )
           .toList();
@@ -96,8 +102,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         0,
         widget.preset.exercises.length - 1,
       );
+      noteController.text = draft.sessionNote;
+      effortRating = draft.effortRating;
       draftRestored = draft.hasEnteredData || draft.elapsedSeconds > 0;
     });
+  }
+
+  String _restoredWeight(String raw, String savedUnitCode) {
+    if (raw.trim().isEmpty) return raw;
+    final value = double.tryParse(raw.replaceAll(',', '.'));
+    if (value == null) return raw;
+    final kilograms = WeightUnitStore.toKilograms(
+      value,
+      unit: WeightUnitStore.fromCode(savedUnitCode),
+    );
+    final displayed = WeightUnitStore.fromKilograms(
+      kilograms,
+      unit: weightUnit,
+    );
+    return displayed == displayed.roundToDouble()
+        ? displayed.toStringAsFixed(0)
+        : displayed.toStringAsFixed(1);
   }
 
   WorkoutDraft _draft() => WorkoutDraft(
@@ -105,6 +130,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     exerciseIndex: exerciseIndex,
     elapsedSeconds: elapsedSeconds,
     savedAt: DateTime.now(),
+    sessionNote: noteController.text,
+    effortRating: effortRating,
+    weightUnit: WeightUnitStore.codeFor(weightUnit),
     sets: sets.map(
       (name, entries) => MapEntry(
         name,
@@ -122,7 +150,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _saveDraft() {
     final snapshot = _draft();
-    draftSave = draftSave.then((_) => WorkoutDraftStore.save(snapshot));
+    draftSave = draftSave
+        .then((_) => WorkoutDraftStore.save(snapshot))
+        .catchError((_) {});
     return draftSave;
   }
 
@@ -236,23 +266,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _finish() async {
     if (finishing) return;
-    final results = widget.preset.exercises.map((e) {
-      final completed = sets[e.name]!
-          .map(
-            (s) => WorkoutSetResult(
-              weight: double.tryParse(s.weight.text.replaceAll(',', '.')) ?? 0,
-              reps: int.tryParse(s.reps.text) ?? 0,
-            ),
-          )
-          .where((s) => s.weight > 0 && s.reps > 0)
-          .toList();
-      return WorkoutExerciseResult(
-        name: e.name,
-        muscleGroup: widget.preset.id,
-        sets: completed,
-      );
-    }).toList();
-    if (!results.any((exercise) => exercise.sets.isNotEmpty)) {
+    final results = widget.preset.exercises
+        .map((e) {
+          final completed = sets[e.name]!
+              .map(
+                (s) => WorkoutSetResult(
+                  weight: WeightUnitStore.toKilograms(
+                    double.tryParse(s.weight.text.replaceAll(',', '.')) ?? 0,
+                    unit: weightUnit,
+                  ),
+                  reps: int.tryParse(s.reps.text) ?? 0,
+                ),
+              )
+              .where((s) => s.weight > 0 && s.reps > 0)
+              .toList();
+          return WorkoutExerciseResult(
+            name: e.name,
+            muscleGroup: widget.preset.id,
+            sets: completed,
+          );
+        })
+        .where((exercise) => exercise.sets.isNotEmpty)
+        .toList(growable: false);
+    if (results.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.tr.t('completeOneSet'))));
@@ -268,9 +304,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       walk: false,
       durationSeconds: elapsedSeconds,
       exercises: results,
+      sessionNote: noteController.text,
+      effortRating: effortRating,
     );
-    await draftSave;
-    await WorkoutDraftStore.clear();
+    try {
+      await draftSave;
+      await WorkoutDraftStore.clear();
+    } catch (_) {
+      // A stale draft must never block an otherwise completed workout.
+    }
     RatInventoryState inventory;
     try {
       inventory = await inventoryFuture;
@@ -295,6 +337,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     intervalTimer?.cancel();
     draftSaveTimer?.cancel();
     if (!finishing) unawaited(_saveDraft());
+    noteController.dispose();
     for (final l in sets.values) {
       for (final e in l) {
         e.dispose();
@@ -381,7 +424,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     ),
                   ],
                   const SizedBox(height: 24),
-                  const _SetHeader(),
+                  _SetHeader(unit: weightUnit),
                   for (var i = 0; i < currentSets.length; i++)
                     _SetRow(
                       index: i,
@@ -401,6 +444,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       foregroundColor: GymRatColors.green,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  SessionJournalCard(
+                    noteController: noteController,
+                    effortRating: effortRating,
+                    onEffortChanged: (value) =>
+                        setState(() => effortRating = value),
+                    onChanged: _scheduleDraftSave,
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -414,7 +465,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       ),
                       const Spacer(),
                       Text(
-                        '${totalVolume.round()} KG',
+                        '${totalVolume.round()} '
+                        '${weightUnit == WeightUnit.kilograms ? 'KG' : 'LB'}',
                         style: const TextStyle(
                           color: GymRatColors.textPrimary,
                           fontSize: 13,
@@ -582,12 +634,15 @@ class _TimerBar extends StatelessWidget {
 }
 
 class _SetHeader extends StatelessWidget {
-  const _SetHeader();
+  const _SetHeader({required this.unit});
+
+  final WeightUnit unit;
+
   @override
   Widget build(BuildContext context) => Row(
     children: [
       SizedBox(width: 40, child: Text(context.tr.t('setLabel'))),
-      const Expanded(child: Text('KG')),
+      Expanded(child: Text(unit == WeightUnit.kilograms ? 'KG' : 'LB')),
       const SizedBox(width: 12),
       Expanded(child: Text(context.tr.t('reps'))),
       const SizedBox(width: 42),

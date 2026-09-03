@@ -83,5 +83,12 @@ void main() {
     expect(trend.baseline, 60);
     expect(trend.currentBest, 75);
     expect(trend.totalGain, 15);
+    expect(trend.sessionVolumes.map((point) => point.value), [600, 550, 750]);
+    expect(trend.estimatedStrength.map((point) => point.value.round()), [
+      80,
+      73,
+      100,
+    ]);
+    expect(trend.currentEstimatedStrength, 100);
   });
 }

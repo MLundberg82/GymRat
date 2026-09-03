@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../armory/data/rat_inventory_store.dart';
+import '../data/workout_draft_store.dart';
 import '../data/workout_session_store.dart';
+import '../domain/workout_draft.dart';
 import '../domain/workout_models.dart';
 import '../domain/workout_result.dart';
 import '../domain/workout_timer_settings.dart';
@@ -41,11 +44,13 @@ class _SetEntry {
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   final Map<String, List<_SetEntry>> sets = {};
   Timer? workoutTimer, intervalTimer;
+  Timer? draftSaveTimer;
+  Future<void> draftSave = Future<void>.value();
   int exerciseIndex = 0, elapsedSeconds = 0;
   late WorkoutTimerSettings timerSettings;
   late int remainingSeconds;
   _TimerMode timerMode = _TimerMode.rest;
-  bool timerRunning = false, finishing = false;
+  bool timerRunning = false, finishing = false, draftRestored = false;
   WorkoutExercise get exercise => widget.preset.exercises[exerciseIndex];
 
   @override
@@ -59,9 +64,74 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         (_) => _SetEntry(),
       );
     }
+    _restoreDraft();
     workoutTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => elapsedSeconds++);
+      if (!mounted) return;
+      setState(() => elapsedSeconds++);
+      if (elapsedSeconds % 10 == 0) unawaited(_saveDraft());
     });
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await WorkoutDraftStore.loadForPreset(widget.preset.id);
+    if (!mounted || draft == null) return;
+    for (final exercise in widget.preset.exercises) {
+      final saved = draft.sets[exercise.name];
+      if (saved == null || saved.isEmpty) continue;
+      final current = sets[exercise.name]!;
+      for (final entry in current) {
+        entry.dispose();
+      }
+      sets[exercise.name] = saved
+          .map(
+            (value) => _SetEntry()
+              ..weight.text = value.weight
+              ..reps.text = value.reps,
+          )
+          .toList();
+    }
+    setState(() {
+      elapsedSeconds = draft.elapsedSeconds.clamp(0, 60 * 60 * 24);
+      exerciseIndex = draft.exerciseIndex.clamp(
+        0,
+        widget.preset.exercises.length - 1,
+      );
+      draftRestored = draft.hasEnteredData || draft.elapsedSeconds > 0;
+    });
+  }
+
+  WorkoutDraft _draft() => WorkoutDraft(
+    presetId: widget.preset.id,
+    exerciseIndex: exerciseIndex,
+    elapsedSeconds: elapsedSeconds,
+    savedAt: DateTime.now(),
+    sets: sets.map(
+      (name, entries) => MapEntry(
+        name,
+        entries
+            .map(
+              (entry) => WorkoutSetDraft(
+                weight: entry.weight.text,
+                reps: entry.reps.text,
+              ),
+            )
+            .toList(growable: false),
+      ),
+    ),
+  );
+
+  Future<void> _saveDraft() {
+    final snapshot = _draft();
+    draftSave = draftSave.then((_) => WorkoutDraftStore.save(snapshot));
+    return draftSave;
+  }
+
+  void _scheduleDraftSave() {
+    draftSaveTimer?.cancel();
+    draftSaveTimer = Timer(
+      const Duration(milliseconds: 350),
+      () => unawaited(_saveDraft()),
+    );
   }
 
   String get sessionTime =>
@@ -81,12 +151,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     return total;
   }
 
-  void _addSet() => setState(() => sets[exercise.name]!.add(_SetEntry()));
+  void _addSet() {
+    setState(() => sets[exercise.name]!.add(_SetEntry()));
+    _scheduleDraftSave();
+  }
+
   void _removeSet(int i) {
     final l = sets[exercise.name]!;
     if (l.length <= 1) return;
     l[i].dispose();
     setState(() => l.removeAt(i));
+    _scheduleDraftSave();
   }
 
   void _resetIntervalTimer() {
@@ -161,9 +236,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _finish() async {
     if (finishing) return;
-    setState(() => finishing = true);
-    workoutTimer?.cancel();
-    intervalTimer?.cancel();
     final results = widget.preset.exercises.map((e) {
       final completed = sets[e.name]!
           .map(
@@ -172,7 +244,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               reps: int.tryParse(s.reps.text) ?? 0,
             ),
           )
-          .where((s) => s.weight > 0 || s.reps > 0)
+          .where((s) => s.weight > 0 && s.reps > 0)
           .toList();
       return WorkoutExerciseResult(
         name: e.name,
@@ -180,6 +252,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         sets: completed,
       );
     }).toList();
+    if (!results.any((exercise) => exercise.sets.isNotEmpty)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.tr.t('completeOneSet'))));
+      return;
+    }
+    setState(() => finishing = true);
+    draftSaveTimer?.cancel();
+    workoutTimer?.cancel();
+    intervalTimer?.cancel();
     final inventoryFuture = RatInventoryStore.load();
     final result = await WorkoutSessionStore.complete(
       workoutName: widget.preset.title,
@@ -187,6 +269,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       durationSeconds: elapsedSeconds,
       exercises: results,
     );
+    await draftSave;
+    await WorkoutDraftStore.clear();
     RatInventoryState inventory;
     try {
       inventory = await inventoryFuture;
@@ -199,6 +283,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         builder: (_) => WorkoutCompleteScreen(
           result: result,
           appearanceId: inventory.equippedAppearanceId,
+          characterView: inventory.characterView,
         ),
       ),
     );
@@ -208,6 +293,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   void dispose() {
     workoutTimer?.cancel();
     intervalTimer?.cancel();
+    draftSaveTimer?.cancel();
+    if (!finishing) unawaited(_saveDraft());
     for (final l in sets.values) {
       for (final e in l) {
         e.dispose();
@@ -287,6 +374,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       ],
                     ),
                   ],
+                  if (draftRestored) ...[
+                    const SizedBox(height: 10),
+                    _DraftRestoredBadge(
+                      onDismiss: () => setState(() => draftRestored = false),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   const _SetHeader(),
                   for (var i = 0; i < currentSets.length; i++)
@@ -294,7 +387,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       index: i,
                       entry: currentSets[i],
                       onRemove: () => _removeSet(i),
-                      onChanged: () => setState(() {}),
+                      onChanged: () {
+                        setState(() {});
+                        _scheduleDraftSave();
+                      },
                     ),
                   const SizedBox(height: 12),
                   TextButton.icon(
@@ -334,10 +430,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               canBack: exerciseIndex > 0,
               isLast: exerciseIndex == widget.preset.exercises.length - 1,
               loading: finishing,
-              onBack: () => setState(() => exerciseIndex--),
+              onBack: () {
+                setState(() => exerciseIndex--);
+                _scheduleDraftSave();
+              },
               onNext: () {
                 if (exerciseIndex < widget.preset.exercises.length - 1) {
                   setState(() => exerciseIndex++);
+                  _scheduleDraftSave();
                 } else {
                   _finish();
                 }
@@ -348,6 +448,50 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       ),
     );
   }
+}
+
+class _DraftRestoredBadge extends StatelessWidget {
+  const _DraftRestoredBadge({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
+      decoration: BoxDecoration(
+        color: GymRatColors.green.withValues(alpha: .10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GymRatColors.greenDark),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.restore_rounded,
+            color: GymRatColors.green,
+            size: 17,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.tr.t('workoutRestored'),
+              style: const TextStyle(
+                color: GymRatColors.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: onDismiss,
+            icon: const Icon(Icons.close_rounded, size: 16),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _TopBar extends StatelessWidget {
@@ -521,6 +665,11 @@ class _Input extends StatelessWidget {
     controller: controller,
     onChanged: (_) => onChanged(),
     keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+    inputFormatters: [
+      FilteringTextInputFormatter.allow(
+        decimal ? RegExp(r'^\d{0,4}([.,]\d{0,2})?') : RegExp(r'^\d{0,4}'),
+      ),
+    ],
     textAlign: TextAlign.center,
     style: const TextStyle(
       color: GymRatColors.textPrimary,

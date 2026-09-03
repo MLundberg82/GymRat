@@ -71,10 +71,54 @@ class WorkoutCategoryDetailScreen extends StatelessWidget {
   }
 }
 
-class ExerciseProgressScreen extends StatelessWidget {
+enum _ExerciseMetricType { personalBest, estimatedStrength, volume }
+
+enum _TrainingWindow { fourWeeks, threeMonths, oneYear, all }
+
+class ExerciseProgressScreen extends StatefulWidget {
   const ExerciseProgressScreen({super.key, required this.trend});
 
   final ExerciseTrend trend;
+
+  @override
+  State<ExerciseProgressScreen> createState() => _ExerciseProgressScreenState();
+}
+
+class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
+  _ExerciseMetricType metric = _ExerciseMetricType.personalBest;
+  _TrainingWindow window = _TrainingWindow.all;
+
+  ExerciseTrend get trend => widget.trend;
+
+  List<TrainingPoint> _visible(List<TrainingPoint> points) {
+    if (points.isEmpty || window == _TrainingWindow.all) return points;
+    final latest = points.last.date;
+    final cutoff = switch (window) {
+      _TrainingWindow.fourWeeks => latest.subtract(const Duration(days: 28)),
+      _TrainingWindow.threeMonths => latest.subtract(const Duration(days: 92)),
+      _TrainingWindow.oneYear => latest.subtract(const Duration(days: 365)),
+      _TrainingWindow.all => DateTime.fromMillisecondsSinceEpoch(0),
+    };
+    return points.where((point) => !point.date.isBefore(cutoff)).toList();
+  }
+
+  List<TrainingPoint> get _metricPoints => _visible(switch (metric) {
+    _ExerciseMetricType.personalBest => trend.personalBestPath,
+    _ExerciseMetricType.estimatedStrength => trend.estimatedStrength,
+    _ExerciseMetricType.volume => trend.sessionVolumes,
+  });
+
+  Color get _metricColor => switch (metric) {
+    _ExerciseMetricType.personalBest => GymRatColors.gold,
+    _ExerciseMetricType.estimatedStrength => GymRatColors.premium,
+    _ExerciseMetricType.volume => GymRatColors.green,
+  };
+
+  String _metricLabel(BuildContext context) => switch (metric) {
+    _ExerciseMetricType.personalBest => context.tr.t('personalBestJourney'),
+    _ExerciseMetricType.estimatedStrength => context.tr.t('estimatedStrength'),
+    _ExerciseMetricType.volume => context.tr.t('sessionVolume'),
+  };
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -126,39 +170,128 @@ class ExerciseProgressScreen extends StatelessWidget {
               Row(
                 children: [
                   _Metric(
-                    label: context.tr.t('baseline'),
-                    value: '${_weight(trend.baseline)} kg',
-                  ),
-                  _Metric(
                     label: context.tr.t('personalBest'),
                     value: '${_weight(trend.currentBest)} kg',
                   ),
                   _Metric(
-                    label: context.tr.t('totalGain'),
-                    value: '+${_weight(trend.totalGain)} kg',
+                    label: context.tr.t('estimatedStrength'),
+                    value: '${_weight(trend.currentEstimatedStrength)} kg',
+                  ),
+                  _Metric(
+                    label: context.tr.t('sessionVolume'),
+                    value: '${_compact(trend.latestVolume)} kg',
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _MetricSelector(
+                value: metric,
+                onChanged: (value) => setState(() => metric = value),
+              ),
+              const SizedBox(height: 10),
+              _WindowSelector(
+                value: window,
+                onChanged: (value) => setState(() => window = value),
+              ),
               const SizedBox(height: 18),
               ProgressLineChart(
-                points: trend.personalBestPath,
-                color: GymRatColors.gold,
+                points: _metricPoints,
+                color: _metricColor,
                 height: 210,
-                semanticLabel: context.tr.t('personalBestJourney'),
+                semanticLabel: _metricLabel(context),
               ),
+              if (metric == _ExerciseMetricType.estimatedStrength) ...[
+                const SizedBox(height: 10),
+                Text(
+                  context.tr.t('estimatedStrengthInfo'),
+                  style: const TextStyle(
+                    color: GymRatColors.textMuted,
+                    fontSize: 9,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
         const SizedBox(height: 22),
         _SectionTitle(context.tr.t('sessionBestHistory')),
         const SizedBox(height: 12),
-        for (final point in trend.sessionBests.reversed)
+        for (final point in _visible(trend.sessionBests).reversed)
           _PointTile(
             point: point,
             isPersonalBest: point.value == trend.currentBest,
           ),
       ],
     ),
+  );
+}
+
+class _MetricSelector extends StatelessWidget {
+  const _MetricSelector({required this.value, required this.onChanged});
+
+  final _ExerciseMetricType value;
+  final ValueChanged<_ExerciseMetricType> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SegmentedButton<_ExerciseMetricType>(
+    segments: [
+      ButtonSegment(
+        value: _ExerciseMetricType.personalBest,
+        label: Text(context.tr.t('personalBestShort')),
+      ),
+      ButtonSegment(
+        value: _ExerciseMetricType.estimatedStrength,
+        label: Text(context.tr.t('estimatedStrengthShort')),
+      ),
+      ButtonSegment(
+        value: _ExerciseMetricType.volume,
+        label: Text(context.tr.t('volumeShort')),
+      ),
+    ],
+    selected: {value},
+    showSelectedIcon: false,
+    onSelectionChanged: (selection) => onChanged(selection.single),
+    style: const ButtonStyle(visualDensity: VisualDensity.compact),
+  );
+}
+
+class _WindowSelector extends StatelessWidget {
+  const _WindowSelector({required this.value, required this.onChanged});
+
+  final _TrainingWindow value;
+  final ValueChanged<_TrainingWindow> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 7,
+    children: _TrainingWindow.values
+        .map((option) {
+          final selected = option == value;
+          final label = switch (option) {
+            _TrainingWindow.fourWeeks => context.tr.t('fourWeeks'),
+            _TrainingWindow.threeMonths => context.tr.t('threeMonths'),
+            _TrainingWindow.oneYear => context.tr.t('oneYear'),
+            _TrainingWindow.all => context.tr.t('allTime'),
+          };
+          return ChoiceChip(
+            label: Text(label),
+            selected: selected,
+            onSelected: (_) => onChanged(option),
+            labelStyle: TextStyle(
+              color: selected ? GymRatColors.black : GymRatColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+            ),
+            selectedColor: GymRatColors.gold,
+            backgroundColor: GymRatColors.surfaceElevated,
+            side: BorderSide(
+              color: selected ? GymRatColors.gold : GymRatColors.border,
+            ),
+            visualDensity: VisualDensity.compact,
+          );
+        })
+        .toList(growable: false),
   );
 }
 

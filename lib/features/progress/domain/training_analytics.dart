@@ -31,16 +31,27 @@ class ExerciseTrend {
     required this.exerciseName,
     required this.sessionBests,
     required this.personalBestPath,
+    required this.sessionVolumes,
+    required this.estimatedStrength,
   });
 
   final String exerciseName;
   final List<TrainingPoint> sessionBests;
   final List<TrainingPoint> personalBestPath;
+  final List<TrainingPoint> sessionVolumes;
+  final List<TrainingPoint> estimatedStrength;
 
   double get baseline => sessionBests.isEmpty ? 0 : sessionBests.first.value;
   double get currentBest =>
       personalBestPath.isEmpty ? 0 : personalBestPath.last.value;
   double get totalGain => currentBest - baseline;
+  double get latestVolume =>
+      sessionVolumes.isEmpty ? 0 : sessionVolumes.last.value;
+  double get currentEstimatedStrength => estimatedStrength.isEmpty
+      ? 0
+      : estimatedStrength
+            .map((point) => point.value)
+            .reduce((left, right) => left > right ? left : right);
 }
 
 abstract final class TrainingAnalytics {
@@ -95,16 +106,31 @@ abstract final class TrainingAnalytics {
       ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
     final sessionBests = <TrainingPoint>[];
     final personalBestPath = <TrainingPoint>[];
+    final sessionVolumes = <TrainingPoint>[];
+    final estimatedStrength = <TrainingPoint>[];
     var runningBest = 0.0;
 
     for (final workout in chronological) {
-      final matching = workout.exercises.where(
-        (exercise) => exercise.name == exerciseName,
-      );
+      final matching = workout.exercises
+          .where((exercise) => exercise.name == exerciseName)
+          .toList(growable: false);
+      final sets = matching
+          .expand((exercise) => exercise.sets)
+          .toList(growable: false);
+      if (sets.isEmpty) continue;
       var sessionBest = 0.0;
-      for (final exercise in matching) {
-        for (final set in exercise.sets) {
-          if (set.weight > sessionBest) sessionBest = set.weight;
+      var sessionVolume = 0.0;
+      var sessionEstimatedStrength = 0.0;
+      for (final set in sets) {
+        if (set.weight > sessionBest) sessionBest = set.weight;
+        sessionVolume += set.volume;
+        if (set.weight > 0 && set.reps > 0) {
+          final estimate = set.reps == 1
+              ? set.weight
+              : set.weight * (1 + set.reps / 30);
+          if (estimate > sessionEstimatedStrength) {
+            sessionEstimatedStrength = estimate;
+          }
         }
       }
       if (sessionBest <= 0) continue;
@@ -115,12 +141,23 @@ abstract final class TrainingAnalytics {
       personalBestPath.add(
         TrainingPoint(date: workout.completedAt, value: runningBest),
       );
+      sessionVolumes.add(
+        TrainingPoint(date: workout.completedAt, value: sessionVolume),
+      );
+      estimatedStrength.add(
+        TrainingPoint(
+          date: workout.completedAt,
+          value: sessionEstimatedStrength,
+        ),
+      );
     }
 
     return ExerciseTrend(
       exerciseName: exerciseName,
       sessionBests: List.unmodifiable(sessionBests),
       personalBestPath: List.unmodifiable(personalBestPath),
+      sessionVolumes: List.unmodifiable(sessionVolumes),
+      estimatedStrength: List.unmodifiable(estimatedStrength),
     );
   }
 }

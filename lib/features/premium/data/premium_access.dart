@@ -8,6 +8,9 @@ abstract final class PremiumAccess {
   static Future<bool> isActive() =>
       ArmoryBilling.hasActiveEntitlement(entitlementId);
 
+  static bool get current =>
+      ArmoryBilling.activeEntitlements.value.contains(entitlementId);
+
   static TrainingHistorySnapshot visibleHistory(
     TrainingHistorySnapshot history, {
     required bool isPremium,

@@ -22,6 +22,7 @@ class LevelUpCelebration extends StatefulWidget {
     required this.gender,
     required this.upgrade,
     this.appearanceId = RatAppearanceCatalog.baseId,
+    this.characterView = RatCharacterView.front,
     this.ratItem,
   });
 
@@ -34,6 +35,7 @@ class LevelUpCelebration extends StatefulWidget {
   final RatGender gender;
   final GymUpgrade upgrade;
   final String appearanceId;
+  final RatCharacterView characterView;
   final RatItem? ratItem;
 
   Duration get playDuration => isEvolution ? evolutionDuration : duration;
@@ -312,6 +314,7 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       child: Image.asset(
         GymRatCharacter.assetFor(
           gender: widget.gender,
+          view: widget.characterView,
           level: widget.newLevel,
           appearanceId: widget.appearanceId,
         ),

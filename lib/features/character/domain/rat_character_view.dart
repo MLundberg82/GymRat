@@ -1,0 +1,1 @@
+enum RatCharacterView { front, back }

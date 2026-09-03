@@ -14,13 +14,16 @@ import '../../history/presentation/history_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
+import '../../progress/domain/training_analytics.dart';
 import '../../progress/presentation/progress_screen.dart';
+import '../../progress/presentation/training_detail_screen.dart';
 import '../../quests/domain/quest_progress.dart';
 import '../../quests/presentation/quest_board_screen.dart';
 import '../../rewards/presentation/gym_upgrade_layer.dart';
 import '../../support/presentation/contact_screen.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../../workout/presentation/workout_screen.dart';
+import '../../workout/presentation/workout_copy.dart';
 
 class HubScreen extends StatefulWidget {
   const HubScreen({super.key, this.animationFromXP, this.unlockedUpgradeLevel});
@@ -33,6 +36,7 @@ class _HubScreenState extends State<HubScreen> {
   PlayerProgress? progress;
   QuestSnapshot? quests;
   RatInventoryState? inventory;
+  TrainingHistorySnapshot? history;
   int animationFromXP = 0, animationVersion = 0;
   RatCharacterView characterView = RatCharacterView.front;
   int? get previousGymLevel => widget.unlockedUpgradeLevel == null
@@ -56,11 +60,14 @@ class _HubScreenState extends State<HubScreen> {
       results[1] as TrainingHistorySnapshot,
     );
     final loadedInventory = results[2] as RatInventoryState;
+    final loadedHistory = results[1] as TrainingHistorySnapshot;
     if (!mounted) return;
     setState(() {
       progress = loaded;
       quests = loadedQuests;
       inventory = loadedInventory;
+      characterView = loadedInventory.characterView;
+      history = loadedHistory;
       animationFromXP =
           widget.animationFromXP ?? loaded.totalXP - loaded.currentLevelXP;
       animationVersion++;
@@ -80,12 +87,15 @@ class _HubScreenState extends State<HubScreen> {
       results[1] as TrainingHistorySnapshot,
     );
     final loadedInventory = results[2] as RatInventoryState;
+    final loadedHistory = results[1] as TrainingHistorySnapshot;
     if (!mounted) return;
     setState(() {
       animationFromXP = before?.totalXP ?? loaded.totalXP;
       progress = loaded;
       quests = loadedQuests;
       inventory = loadedInventory;
+      characterView = loadedInventory.characterView;
+      history = loadedHistory;
       animationVersion++;
     });
   }
@@ -121,13 +131,16 @@ class _HubScreenState extends State<HubScreen> {
           appearanceId:
               (inventory ?? const RatInventoryState()).equippedAppearanceId,
           view: characterView,
+          emoteSemanticLabel: context.tr.t('tapRatToFlex'),
         ),
+        if (history case final loadedHistory?)
+          _GymRecordHotspots(history: loadedHistory),
         SafeArea(
           child: Align(
             alignment: const Alignment(.92, -.55),
             child: _CharacterViewToggle(
               view: characterView,
-              onChanged: (view) => setState(() => characterView = view),
+              onChanged: _setCharacterView,
             ),
           ),
         ),
@@ -161,6 +174,12 @@ class _HubScreenState extends State<HubScreen> {
       ],
     ),
   );
+
+  Future<void> _setCharacterView(RatCharacterView view) async {
+    if (view == characterView) return;
+    setState(() => characterView = view);
+    await RatInventoryStore.setCharacterView(view);
+  }
 }
 
 class _Atmosphere extends StatelessWidget {
@@ -221,12 +240,14 @@ class _CharacterLayer extends StatelessWidget {
     required this.gender,
     required this.appearanceId,
     required this.view,
+    required this.emoteSemanticLabel,
   });
 
   final int level;
   final RatGender gender;
   final String appearanceId;
   final RatCharacterView view;
+  final String emoteSemanticLabel;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
@@ -265,6 +286,8 @@ class _CharacterLayer extends StatelessWidget {
               gender: gender,
               appearanceId: appearanceId,
               view: view,
+              enableEmotes: true,
+              emoteSemanticLabel: emoteSemanticLabel,
             ),
           ),
         ),
@@ -272,6 +295,296 @@ class _CharacterLayer extends StatelessWidget {
     },
   );
 }
+
+class _GymRecordHotspots extends StatelessWidget {
+  const _GymRecordHotspots({required this.history});
+
+  final TrainingHistorySnapshot history;
+
+  static const _stations = <_GymRecordStation>[
+    _GymRecordStation(
+      exerciseName: 'Bench Press',
+      alignment: Alignment(-.82, -.20),
+      icon: Icons.fitness_center_rounded,
+    ),
+    _GymRecordStation(
+      exerciseName: 'Barbell Row',
+      alignment: Alignment(.82, -.08),
+      icon: Icons.line_weight_rounded,
+    ),
+    _GymRecordStation(
+      exerciseName: 'Squat',
+      alignment: Alignment(.80, .43),
+      icon: Icons.sports_gymnastics_rounded,
+    ),
+    _GymRecordStation(
+      exerciseName: 'Barbell Curl',
+      alignment: Alignment(-.80, .38),
+      icon: Icons.military_tech_rounded,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(14, 116, 14, 150),
+      child: Stack(
+        children: [
+          for (final station in _stations)
+            if (TrainingAnalytics.exercise(
+              history,
+              station.exerciseName,
+            ).sessionBests.isNotEmpty)
+              Align(
+                alignment: station.alignment,
+                child: _GymRecordButton(
+                  icon: station.icon,
+                  semanticLabel:
+                      '${WorkoutCopy.exercise(context, station.exerciseName)} ${context.tr.t('personalBest')}',
+                  onTap: () => _showRecord(context, station.exerciseName),
+                ),
+              ),
+        ],
+      ),
+    ),
+  );
+
+  void _showRecord(BuildContext context, String exerciseName) {
+    final trend = TrainingAnalytics.exercise(history, exerciseName);
+    PersonalBestRecord? record;
+    for (final candidate in history.personalBests) {
+      if (candidate.exerciseName == exerciseName) {
+        record = candidate;
+        break;
+      }
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _GymRecordSheet(
+        trend: trend,
+        recordBreaks: record?.improvementCount ?? 0,
+        onOpenProgress: () {
+          Navigator.of(sheetContext).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ExerciseProgressScreen(trend: trend),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _GymRecordStation {
+  const _GymRecordStation({
+    required this.exerciseName,
+    required this.alignment,
+    required this.icon,
+  });
+
+  final String exerciseName;
+  final Alignment alignment;
+  final IconData icon;
+}
+
+class _GymRecordButton extends StatelessWidget {
+  const _GymRecordButton({
+    required this.icon,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: semanticLabel,
+    child: TweenAnimationBuilder<double>(
+      tween: Tween(begin: .82, end: 1),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeOutBack,
+      builder: (context, reveal, child) => Transform.scale(
+        scale: reveal,
+        child: Opacity(
+          opacity: reveal.clamp(0.0, 1.0).toDouble(),
+          child: child,
+        ),
+      ),
+      child: Material(
+        color: GymRatColors.black.withValues(alpha: .82),
+        shape: const CircleBorder(),
+        elevation: 8,
+        shadowColor: GymRatColors.gold,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 42,
+            height: 42,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(icon, color: GymRatColors.gold, size: 18),
+                const Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: Text(
+                    'PB',
+                    style: TextStyle(
+                      color: GymRatColors.gold,
+                      fontSize: 7,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _GymRecordSheet extends StatelessWidget {
+  const _GymRecordSheet({
+    required this.trend,
+    required this.recordBreaks,
+    required this.onOpenProgress,
+  });
+
+  final ExerciseTrend trend;
+  final int recordBreaks;
+  final VoidCallback onOpenProgress;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
+    decoration: const BoxDecoration(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      border: Border(top: BorderSide(color: GymRatColors.goldDark)),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: GymRatColors.border,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          context.tr.t('gymRecordStation'),
+          style: const TextStyle(
+            color: GymRatColors.gold,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.3,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          WorkoutCopy.exercise(context, trend.exerciseName),
+          style: const TextStyle(
+            color: GymRatColors.textPrimary,
+            fontSize: 25,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            _RecordMetric(
+              label: context.tr.t('baseline'),
+              value: '${_recordWeight(trend.baseline)} kg',
+            ),
+            _RecordMetric(
+              label: context.tr.t('personalBest'),
+              value: '${_recordWeight(trend.currentBest)} kg',
+              highlighted: recordBreaks > 0,
+            ),
+            _RecordMetric(
+              label: context.tr.t('recordBreaks'),
+              value: '$recordBreaks',
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: onOpenProgress,
+            style: FilledButton.styleFrom(
+              backgroundColor: GymRatColors.gold,
+              foregroundColor: GymRatColors.black,
+            ),
+            icon: const Icon(Icons.show_chart_rounded),
+            label: Text(
+              context.tr.t('openFullProgress'),
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _RecordMetric extends StatelessWidget {
+  const _RecordMetric({
+    required this.label,
+    required this.value,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: highlighted ? GymRatColors.gold : GymRatColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: GymRatColors.textMuted,
+            fontSize: 8,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String _recordWeight(double value) => value == value.roundToDouble()
+    ? value.toStringAsFixed(0)
+    : value.toStringAsFixed(1);
 
 class _CharacterViewToggle extends StatelessWidget {
   const _CharacterViewToggle({required this.view, required this.onChanged});

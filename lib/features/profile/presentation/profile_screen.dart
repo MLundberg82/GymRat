@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/localization/app_language_store.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../data/training_profile_store.dart';
+import '../data/local_data_archive.dart';
 import '../domain/training_profile.dart';
 import 'onboarding_screen.dart';
 
@@ -20,6 +22,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (value == null) return;
     await AppLanguageStore.setLanguage(value);
     if (mounted) setState(() => selected = value);
+  }
+
+  Future<void> _exportData() async {
+    final archive = await LocalDataArchive.exportJson();
+    await Clipboard.setData(ClipboardData(text: archive));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.tr.t('dataExportCopied'))));
+  }
+
+  Future<void> _deleteData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr.t('deleteDataTitle')),
+        content: Text(context.tr.t('deleteDataMessage')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(context.tr.t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: GymRatColors.danger,
+              foregroundColor: GymRatColors.black,
+            ),
+            child: Text(context.tr.t('deleteLocalData')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await LocalDataArchive.clear();
+    await AppLanguageStore.initialize();
+    await TrainingProfileStore.initialize();
+    if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override
@@ -199,6 +240,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onChanged: _change,
               ),
             ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            t.t('yourData'),
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t.t('dataPrivacyHelp'),
+            style: const TextStyle(
+              color: GymRatColors.textMuted,
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: _exportData,
+            icon: const Icon(Icons.content_copy_rounded),
+            label: Text(t.t('copyDataExport')),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _deleteData,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GymRatColors.danger,
+              side: const BorderSide(color: GymRatColors.danger),
+            ),
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: Text(t.t('deleteLocalData')),
           ),
         ],
       ),

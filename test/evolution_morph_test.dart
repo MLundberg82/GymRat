@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/core/localization/gymrat_localizations.dart';
 import 'package:gymrat/features/evolution/presentation/evolution_morph.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
+import 'package:gymrat/features/character/domain/rat_character_view.dart';
 
 void main() {
   testWidgets('keeps opacity bounded while text reveal curve overshoots', (
@@ -22,6 +23,7 @@ void main() {
           newLevel: 5,
           duration: const Duration(seconds: 1),
           gender: RatGender.female,
+          characterView: RatCharacterView.back,
           appearanceId: 'missing-appearance',
           onComplete: () {},
         ),
@@ -40,10 +42,13 @@ void main() {
         .widgetList<Image>(find.byType(Image))
         .map(_assetName)
         .whereType<String>();
-    expect(femaleAssets, contains('assets/characters/female/level_01.png'));
     expect(
       femaleAssets,
-      isNot(contains('assets/characters/male/level_01.png')),
+      contains('assets/characters/female/level_01_back.png'),
+    );
+    expect(
+      femaleAssets,
+      isNot(contains('assets/characters/male/level_01_back.png')),
     );
   });
 }

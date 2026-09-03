@@ -40,6 +40,11 @@ abstract final class ArmoryBilling {
   );
 
   static bool _configured = false;
+  static bool _listenerRegistered = false;
+  static final ValueNotifier<Set<String>> activeEntitlements =
+      ValueNotifier<Set<String>>(<String>{});
+  static final ValueNotifier<Set<String>> purchasedProductIds =
+      ValueNotifier<Set<String>>(<String>{});
 
   static bool get isConfigured => _configured;
 
@@ -55,6 +60,11 @@ abstract final class ArmoryBilling {
     try {
       await Purchases.configure(PurchasesConfiguration(apiKey));
       _configured = true;
+      if (!_listenerRegistered) {
+        Purchases.addCustomerInfoUpdateListener(_applyCustomerInfo);
+        _listenerRegistered = true;
+      }
+      _applyCustomerInfo(await Purchases.getCustomerInfo());
     } catch (_) {
       // Billing must never prevent the workout app from starting.
     }
@@ -70,14 +80,12 @@ abstract final class ArmoryBilling {
         Purchases.getCustomerInfo(),
       ]);
       final offering = (results[0] as Offerings).current;
+      final customerInfo = results[1] as CustomerInfo;
+      _applyCustomerInfo(customerInfo);
       if (offering == null || offering.availablePackages.isEmpty) {
         return const ArmoryStoreSnapshot(status: ArmoryStoreStatus.empty);
       }
-      final activeProductIds = (results[1] as CustomerInfo)
-          .entitlements
-          .active
-          .values
-          .map((entitlement) => entitlement.productIdentifier)
+      final ownedProductIds = customerInfo.allPurchasedProductIdentifiers
           .toSet();
       final offers = offering.availablePackages
           .map((package) {
@@ -87,7 +95,7 @@ abstract final class ArmoryBilling {
               title: product.title,
               description: product.description,
               price: product.priceString,
-              isOwned: activeProductIds.contains(product.identifier),
+              isOwned: ownedProductIds.contains(product.identifier),
               package: package,
             );
           })
@@ -104,7 +112,10 @@ abstract final class ArmoryBilling {
   static Future<ArmoryPurchaseStatus> purchase(ArmoryOffer offer) async {
     if (!_configured) return ArmoryPurchaseStatus.failed;
     try {
-      await Purchases.purchase(PurchaseParams.package(offer.package));
+      final result = await Purchases.purchase(
+        PurchaseParams.package(offer.package),
+      );
+      _applyCustomerInfo(result.customerInfo);
       return ArmoryPurchaseStatus.purchased;
     } on PlatformException catch (error) {
       final code = PurchasesErrorHelper.getErrorCode(error);
@@ -119,7 +130,7 @@ abstract final class ArmoryBilling {
   static Future<bool> restore() async {
     if (!_configured) return false;
     try {
-      await Purchases.restorePurchases();
+      _applyCustomerInfo(await Purchases.restorePurchases());
       return true;
     } catch (_) {
       return false;
@@ -129,13 +140,31 @@ abstract final class ArmoryBilling {
   static Future<bool> hasActiveEntitlement(String identifier) async {
     if (!_configured) return false;
     try {
-      return (await Purchases.getCustomerInfo())
-              .entitlements
-              .active[identifier]
-              ?.isActive ??
-          false;
+      final info = await Purchases.getCustomerInfo();
+      _applyCustomerInfo(info);
+      return info.entitlements.active[identifier]?.isActive ?? false;
     } catch (_) {
       return false;
     }
   }
+
+  static void _applyCustomerInfo(CustomerInfo info) {
+    final nextEntitlements = Set<String>.unmodifiable(
+      info.entitlements.active.entries
+          .where((entry) => entry.value.isActive)
+          .map((entry) => entry.key),
+    );
+    final nextProducts = Set<String>.unmodifiable(
+      info.allPurchasedProductIdentifiers,
+    );
+    if (!_setsEqual(activeEntitlements.value, nextEntitlements)) {
+      activeEntitlements.value = nextEntitlements;
+    }
+    if (!_setsEqual(purchasedProductIds.value, nextProducts)) {
+      purchasedProductIds.value = nextProducts;
+    }
+  }
+
+  static bool _setsEqual(Set<String> left, Set<String> right) =>
+      left.length == right.length && left.containsAll(right);
 }

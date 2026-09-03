@@ -67,6 +67,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
         builder: (_) => WorkoutCompleteScreen(
           result: result,
           appearanceId: inventory.equippedAppearanceId,
+          characterView: inventory.characterView,
         ),
       ),
     );

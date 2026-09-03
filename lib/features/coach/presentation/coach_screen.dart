@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../premium/data/premium_access.dart';
+import '../../armory/data/armory_billing.dart';
 import '../../premium/presentation/premium_gate_card.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
@@ -34,6 +35,17 @@ class _CoachScreenState extends State<CoachScreen> {
   void initState() {
     super.initState();
     _data = _load();
+    ArmoryBilling.activeEntitlements.addListener(_entitlementChanged);
+  }
+
+  void _entitlementChanged() {
+    if (mounted) setState(() => _data = _load());
+  }
+
+  @override
+  void dispose() {
+    ArmoryBilling.activeEntitlements.removeListener(_entitlementChanged);
+    super.dispose();
   }
 
   Future<_CoachData> _load() async {

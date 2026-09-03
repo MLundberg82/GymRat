@@ -23,6 +23,7 @@ class EvolutionMorph extends StatefulWidget {
     required this.gender,
     required this.onComplete,
     this.appearanceId = RatAppearanceCatalog.baseId,
+    this.characterView = RatCharacterView.front,
   });
 
   final int previousLevel;
@@ -30,6 +31,7 @@ class EvolutionMorph extends StatefulWidget {
   final Duration duration;
   final RatGender gender;
   final String appearanceId;
+  final RatCharacterView characterView;
   final VoidCallback onComplete;
 
   @override
@@ -48,12 +50,14 @@ class _EvolutionMorphState extends State<EvolutionMorph>
     gender: widget.gender,
     level: EvolutionMilestones.previousStageFor(widget.newLevel),
     appearanceId: widget.appearanceId,
+    view: widget.characterView,
   );
 
   String get _targetAsset => GymRatCharacter.assetFor(
     gender: widget.gender,
     level: widget.newLevel,
     appearanceId: widget.appearanceId,
+    view: widget.characterView,
   );
 
   @override

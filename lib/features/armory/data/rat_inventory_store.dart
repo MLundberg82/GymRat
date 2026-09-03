@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../character/domain/rat_appearance.dart';
+import '../../character/domain/rat_character_view.dart';
 import '../domain/rat_item.dart';
 
 enum RatItemPurchaseResult {
@@ -18,12 +19,14 @@ class RatInventoryState {
     this.claimedQuests = const <String>{},
     this.ownedItems = const <String>{},
     this.equippedAppearanceId = RatAppearanceCatalog.baseId,
+    this.characterView = RatCharacterView.front,
   });
 
   final int credits;
   final Set<String> claimedQuests;
   final Set<String> ownedItems;
   final String equippedAppearanceId;
+  final RatCharacterView characterView;
 
   bool owns(RatItem item, int level) =>
       item.isLevelUnlocked(level) || ownedItems.contains(item.id);
@@ -46,6 +49,10 @@ abstract final class RatInventoryStore {
               RatAppearanceCatalog.isReady(storedAppearance)
           ? storedAppearance
           : RatAppearanceCatalog.baseId;
+      final storedView = json['characterView'];
+      final characterView = storedView == RatCharacterView.back.name
+          ? RatCharacterView.back
+          : RatCharacterView.front;
       return RatInventoryState(
         credits: (json['credits'] as num?)?.toInt().clamp(0, 1000000) ?? 0,
         claimedQuests: _strings(json['claimedQuests']),
@@ -53,6 +60,7 @@ abstract final class RatInventoryStore {
             .where((id) => RatItemCatalog.byId(id) != null)
             .toSet(),
         equippedAppearanceId: appearanceId,
+        characterView: characterView,
       );
     } catch (_) {
       return const RatInventoryState();
@@ -68,6 +76,7 @@ abstract final class RatInventoryStore {
         claimedQuests: {...state.claimedQuests, claimId},
         ownedItems: state.ownedItems,
         equippedAppearanceId: state.equippedAppearanceId,
+        characterView: state.characterView,
       ),
     );
     return true;
@@ -93,6 +102,7 @@ abstract final class RatInventoryStore {
         claimedQuests: state.claimedQuests,
         ownedItems: {...state.ownedItems, item.id},
         equippedAppearanceId: item.appearanceId!,
+        characterView: state.characterView,
       ),
     );
     return RatItemPurchaseResult.purchased;
@@ -115,6 +125,7 @@ abstract final class RatInventoryStore {
         claimedQuests: state.claimedQuests,
         ownedItems: state.ownedItems,
         equippedAppearanceId: appearance.id,
+        characterView: state.characterView,
       ),
     );
   }
@@ -131,6 +142,20 @@ abstract final class RatInventoryStore {
         claimedQuests: state.claimedQuests,
         ownedItems: {...state.ownedItems, item.id},
         equippedAppearanceId: item.appearanceId!,
+        characterView: state.characterView,
+      ),
+    );
+  }
+
+  static Future<void> setCharacterView(RatCharacterView view) async {
+    final state = await load();
+    await _save(
+      RatInventoryState(
+        credits: state.credits,
+        claimedQuests: state.claimedQuests,
+        ownedItems: state.ownedItems,
+        equippedAppearanceId: state.equippedAppearanceId,
+        characterView: view,
       ),
     );
   }
@@ -140,11 +165,12 @@ abstract final class RatInventoryStore {
     await preferences.setString(
       _stateKey,
       jsonEncode(<String, Object>{
-        'version': 2,
+        'version': 3,
         'credits': state.credits,
         'claimedQuests': state.claimedQuests.toList(),
         'ownedItems': state.ownedItems.toList(),
         'equippedAppearanceId': state.equippedAppearanceId,
+        'characterView': state.characterView.name,
       }),
     );
   }

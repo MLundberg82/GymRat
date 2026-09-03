@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/core/localization/gymrat_localizations.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
+import 'package:gymrat/features/character/domain/rat_character_view.dart';
 import 'package:gymrat/features/rewards/domain/gym_upgrade.dart';
 import 'package:gymrat/features/rewards/presentation/level_up_celebration.dart';
 import 'package:gymrat/features/rewards/presentation/reward_sequence.dart';
@@ -24,6 +25,7 @@ void main() {
           newLevel: 4,
           isEvolution: false,
           gender: RatGender.female,
+          characterView: RatCharacterView.back,
           appearanceId: 'missing-appearance',
           upgrade: GymUpgradeCatalog.forLevel(4),
         ),
@@ -38,8 +40,8 @@ void main() {
         .map((image) => image.assetName)
         .toList();
 
-    expect(assets, contains('assets/characters/female/level_01.png'));
-    expect(assets, isNot(contains('assets/characters/male/level_01.png')));
+    expect(assets, contains('assets/characters/female/level_01_back.png'));
+    expect(assets, isNot(contains('assets/characters/male/level_01_back.png')));
     expect(tester.takeException(), isNull);
   });
 

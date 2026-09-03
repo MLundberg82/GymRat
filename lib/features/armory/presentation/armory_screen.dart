@@ -47,13 +47,36 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
     final results = await Future.wait<Object>([
       WorkoutSessionStore.getPlayerProgress(),
       ArmoryBilling.loadStore(),
-      RatInventoryStore.load(),
     ]);
+    await _syncPurchasedAppearances();
     return _ArmoryData(
       player: results[0] as PlayerProgress,
-      store: results[1] as ArmoryStoreSnapshot,
-      inventory: results[2] as RatInventoryState,
+      store: _releaseReadyStore(results[1] as ArmoryStoreSnapshot),
+      inventory: await RatInventoryStore.load(),
     );
+  }
+
+  ArmoryStoreSnapshot _releaseReadyStore(ArmoryStoreSnapshot store) {
+    if (store.status != ArmoryStoreStatus.ready) return store;
+    final offers = store.offers
+        .where((offer) {
+          final item = RatItemCatalog.byStoreProductId(offer.identifier);
+          return item == null ||
+              (item.hasCompleteAppearance &&
+                  RatAppearanceCatalog.isReady(item.appearanceId));
+        })
+        .toList(growable: false);
+    return ArmoryStoreSnapshot(
+      status: offers.isEmpty ? ArmoryStoreStatus.empty : store.status,
+      offers: offers,
+    );
+  }
+
+  Future<void> _syncPurchasedAppearances() async {
+    for (final productId in ArmoryBilling.purchasedProductIds.value) {
+      final item = RatItemCatalog.byStoreProductId(productId);
+      if (item != null) await RatInventoryStore.grantPurchased(item);
+    }
   }
 
   Future<void> _refresh() async {

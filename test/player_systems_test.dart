@@ -3,6 +3,7 @@ import 'package:gymrat/features/armory/data/rat_inventory_store.dart';
 import 'package:gymrat/features/armory/domain/rat_item.dart';
 import 'package:gymrat/features/coach/domain/coach_recommendation.dart';
 import 'package:gymrat/features/character/domain/rat_appearance.dart';
+import 'package:gymrat/features/character/domain/rat_character_view.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/data/training_profile_store.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
@@ -48,6 +49,16 @@ void main() {
     final state = await RatInventoryStore.load();
     expect(state.credits, 15);
     expect(state.claimedQuests, contains('daily-test'));
+  });
+
+  test('selected character view persists across app launches', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+
+    await RatInventoryStore.setCharacterView(RatCharacterView.back);
+    final restored = await RatInventoryStore.load();
+
+    expect(restored.characterView, RatCharacterView.back);
+    expect(restored.equippedAppearanceId, RatAppearanceCatalog.baseId);
   });
 
   test(

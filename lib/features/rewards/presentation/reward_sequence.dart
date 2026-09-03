@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../character/domain/rat_appearance.dart';
+import '../../character/domain/rat_character_view.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../../armory/domain/rat_item.dart';
 import '../../evolution/presentation/evolution_sequence.dart';
@@ -25,11 +26,13 @@ class RewardSequence extends StatefulWidget {
     required this.onComplete,
     required this.gender,
     this.appearanceId = RatAppearanceCatalog.baseId,
+    this.characterView = RatCharacterView.front,
   });
   final WorkoutResult result;
   final VoidCallback onComplete;
   final RatGender gender;
   final String appearanceId;
+  final RatCharacterView characterView;
   @override
   State<RewardSequence> createState() => _RewardSequenceState();
 }
@@ -133,6 +136,7 @@ class _RewardSequenceState extends State<RewardSequence> {
           isEvolution: false,
           gender: widget.gender,
           appearanceId: widget.appearanceId,
+          characterView: widget.characterView,
           upgrade: GymUpgradeCatalog.forLevel(celebrationLevel),
           ratItem: RatItemCatalog.forLevel(celebrationLevel),
         ),
@@ -142,6 +146,7 @@ class _RewardSequenceState extends State<RewardSequence> {
           newLevel: evolutionLevel,
           gender: widget.gender,
           appearanceId: widget.appearanceId,
+          characterView: widget.characterView,
           onComplete: _completeEvolution,
         ),
       },

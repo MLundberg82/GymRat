@@ -17,6 +17,13 @@ void main() {
     expect(torso.height, lessThan(600 / 3));
   });
 
+  test('power-flex emote grows every identity without changing its asset', () {
+    expect(GymRatCharacter.emoteScaleX(0), 1);
+    expect(GymRatCharacter.emoteScaleX(.5), greaterThan(1.03));
+    expect(GymRatCharacter.emoteScaleY(.5), greaterThan(1));
+    expect(GymRatCharacter.emoteScaleX(1), closeTo(1, .000001));
+  });
+
   test('authored level-1 frames never leak across identity or view', () {
     expect(
       GymRatCharacter.usesAuthoredSpriteFrames(

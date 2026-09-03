@@ -179,6 +179,14 @@ As verified from the repository on 2026-09-02:
   Premium purple roles.
 - The iOS runner targets iOS 15, uses Flutter's Swift Package Manager plugin
   integration, and declares the same five supported languages as the app.
+- Active strength sessions are saved locally while they are entered and resume
+  after process termination without granting duplicate rewards.
+- The selected front/back character view follows level-up and evolution; the
+  hub character also supports a bounded tap-triggered power-flex.
+- Exercise detail tracks actual PB, estimated strength, and session volume,
+  while earned hub record stations open the same canonical history.
+- Users can copy a local JSON export and erase GymRat-owned local data from
+  settings without removing unrelated host preferences or store purchases.
 
 ## iOS verification on macOS
 
@@ -195,11 +203,11 @@ When a macOS/Xcode environment is available, verify iOS with:
    layout, system-language selection, persistence after relaunch, the complete
    workout/reward loop, history details, and personal-best records.
 
-The checked-in launcher icon sets still use the generated Flutter placeholder.
-The approved shield-and-barbell source master is preserved at
-`assets/branding/gymrat_app_icon_master_v1.png`; keep it unchanged until the
-platform icon exports are deliberately generated and reviewed. Never generate
-the rat with AI for this purpose.
+The checked-in Android, iOS, and web launcher icon sets are exported from the
+approved shield-and-barbell source master at
+`assets/branding/gymrat_app_icon_master_v1.png`. Keep the source master
+unchanged and regenerate every platform size from that file when branding is
+updated. Never generate the rat with AI for this purpose.
 
 ## Store release signing
 

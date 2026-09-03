@@ -58,8 +58,22 @@ for them.
 
 ## Persistence and migration
 
-Inventory version 2 stores a single `equippedAppearanceId`. Version 1
+Inventory version 3 stores `equippedAppearanceId` and the selected front/back
+character view. Version 1
 slot-based `equipped` data is deliberately ignored during migration because it
 referred to runtime overlays. Credits, claimed quests, and owned item IDs are
 preserved. Unknown or incomplete appearance identifiers safely fall back to
 the base appearance.
+
+## Poses and emotes
+
+The built-in power-flex is a bounded runtime transformation of the currently
+approved full-character asset and therefore works identically for every
+identity, view, and evolution stage. It never composites an item or replaces
+the selected master.
+
+Any future authored pose or multi-frame emote follows the same release matrix
+as an appearance: male, female, and non-binary, front and back, at every stage
+where it is offered. A partial pose remains unavailable. Frames must preserve
+canvas size, foot line, lighting, identity, outfit, and transparency so the
+animation cannot jump or drift.

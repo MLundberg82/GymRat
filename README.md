@@ -62,3 +62,8 @@ flutter build apk --debug
 
 Do not commit local tooling state such as `.codex/`, credentials, secrets,
 caches, or generated build outputs.
+
+For a local Android phone, the verified debug artifact is written to
+`build/app/outputs/flutter-apk/app-debug.apk`. Device installation, RevenueCat
+sandbox setup, and the first macOS/Xcode verification are documented in
+[`docs/MOBILE_RELEASE_READINESS.md`](docs/MOBILE_RELEASE_READINESS.md).

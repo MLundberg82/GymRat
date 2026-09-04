@@ -47,6 +47,18 @@ class QuestSnapshot {
 
   int get completedDaily => daily.where((quest) => quest.isComplete).length;
   int get completedWeekly => weekly.where((quest) => quest.isComplete).length;
+
+  QuestProgress? get weeklySessions {
+    for (final quest in weekly) {
+      if (quest.id == 'weekly-sessions' && quest.unit == QuestUnit.sessions) {
+        return quest;
+      }
+    }
+    return null;
+  }
+
+  int get completedWeeklySessions => weeklySessions?.visibleCurrent ?? 0;
+  int get weeklySessionTarget => weeklySessions?.target ?? 3;
 }
 
 abstract final class QuestProgressCalculator {

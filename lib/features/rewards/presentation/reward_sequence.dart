@@ -84,7 +84,11 @@ class _RewardSequenceState extends State<RewardSequence> {
         });
         await Future<void>.delayed(LevelUpCelebration.duration + phaseGap);
         if (!mounted) return;
-        if (EvolutionMilestones.isMilestone(level)) {
+        if (EvolutionMilestones.isMilestone(level) &&
+            RatAppearanceCatalog.hasDistinctStageAtLevel(
+              appearanceId: widget.appearanceId,
+              level: level,
+            )) {
           evolutionCompleter = Completer<void>();
           setState(() {
             evolutionLevel = level;

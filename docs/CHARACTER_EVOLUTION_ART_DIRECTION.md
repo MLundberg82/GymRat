@@ -73,8 +73,9 @@ within three percent so evolution morphs remain anchored.
    commit. Never activate a partial stage.
 
 Until a full stage passes this sequence, the catalog intentionally falls back
-to the latest approved stage and the existing progression scale supplies visual
-growth without exposing draft assets.
+to the latest approved stage at a stable display scale. Runtime scaling must
+never be presented as physique growth. The evolution sequence is shown only
+when the source and target are distinct, complete, approved stage assets.
 
 ## Identity-preserving production brief
 

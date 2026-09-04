@@ -920,10 +920,99 @@ class _StoreTab extends StatelessWidget {
             ]
           else
             _StoreState(status: visibleStatus),
+          const SizedBox(height: 24),
+          Text(
+            context.tr.t('armoryFitForge'),
+            style: const TextStyle(
+              color: GymRatColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            context.tr.t('armoryFitForgeHelp'),
+            style: const TextStyle(
+              color: GymRatColors.textMuted,
+              fontSize: 10,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final item in RatItemCatalog.featuredItems.where(
+            (item) => item.storeProductId != null && item.isConcept,
+          )) ...[_StoreConceptCard(item: item), const SizedBox(height: 9)],
         ],
       ),
     );
   }
+}
+
+class _StoreConceptCard extends StatelessWidget {
+  const _StoreConceptCard({required this.item});
+
+  final RatItem item;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.circular(17),
+      border: Border.all(color: GymRatColors.border),
+    ),
+    child: Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(11),
+          child: ColoredBox(
+            color: GymRatColors.black,
+            child: SizedBox.square(
+              dimension: 58,
+              child: item.previewAssetPath == null
+                  ? Icon(_ratItemIcon(item.slot), color: GymRatColors.textMuted)
+                  : Image.asset(
+                      item.previewAssetPath!,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 13),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr.t(item.nameKey),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                context.tr.t('fitMatrixPending'),
+                style: const TextStyle(
+                  color: GymRatColors.textMuted,
+                  fontSize: 9,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Icon(
+          Icons.design_services_outlined,
+          color: GymRatColors.premium,
+          size: 19,
+        ),
+      ],
+    ),
+  );
 }
 
 class _StoreHeader extends StatelessWidget {

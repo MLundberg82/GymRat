@@ -129,7 +129,8 @@ Gender identity must not change workout access, XP, rewards, or progression.
 Male, female, and non-binary now each have approved level-1 front and back
 masters. Every later stage must preserve its own approved identity and must
 never be generated as a new rat from scratch. Missing milestone assets must
-fall back safely to the latest complete approved stage.
+fall back safely to the latest complete approved stage without stretching or
+enlarging the same image as fake muscle growth.
 
 The rat grows at each evolution milestone. Growth is modest at early levels and
 ends in an intentionally massive Mr Olympia-scale silhouette at level 50.
@@ -168,7 +169,8 @@ As verified from the repository on 2026-09-02:
 - `EvolutionMilestones.unlockLevels` contains 5, 10, 15, 20, 30, 40, and 50.
 - Male, female, and non-binary level-1 front/back masters are active, and the
   stage-aware appearance catalog falls back to the latest complete approved
-  stage whenever a later milestone matrix is missing.
+  stage at a stable display scale whenever a later milestone matrix is missing.
+  Evolution is not shown until a distinct approved target stage exists.
 - Premium Coach derives an order-independent mission rotation, weekly campaign,
   recovery signal, and volume trend from the training profile and persisted
   history. Guided missions carry the conservative set count and repetition

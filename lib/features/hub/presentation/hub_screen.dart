@@ -162,8 +162,8 @@ class _HubScreenState extends State<HubScreen> {
                 const Spacer(),
                 _StatusRow(
                   streak: progress?.streak ?? 0,
-                  completedQuests: quests?.completedDaily ?? 0,
-                  totalQuests: quests?.daily.length ?? 3,
+                  completedWeeklySessions: quests?.completedWeeklySessions ?? 0,
+                  weeklySessionTarget: quests?.weeklySessionTarget ?? 3,
                   onQuests: () => _open(const QuestBoardScreen()),
                 ),
                 const SizedBox(height: 12),
@@ -306,22 +306,15 @@ class _GymRecordHotspots extends StatelessWidget {
     _GymRecordStation(
       exerciseName: 'Bench Press',
       alignment: Alignment(-.82, -.20),
-      icon: Icons.fitness_center_rounded,
     ),
     _GymRecordStation(
       exerciseName: 'Barbell Row',
       alignment: Alignment(.82, -.08),
-      icon: Icons.line_weight_rounded,
     ),
-    _GymRecordStation(
-      exerciseName: 'Squat',
-      alignment: Alignment(.80, .43),
-      icon: Icons.sports_gymnastics_rounded,
-    ),
+    _GymRecordStation(exerciseName: 'Squat', alignment: Alignment(.80, .43)),
     _GymRecordStation(
       exerciseName: 'Barbell Curl',
       alignment: Alignment(-.80, .38),
-      icon: Icons.military_tech_rounded,
     ),
   ];
 
@@ -338,8 +331,8 @@ class _GymRecordHotspots extends StatelessWidget {
             ).sessionBests.isNotEmpty)
               Align(
                 alignment: station.alignment,
-                child: _GymRecordButton(
-                  icon: station.icon,
+                child: _GymRecordHotspot(
+                  key: ValueKey('gym-record-${station.exerciseName}'),
                   semanticLabel:
                       '${WorkoutCopy.exercise(context, station.exerciseName)} ${context.tr.t('personalBest')}',
                   onTap: () => _showRecord(context, station.exerciseName),
@@ -384,22 +377,19 @@ class _GymRecordStation {
   const _GymRecordStation({
     required this.exerciseName,
     required this.alignment,
-    required this.icon,
   });
 
   final String exerciseName;
   final Alignment alignment;
-  final IconData icon;
 }
 
-class _GymRecordButton extends StatelessWidget {
-  const _GymRecordButton({
-    required this.icon,
+class _GymRecordHotspot extends StatelessWidget {
+  const _GymRecordHotspot({
+    super.key,
     required this.semanticLabel,
     required this.onTap,
   });
 
-  final IconData icon;
   final String semanticLabel;
   final VoidCallback onTap;
 
@@ -407,47 +397,19 @@ class _GymRecordButton extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     button: true,
     label: semanticLabel,
-    child: TweenAnimationBuilder<double>(
-      tween: Tween(begin: .82, end: 1),
-      duration: const Duration(milliseconds: 700),
-      curve: Curves.easeOutBack,
-      builder: (context, reveal, child) => Transform.scale(
-        scale: reveal,
-        child: Opacity(
-          opacity: reveal.clamp(0.0, 1.0).toDouble(),
-          child: child,
-        ),
-      ),
+    child: Tooltip(
+      message: semanticLabel,
+      triggerMode: TooltipTriggerMode.longPress,
       child: Material(
-        color: GymRatColors.black.withValues(alpha: .82),
-        shape: const CircleBorder(),
-        elevation: 8,
-        shadowColor: GymRatColors.gold,
-        child: InkWell(
-          customBorder: const CircleBorder(),
+        color: Colors.transparent,
+        child: InkResponse(
           onTap: onTap,
-          child: SizedBox(
-            width: 42,
-            height: 42,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, color: GymRatColors.gold, size: 18),
-                const Positioned(
-                  right: 3,
-                  bottom: 3,
-                  child: Text(
-                    'PB',
-                    style: TextStyle(
-                      color: GymRatColors.gold,
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          containedInkWell: true,
+          highlightShape: BoxShape.rectangle,
+          radius: 42,
+          splashColor: GymRatColors.gold.withValues(alpha: .24),
+          highlightColor: GymRatColors.gold.withValues(alpha: .10),
+          child: const SizedBox.square(dimension: 76),
         ),
       ),
     ),
@@ -860,13 +822,13 @@ class _LevelProgress extends StatelessWidget {
 class _StatusRow extends StatelessWidget {
   const _StatusRow({
     required this.streak,
-    required this.completedQuests,
-    required this.totalQuests,
+    required this.completedWeeklySessions,
+    required this.weeklySessionTarget,
     required this.onQuests,
   });
   final int streak;
-  final int completedQuests;
-  final int totalQuests;
+  final int completedWeeklySessions;
+  final int weeklySessionTarget;
   final VoidCallback onQuests;
   @override
   Widget build(BuildContext context) => Material(
@@ -894,17 +856,18 @@ class _StatusRow extends StatelessWidget {
             ),
             const Spacer(),
             Icon(
-              Icons.check_rounded,
+              Icons.calendar_today_rounded,
               size: 17,
-              color: completedQuests == totalQuests
+              color: completedWeeklySessions == weeklySessionTarget
                   ? GymRatColors.gold
                   : GymRatColors.textSecondary,
             ),
             const SizedBox(width: 6),
             Text(
-              '$completedQuests/$totalQuests',
+              '${context.tr.t('weeklyShort')} '
+              '$completedWeeklySessions/$weeklySessionTarget',
               style: TextStyle(
-                color: completedQuests == totalQuests
+                color: completedWeeklySessions == weeklySessionTarget
                     ? GymRatColors.gold
                     : GymRatColors.textSecondary,
                 fontSize: 10,

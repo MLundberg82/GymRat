@@ -28,8 +28,16 @@ class RatInventoryState {
   final String equippedAppearanceId;
   final RatCharacterView characterView;
 
-  bool owns(RatItem item, int level) =>
-      item.isLevelUnlocked(level) || ownedItems.contains(item.id);
+  bool owns(RatItem item, int level) {
+    if (item.slot == RatItemSlot.collectible) {
+      return item.isLevelUnlocked(level) || ownedItems.contains(item.id);
+    }
+    if (!item.hasCompleteAppearance ||
+        !RatAppearanceCatalog.isReady(item.appearanceId)) {
+      return false;
+    }
+    return item.isLevelUnlocked(level) || ownedItems.contains(item.id);
+  }
 }
 
 abstract final class RatInventoryStore {

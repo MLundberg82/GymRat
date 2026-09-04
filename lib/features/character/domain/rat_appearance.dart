@@ -128,4 +128,16 @@ abstract final class RatAppearanceCatalog {
     required String? appearanceId,
     required int level,
   }) => byId(appearanceId).approvedStageForLevel(level);
+
+  static bool hasDistinctStageAtLevel({
+    required String? appearanceId,
+    required int level,
+  }) {
+    final appearance = byId(appearanceId);
+    final targetStage = EvolutionMilestones.stageForLevel(level);
+    final previousStage = EvolutionMilestones.previousStageFor(targetStage);
+    return targetStage != previousStage &&
+        appearance.stages.containsKey(targetStage) &&
+        appearance.stages.containsKey(previousStage);
+  }
 }

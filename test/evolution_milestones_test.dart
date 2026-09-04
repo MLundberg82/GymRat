@@ -31,30 +31,13 @@ void main() {
       expect(EvolutionMilestones.previousStageFor(50), 40);
     });
 
-    test('character growth is monotonic', () {
-      var previousWidth = 0.0;
-      var previousHeight = 0.0;
+    test('evolution intensity is monotonic without scaling the same asset', () {
+      var previous = 0.0;
       for (final stage in EvolutionMilestones.stages) {
-        final width = EvolutionMilestones.widthScaleForLevel(stage);
-        final height = EvolutionMilestones.heightScaleForLevel(stage);
-        expect(width, greaterThan(previousWidth));
-        expect(height, greaterThan(previousHeight));
-        previousWidth = width;
-        previousHeight = height;
+        final intensity = EvolutionMilestones.intensityForLevel(stage);
+        expect(intensity, greaterThan(previous));
+        previous = intensity;
       }
-    });
-
-    test('level 1 is visibly smaller than the level 10 form', () {
-      expect(
-        EvolutionMilestones.widthScaleForLevel(10) /
-            EvolutionMilestones.widthScaleForLevel(1),
-        greaterThan(1.4),
-      );
-      expect(
-        EvolutionMilestones.heightScaleForLevel(10) /
-            EvolutionMilestones.heightScaleForLevel(1),
-        greaterThan(1.3),
-      );
     });
   });
 }

@@ -33,7 +33,9 @@ See `docs/GYMRAT_VISION.md` for the durable product and architecture vision.
   award a PB. Only a later result above that baseline awards a PB.
 - Evolution milestones are levels 5, 10, 15, 20, 30, 40, and 50.
 - Continue using the accepted rat master asset for every evolution stage until
-  approved milestone assets exist. Never AI-regenerate the rat.
+  approved milestone assets exist. Keep fallback rendering at a stable display
+  scale; never fake muscular growth by enlarging the same raster. Never
+  AI-regenerate the rat.
 - First launch collects rat identity, training experience, intended weekly
   frequency, height, weight, and training goal. Identity options are male,
   female, and non-binary; they never change workout access or progression.

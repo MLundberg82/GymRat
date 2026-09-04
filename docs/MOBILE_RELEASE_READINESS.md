@@ -76,6 +76,7 @@ Run the following on Android and iOS, on narrow and large phones:
 
 The runtime is ready for stages 1, 5, 10, 15, 20, 30, 40, and 50. Only the
 approved level-1 identity/view matrix currently exists. Missing stages retain
-the correct identity and view while progression scaling supplies visible
-growth. A milestone becomes shippable only when all six human-reviewed renders
-exist and pass `test/character_asset_contract_test.dart`.
+the correct identity and view at a stable display scale; the runtime never
+fakes muscular growth by enlarging the same image. A milestone becomes
+shippable only when all six human-reviewed renders exist and pass
+`test/character_asset_contract_test.dart`.

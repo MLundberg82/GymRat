@@ -27,6 +27,8 @@ class RatItem {
       unlockLevel != null && level >= unlockLevel!;
 
   bool get hasCompleteAppearance => appearanceId != null;
+  bool get isConcept =>
+      slot != RatItemSlot.collectible && !hasCompleteAppearance;
 }
 
 abstract final class RatItemCatalog {
@@ -174,8 +176,11 @@ abstract final class RatItemCatalog {
     RatItem? rank;
     for (final item in items) {
       if (item.unlockLevel != level) continue;
-      if (item.slot != RatItemSlot.collectible) return item;
-      rank = item;
+      if (item.slot == RatItemSlot.collectible) {
+        rank = item;
+      } else if (item.hasCompleteAppearance) {
+        return item;
+      }
     }
     return rank;
   }

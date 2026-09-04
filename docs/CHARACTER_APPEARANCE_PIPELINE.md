@@ -29,8 +29,9 @@ full-character renders:
 The same six-file matrix is required for every supported evolution stage. The
 stage plan and visual acceptance rules live in
 `docs/CHARACTER_EVOLUTION_ART_DIRECTION.md`. Until a complete stage is approved,
-the catalog selects the latest approved stage and the existing progression
-scale supplies visual growth. Partial stages are never reachable at runtime.
+the catalog selects the latest approved stage at one stable display scale.
+Flutter must never imply muscular development by stretching or enlarging the
+same raster. Partial stages are never reachable at runtime.
 
 ## Acceptance criteria
 
@@ -67,13 +68,27 @@ the base appearance.
 
 ## Poses and emotes
 
-The built-in power-flex is a bounded runtime transformation of the currently
-approved full-character asset and therefore works identically for every
-identity, view, and evolution stage. It never composites an item or replaces
-the selected master.
+The built-in power stance is a bounded squash, recoil, energy-ring, and haptic
+response around the currently approved full-character asset. It works for every
+identity and view, never pretends to change the limb pose, never composites an
+item, and never replaces the selected master.
 
 Any future authored pose or multi-frame emote follows the same release matrix
 as an appearance: male, female, and non-binary, front and back, at every stage
 where it is offered. A partial pose remains unavailable. Frames must preserve
 canvas size, foot line, lighting, identity, outfit, and transparency so the
 animation cannot jump or drift.
+
+## Motion matrix
+
+Authored breathing, blink, and tail motion follows the same identity, view,
+appearance, and approved-stage routing as the neutral render. A motion set is
+enabled only when all three frame groups are present. The current authored set
+is male, base appearance, level 1, front view. Every other combination uses a
+torso-only breathing fallback; it does not fake eye or tail movement.
+
+Female, non-binary, back-view, later-stage, and outfit motion frames must be
+exported from their matching approved neutral render. Never reuse male frames
+for another identity and never reuse front frames for the back view. Character
+Lab reports whether the selected combination uses a complete authored set or
+the safe breathing fallback.

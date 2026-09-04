@@ -117,8 +117,8 @@ void main() {
     await tester.pumpWidget(const GymRatApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('0/3'), findsOneWidget);
-    await tester.tap(find.text('0/3'));
+    expect(find.text('WEEKLY 0/3'), findsOneWidget);
+    await tester.tap(find.text('WEEKLY 0/3'));
     await tester.pumpAndSettle();
 
     expect(find.text('QUEST BOARD'), findsOneWidget);
@@ -155,6 +155,43 @@ void main() {
 
     expect(find.text('THE PREMIUM VAULT'), findsOneWidget);
     expect(find.text('THE VAULT IS BEING FORGED'), findsOneWidget);
+  });
+
+  testWidgets('hub PB uses the gym detail as an invisible hit zone', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
+    await WorkoutSessionStore.complete(
+      workoutName: 'CHEST',
+      walk: false,
+      durationSeconds: 1800,
+      exercises: const <WorkoutExerciseResult>[
+        WorkoutExerciseResult(
+          name: 'Bench Press',
+          muscleGroup: 'chest',
+          sets: <WorkoutSetResult>[WorkoutSetResult(weight: 80, reps: 8)],
+        ),
+      ],
+    );
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pumpAndSettle();
+
+    final hotspot = find.byKey(const ValueKey('gym-record-Bench Press'));
+    expect(hotspot, findsOneWidget);
+    expect(
+      find.descendant(of: hotspot, matching: find.byType(Icon)),
+      findsNothing,
+    );
+
+    await tester.tap(hotspot);
+    await tester.pumpAndSettle();
+
+    expect(find.text('GYM RECORD STATION'), findsOneWidget);
+    expect(find.text('Bench Press'), findsOneWidget);
   });
 
   testWidgets('Progress shows persisted workout history', (

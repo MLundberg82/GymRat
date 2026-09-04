@@ -80,16 +80,31 @@ void main() {
     },
   );
 
-  test('level 50 produces an Olympia-sized rat and final item', () {
+  test('missing level 50 art never fakes an Olympia physique by scaling', () {
     expect(
-      EvolutionMilestones.widthScaleForLevel(50),
-      greaterThanOrEqualTo(1.6),
+      RatAppearanceCatalog.approvedStageForLevel(
+        appearanceId: RatAppearanceCatalog.baseId,
+        level: 50,
+      ),
+      1,
     );
     expect(
-      EvolutionMilestones.heightScaleForLevel(50),
-      greaterThanOrEqualTo(1.2),
+      RatAppearanceCatalog.hasDistinctStageAtLevel(
+        appearanceId: RatAppearanceCatalog.baseId,
+        level: 50,
+      ),
+      isFalse,
     );
-    expect(RatItemCatalog.forLevel(50)?.id, 'olympia_aura');
+    expect(RatItemCatalog.forLevel(50)?.id, 'rank_mark_50');
+  });
+
+  test('unfinished wearables are concepts, not owned level rewards', () {
+    const inventory = RatInventoryState();
+    final headband = RatItemCatalog.byId('rookie_headband')!;
+
+    expect(headband.isConcept, isTrue);
+    expect(inventory.owns(headband, 50), isFalse);
+    expect(RatItemCatalog.forLevel(2)?.id, 'rank_mark_2');
   });
 
   test('evolution roadmap uses exact progression thresholds', () {

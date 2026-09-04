@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../../../core/assets/gymrat_assets.dart';
-import '../../evolution/domain/evolution_milestones.dart';
 import '../../profile/domain/training_profile.dart';
+import '../domain/rat_animation_set.dart';
 import '../domain/rat_appearance.dart';
 import '../domain/rat_character_view.dart';
 
@@ -31,19 +31,32 @@ class GymRatCharacter extends StatefulWidget {
   final bool enableEmotes;
   final String? emoteSemanticLabel;
 
+  static const double displayScale = .70;
+
   static double breathingScaleX(double progress) =>
-      1 + sin(progress * pi * 2) * .0025;
+      1 + sin(progress.clamp(0.0, 1.0) * pi) * .006;
+
+  static double breathingScaleY(double progress) =>
+      1 + sin(progress.clamp(0.0, 1.0) * pi) * .002;
 
   static double emoteScaleX(double progress) =>
-      1 + sin(progress.clamp(0.0, 1.0) * pi) * .035;
+      1 + sin(progress.clamp(0.0, 1.0) * pi) * .025;
 
   static double emoteScaleY(double progress) =>
-      1 + sin(progress.clamp(0.0, 1.0) * pi) * .012;
+      1 - sin(progress.clamp(0.0, 1.0) * pi) * .018;
+
+  static double emoteRotation(double progress) {
+    final safe = progress.clamp(0.0, 1.0);
+    return sin(safe * pi * 6) * (1 - safe) * .014;
+  }
+
+  static double emoteDrop(double progress) =>
+      sin(progress.clamp(0.0, 1.0) * pi) * 7;
 
   static Rect breathingTorsoRect(Size size, RatCharacterView view) {
     final top = size.height * (view == RatCharacterView.front ? .20 : .19);
     final bottom = size.height * (view == RatCharacterView.front ? .48 : .47);
-    return Rect.fromLTRB(0, top, size.width, bottom);
+    return Rect.fromLTRB(size.width * .20, top, size.width * .80, bottom);
   }
 
   static String assetFor({
@@ -66,15 +79,12 @@ class GymRatCharacter extends StatefulWidget {
     required RatCharacterView view,
     required int level,
     String appearanceId = RatAppearanceCatalog.baseId,
-  }) =>
-      gender == RatGender.male &&
-      view == RatCharacterView.front &&
-      appearanceId == RatAppearanceCatalog.baseId &&
-      RatAppearanceCatalog.approvedStageForLevel(
-            appearanceId: appearanceId,
-            level: level,
-          ) ==
-          1;
+  }) => RatAnimationCatalog.hasCompleteMotion(
+    gender: gender,
+    view: view,
+    level: level,
+    appearanceId: appearanceId,
+  );
 
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
@@ -147,11 +157,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
         level: widget.level,
       ),
     };
-    if (_usesAuthoredSpriteFrames) {
-      allFrames.addAll(GymRatAssets.maleLevel1IdleFrames);
-      allFrames.addAll(GymRatAssets.maleLevel1BlinkFrames);
-      allFrames.addAll(GymRatAssets.maleLevel1TailFrames);
-    }
+    allFrames.addAll(_animationSet.allFrames);
 
     for (final frame in allFrames) {
       precacheImage(
@@ -235,7 +241,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
     _playAnimation(
       action: _IdleAction.breathing,
-      frames: GymRatAssets.maleLevel1IdleFrames,
+      frames: _animationSet.breathing,
       frameDuration: const Duration(milliseconds: 110),
       onComplete: _scheduleBreath,
     );
@@ -273,11 +279,11 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _playAnimation(
       action: _IdleAction.blinking,
       frames: [
-        GymRatAssets.maleLevel1BlinkFrames[0],
-        GymRatAssets.maleLevel1BlinkFrames[1],
-        GymRatAssets.maleLevel1BlinkFrames[2],
-        GymRatAssets.maleLevel1BlinkFrames[3],
-        GymRatAssets.maleLevel1BlinkFrames[0],
+        _animationSet.blinking[0],
+        _animationSet.blinking[1],
+        _animationSet.blinking[2],
+        _animationSet.blinking[3],
+        _animationSet.blinking[0],
       ],
       frameDuration: const Duration(milliseconds: 45),
       onComplete: _scheduleBlink,
@@ -288,16 +294,16 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _playAnimation(
       action: _IdleAction.blinking,
       frames: [
-        GymRatAssets.maleLevel1BlinkFrames[0],
-        GymRatAssets.maleLevel1BlinkFrames[1],
-        GymRatAssets.maleLevel1BlinkFrames[2],
-        GymRatAssets.maleLevel1BlinkFrames[3],
-        GymRatAssets.maleLevel1BlinkFrames[0],
-        GymRatAssets.maleLevel1BlinkFrames[0],
-        GymRatAssets.maleLevel1BlinkFrames[1],
-        GymRatAssets.maleLevel1BlinkFrames[2],
-        GymRatAssets.maleLevel1BlinkFrames[3],
-        GymRatAssets.maleLevel1BlinkFrames[0],
+        _animationSet.blinking[0],
+        _animationSet.blinking[1],
+        _animationSet.blinking[2],
+        _animationSet.blinking[3],
+        _animationSet.blinking[0],
+        _animationSet.blinking[0],
+        _animationSet.blinking[1],
+        _animationSet.blinking[2],
+        _animationSet.blinking[3],
+        _animationSet.blinking[0],
       ],
       frameDuration: const Duration(milliseconds: 42),
       onComplete: _scheduleBlink,
@@ -328,7 +334,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
     _playAnimation(
       action: _IdleAction.tail,
-      frames: GymRatAssets.maleLevel1TailFrames,
+      frames: _animationSet.tail,
       frameDuration: const Duration(milliseconds: 90),
       onComplete: _scheduleTail,
     );
@@ -386,12 +392,14 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     return _activeFrames[_frameIndex];
   }
 
-  String get _identityMaster => GymRatCharacter.assetFor(
+  RatAnimationSet get _animationSet => RatAnimationCatalog.forCharacter(
     gender: widget.gender,
     view: widget.view,
-    appearanceId: widget.appearanceId,
     level: widget.level,
+    appearanceId: widget.appearanceId,
   );
+
+  String get _identityMaster => _animationSet.neutral;
 
   bool get _usesAuthoredSpriteFrames =>
       GymRatCharacter.usesAuthoredSpriteFrames(
@@ -403,6 +411,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   void _playFlexEmote() {
     if (!widget.enableEmotes || _emoteController.isAnimating) return;
+    HapticFeedback.mediumImpact();
     _emoteController.forward(from: 0);
   }
 
@@ -429,69 +438,89 @@ class _GymRatCharacterState extends State<GymRatCharacter>
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
-            return Transform(
-              transform: Matrix4.diagonal3Values(
-                EvolutionMilestones.widthScaleForLevel(widget.level) *
-                    GymRatCharacter.emoteScaleX(emote),
-                EvolutionMilestones.heightScaleForLevel(widget.level) *
-                    GymRatCharacter.emoteScaleY(emote),
-                1,
-              ),
-              alignment: Alignment.bottomCenter,
-              child: Stack(
+            return Transform.translate(
+              offset: Offset(0, GymRatCharacter.emoteDrop(emote)),
+              child: Transform.rotate(
+                angle: GymRatCharacter.emoteRotation(emote),
                 alignment: Alignment.bottomCenter,
-                children: [
-                  if (_emoteController.isAnimating)
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: (sin(emote * pi) * .24)
-                            .clamp(0.0, 1.0)
-                            .toDouble(),
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: Alignment(0, .05),
-                              radius: .48,
-                              colors: [Color(0x66FFC107), Colors.transparent],
+                child: Transform(
+                  transform: Matrix4.diagonal3Values(
+                    GymRatCharacter.displayScale *
+                        GymRatCharacter.emoteScaleX(emote),
+                    GymRatCharacter.displayScale *
+                        GymRatCharacter.emoteScaleY(emote),
+                    1,
+                  ),
+                  alignment: Alignment.bottomCenter,
+                  child: Stack(
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      if (_emoteController.isAnimating)
+                        Positioned.fill(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Opacity(
+                                opacity: (sin(emote * pi) * .24)
+                                    .clamp(0.0, 1.0)
+                                    .toDouble(),
+                                child: const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: RadialGradient(
+                                      center: Alignment(0, .05),
+                                      radius: .48,
+                                      colors: [
+                                        Color(0x66FFC107),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              CustomPaint(
+                                painter: _PowerStancePainter(progress: emote),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Image.asset(
+                        _currentFrame,
+                        height: widget.height,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.bottomCenter,
+                        gaplessPlayback: true,
+                        filterQuality: FilterQuality.high,
+                        cacheHeight: _cacheHeight,
+                        semanticLabel: widget.gender.name,
+                      ),
+                      if (_action == _IdleAction.breathing &&
+                          !_usesAuthoredSpriteFrames)
+                        Positioned.fill(
+                          child: ClipRect(
+                            clipper: _BreathingTorsoClipper(view: widget.view),
+                            child: Transform.scale(
+                              alignment: const Alignment(0, -.26),
+                              scaleX: GymRatCharacter.breathingScaleX(
+                                _breathingController.value,
+                              ),
+                              scaleY: GymRatCharacter.breathingScaleY(
+                                _breathingController.value,
+                              ),
+                              child: Image.asset(
+                                _identityMaster,
+                                height: widget.height,
+                                fit: BoxFit.contain,
+                                alignment: Alignment.bottomCenter,
+                                gaplessPlayback: true,
+                                filterQuality: FilterQuality.high,
+                                cacheHeight: _cacheHeight,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  Image.asset(
-                    _currentFrame,
-                    height: widget.height,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.bottomCenter,
-                    gaplessPlayback: true,
-                    filterQuality: FilterQuality.high,
-                    cacheHeight: _cacheHeight,
-                    semanticLabel: widget.gender.name,
+                    ],
                   ),
-                  if (_action == _IdleAction.breathing &&
-                      !_usesAuthoredSpriteFrames)
-                    Positioned.fill(
-                      child: ClipRect(
-                        clipper: _BreathingTorsoClipper(view: widget.view),
-                        child: Transform.scale(
-                          alignment: const Alignment(0, -.26),
-                          scaleX: GymRatCharacter.breathingScaleX(
-                            _breathingController.value,
-                          ),
-                          scaleY: 1,
-                          child: Image.asset(
-                            _identityMaster,
-                            height: widget.height,
-                            fit: BoxFit.contain,
-                            alignment: Alignment.bottomCenter,
-                            gaplessPlayback: true,
-                            filterQuality: FilterQuality.high,
-                            cacheHeight: _cacheHeight,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                ),
               ),
             );
           },
@@ -512,4 +541,51 @@ class _BreathingTorsoClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(covariant _BreathingTorsoClipper oldClipper) =>
       oldClipper.view != view;
+}
+
+class _PowerStancePainter extends CustomPainter {
+  const _PowerStancePainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final power = sin(progress.clamp(0.0, 1.0) * pi).clamp(0.0, 1.0);
+    if (power <= 0) return;
+    final paint = Paint()
+      ..color = const Color(0xFFFFC107).withValues(alpha: power * .72)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final center = Offset(size.width / 2, size.height * .91);
+    final radius = size.width * (.12 + .24 * progress);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      pi * .10,
+      pi * .80,
+      false,
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      pi * 1.10,
+      pi * .80,
+      false,
+      paint,
+    );
+    for (final direction in const <double>[-1, 1]) {
+      canvas.drawLine(
+        Offset(center.dx + direction * size.width * .16, center.dy - 8),
+        Offset(
+          center.dx + direction * size.width * (.24 + .07 * progress),
+          center.dy - size.height * .10,
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PowerStancePainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

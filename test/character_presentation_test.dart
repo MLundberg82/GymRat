@@ -5,8 +5,9 @@ import 'package:gymrat/features/profile/domain/training_profile.dart';
 
 void main() {
   test('shared breathing curve expands and contracts', () {
-    expect(GymRatCharacter.breathingScaleX(.25), greaterThan(1));
-    expect(GymRatCharacter.breathingScaleX(.75), lessThan(1));
+    expect(GymRatCharacter.breathingScaleX(0), 1);
+    expect(GymRatCharacter.breathingScaleX(.5), greaterThan(1));
+    expect(GymRatCharacter.breathingScaleX(1), closeTo(1, .000001));
 
     final torso = GymRatCharacter.breathingTorsoRect(
       const Size(320, 600),
@@ -15,12 +16,15 @@ void main() {
     expect(torso.top, greaterThan(0));
     expect(torso.bottom, lessThan(600));
     expect(torso.height, lessThan(600 / 3));
+    expect(torso.left, greaterThan(0));
+    expect(torso.right, lessThan(320));
   });
 
-  test('power-flex emote grows every identity without changing its asset', () {
+  test('power stance emote squats and settles without changing its asset', () {
     expect(GymRatCharacter.emoteScaleX(0), 1);
-    expect(GymRatCharacter.emoteScaleX(.5), greaterThan(1.03));
-    expect(GymRatCharacter.emoteScaleY(.5), greaterThan(1));
+    expect(GymRatCharacter.emoteScaleX(.5), greaterThan(1));
+    expect(GymRatCharacter.emoteScaleY(.5), lessThan(1));
+    expect(GymRatCharacter.emoteDrop(.5), greaterThan(0));
     expect(GymRatCharacter.emoteScaleX(1), closeTo(1, .000001));
   });
 

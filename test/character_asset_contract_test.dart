@@ -45,6 +45,16 @@ void main() {
     );
   });
 
+  test('evolution is released only for a distinct complete stage', () {
+    expect(
+      RatAppearanceCatalog.hasDistinctStageAtLevel(
+        appearanceId: RatAppearanceCatalog.baseId,
+        level: 5,
+      ),
+      isFalse,
+    );
+  });
+
   test('partial identity or unsupported stages fail the release contract', () {
     const partial = RatAppearance(
       id: 'partial',

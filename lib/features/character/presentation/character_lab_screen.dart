@@ -4,6 +4,7 @@ import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../evolution/domain/evolution_milestones.dart';
 import '../../profile/domain/training_profile.dart';
+import '../domain/rat_animation_set.dart';
 import '../domain/rat_appearance.dart';
 import 'gymrat_character.dart';
 
@@ -26,6 +27,11 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
       level: _level,
     );
     final activeAsset = GymRatCharacter.assetFor(
+      gender: _gender,
+      view: _view,
+      level: _level,
+    );
+    final motion = RatAnimationCatalog.forCharacter(
       gender: _gender,
       view: _view,
       level: _level,
@@ -81,26 +87,29 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: EvolutionMilestones.stages
-                      .map(
-                        (level) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            selected: _level == level,
-                            avatar: Icon(
-                              RatAppearanceCatalog.base.stages.containsKey(
-                                    level,
-                                  )
-                                  ? Icons.verified_rounded
-                                  : Icons.aspect_ratio_rounded,
-                              size: 16,
-                            ),
-                            label: Text('${context.tr.t('level')} $level'),
-                            onSelected: (_) => setState(() => _level = level),
-                          ),
+                  children: EvolutionMilestones.stages.map((level) {
+                    final available = RatAppearanceCatalog.base.stages
+                        .containsKey(level);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        selected: _level == level,
+                        avatar: Icon(
+                          available
+                              ? Icons.verified_rounded
+                              : Icons.hourglass_empty_rounded,
+                          size: 16,
                         ),
-                      )
-                      .toList(),
+                        label: Text('${context.tr.t('level')} $level'),
+                        tooltip: available
+                            ? null
+                            : context.tr.t('assetPending'),
+                        onSelected: available
+                            ? (_) => setState(() => _level = level)
+                            : null,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -122,6 +131,8 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
                       gender: _gender,
                       view: _view,
                       level: _level,
+                      enableEmotes: true,
+                      emoteSemanticLabel: context.tr.t('tapRatToFlex'),
                     ),
                   ),
                 ),
@@ -140,9 +151,7 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
                       Expanded(
                         child: Text(
                           '${context.tr.t('approvedAssetStage')}: '
-                          '${context.tr.t('level')} $approvedStage · '
-                          '${context.tr.t('scalePreview')}: '
-                          '${context.tr.t('level')} $_level',
+                          '${context.tr.t('level')} $approvedStage',
                           style: const TextStyle(
                             color: GymRatColors.textSecondary,
                             fontWeight: FontWeight.w700,
@@ -150,6 +159,18 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    context.tr.t(
+                      motion.isComplete
+                          ? 'authoredMotion'
+                          : 'safeMotionFallback',
+                    ),
+                    style: const TextStyle(
+                      color: GymRatColors.textMuted,
+                      fontSize: 10,
+                    ),
                   ),
                   const SizedBox(height: 5),
                   SelectableText(

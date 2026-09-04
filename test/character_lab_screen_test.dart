@@ -7,7 +7,7 @@ import 'package:gymrat/features/character/presentation/gymrat_character.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
 
 void main() {
-  testWidgets('character lab reviews every identity view and milestone', (
+  testWidgets('character lab blocks unapproved milestone previews', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -46,8 +46,14 @@ void main() {
     );
     expect(character.gender, RatGender.female);
     expect(character.view, RatCharacterView.back);
-    expect(character.level, 50);
+    expect(character.level, 1);
     expect(find.textContaining('Approved asset stage:'), findsOneWidget);
+    expect(
+      find.text(
+        'Safe torso breathing is active. Blink and tail frames are pending.',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.text('assets/characters/female/level_01_back.png'),
       findsOneWidget,

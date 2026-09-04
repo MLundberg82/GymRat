@@ -65,6 +65,7 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                 ? _WorkoutSummary(
                     key: const ValueKey('workout-summary'),
                     result: widget.result,
+                    appearanceId: widget.appearanceId,
                     onContinue: _continue,
                   )
                 : RewardSequence(
@@ -88,10 +89,12 @@ class _WorkoutSummary extends StatelessWidget {
   const _WorkoutSummary({
     super.key,
     required this.result,
+    required this.appearanceId,
     required this.onContinue,
   });
 
   final WorkoutResult result;
+  final String appearanceId;
   final VoidCallback onContinue;
 
   String get duration =>
@@ -212,11 +215,15 @@ class _WorkoutSummary extends StatelessWidget {
             const SizedBox(height: 10),
             for (final pr in result.prs) _PRRow(pr: pr),
           ],
-          if (result.milestoneUnlocked != null) ...[
+          if (result.milestoneUnlocked case final milestone?
+              when RatAppearanceCatalog.hasDistinctStageAtLevel(
+                appearanceId: appearanceId,
+                level: milestone,
+              )) ...[
             const SizedBox(height: 28),
             Text(
               '${translations.t('evolutionUnlocked')} · '
-              '${translations.t('level')} ${result.milestoneUnlocked}',
+              '${translations.t('level')} $milestone',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: GymRatColors.gold,

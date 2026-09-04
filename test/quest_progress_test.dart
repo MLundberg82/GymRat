@@ -37,6 +37,30 @@ void main() {
       expect(snapshot.completedDaily, 3);
       expect(snapshot.weekly.map((quest) => quest.current), [2, 90]);
       expect(snapshot.completedWeekly, 1);
+      expect(snapshot.completedWeeklySessions, 2);
+      expect(snapshot.weeklySessionTarget, 3);
+    });
+
+    test('weekly campaign counts workouts, never exercises', () {
+      final history = TrainingHistorySnapshot(
+        personalBests: const [],
+        workouts: [
+          _workout(
+            id: 'one-session',
+            completedAt: DateTime(2026, 9, 3, 10),
+            durationSeconds: 45 * 60,
+            exerciseCount: 8,
+          ),
+        ],
+      );
+
+      final snapshot = QuestProgressCalculator.fromHistory(
+        history,
+        now: DateTime(2026, 9, 3, 18),
+      );
+
+      expect(snapshot.completedWeeklySessions, 1);
+      expect(snapshot.weeklySessions?.current, 1);
     });
 
     test('keeps visible progress and progress bars within their targets', () {

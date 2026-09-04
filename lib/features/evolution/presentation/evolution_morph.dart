@@ -304,19 +304,16 @@ class _EvolutionMorphState extends State<EvolutionMorph>
     required double intensity,
   }) {
     final height = (constraints.maxHeight * .72).clamp(430.0, 700.0).toDouble();
-    final previousStage = EvolutionMilestones.previousStageFor(widget.newLevel);
-    final fromX = EvolutionMilestones.widthScaleForLevel(previousStage);
-    final fromY = EvolutionMilestones.heightScaleForLevel(previousStage);
-    final toX = EvolutionMilestones.widthScaleForLevel(widget.newLevel);
-    final toY = EvolutionMilestones.heightScaleForLevel(widget.newLevel);
     final growthBurst =
-        math.sin(morph * math.pi).abs() * (.20 + .08 * intensity);
+        math.sin(morph * math.pi).abs() * (.07 + .03 * intensity);
     final pulse = math.sin(progress * math.pi * 28) * charge * .018;
-    final morphX = _lerp(fromX, toX, morph) + growthBurst + pulse;
-    final morphY = _lerp(fromY, toY, morph) + growthBurst * .42 - pulse * .4;
+    final morphX = GymRatCharacter.displayScale + growthBurst + pulse;
+    final morphY =
+        GymRatCharacter.displayScale + growthBurst * .24 - pulse * .4;
     final targetPunch = 1 + math.sin(settle * math.pi).abs() * .055;
-    final targetX = toX * targetPunch;
-    final targetY = toY * (1 + (targetPunch - 1) * .45);
+    final targetX = GymRatCharacter.displayScale * targetPunch;
+    final targetY =
+        GymRatCharacter.displayScale * (1 + (targetPunch - 1) * .45);
 
     return Stack(
       fit: StackFit.expand,
@@ -353,8 +350,8 @@ class _EvolutionMorphState extends State<EvolutionMorph>
                   opacity: sourceOpacity,
                   child: _scaledCharacter(
                     asset: _sourceAsset,
-                    scaleX: fromX,
-                    scaleY: fromY,
+                    scaleX: GymRatCharacter.displayScale,
+                    scaleY: GymRatCharacter.displayScale,
                   ),
                 ),
                 Opacity(
@@ -509,9 +506,5 @@ class _EvolutionMorphState extends State<EvolutionMorph>
         ],
       ),
     );
-  }
-
-  double _lerp(double from, double to, double amount) {
-    return from + (to - from) * amount;
   }
 }

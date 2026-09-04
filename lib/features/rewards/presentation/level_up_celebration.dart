@@ -233,6 +233,21 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        Align(
+          alignment: const Alignment(0, -.02),
+          child: SizedBox.square(
+            dimension: (constraints.maxWidth * .92)
+                .clamp(300.0, 460.0)
+                .toDouble(),
+            child: CustomPaint(
+              painter: _LevelSealPainter(
+                charge: charge,
+                reveal: slamOpacity,
+                evolution: widget.isEvolution,
+              ),
+            ),
+          ),
+        ),
         Positioned(
           top: constraints.maxHeight * .055,
           left: 16,
@@ -521,6 +536,100 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
       GymUpgradeType.strongman => Icons.sports_martial_arts_rounded,
       GymUpgradeType.architecture => Icons.account_balance_rounded,
     };
+  }
+}
+
+class _LevelSealPainter extends CustomPainter {
+  const _LevelSealPainter({
+    required this.charge,
+    required this.reveal,
+    required this.evolution,
+  });
+
+  final double charge;
+  final double reveal;
+  final bool evolution;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide * (.31 + .055 * charge);
+    final opacity = (.22 + .68 * charge) * (1 - reveal * .30);
+    final accent = evolution ? const Color(0xFF9B5CFF) : GymRatColors.gold;
+
+    canvas.drawCircle(
+      center,
+      radius * .87,
+      Paint()
+        ..color = const Color(0xFF060603).withValues(alpha: .72)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 19
+        ..color = accent.withValues(alpha: opacity * .18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.2
+        ..color = GymRatColors.gold.withValues(alpha: opacity),
+    );
+    canvas.drawCircle(
+      center,
+      radius * .84,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0xFFFFE082).withValues(alpha: opacity * .62),
+    );
+
+    const tickCount = 36;
+    for (var index = 0; index < tickCount; index++) {
+      final angle = index / tickCount * math.pi * 2 - math.pi / 2;
+      final major = index % 3 == 0;
+      final innerRadius = radius * (major ? .91 : .95);
+      final outerRadius = radius * (major ? 1.08 : 1.03);
+      final direction = Offset(math.cos(angle), math.sin(angle));
+      canvas.drawLine(
+        center + direction * innerRadius,
+        center + direction * outerRadius,
+        Paint()
+          ..strokeWidth = major ? 2.2 : 1
+          ..strokeCap = StrokeCap.round
+          ..color = (major ? GymRatColors.gold : const Color(0xFFFFE082))
+              .withValues(alpha: opacity * (major ? .90 : .48)),
+      );
+    }
+
+    final chevronPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = const Color(0xFFFFE082).withValues(alpha: opacity * .82);
+    for (final side in <double>[-1, 1]) {
+      final x = center.dx + side * radius * .68;
+      final y = center.dy + radius * .67;
+      final path = Path()
+        ..moveTo(x - side * 12, y - 8)
+        ..lineTo(x, y)
+        ..lineTo(x - side * 12, y + 8);
+      canvas.drawPath(path, chevronPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LevelSealPainter oldDelegate) {
+    return oldDelegate.charge != charge ||
+        oldDelegate.reveal != reveal ||
+        oldDelegate.evolution != evolution;
   }
 }
 

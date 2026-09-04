@@ -216,7 +216,7 @@ class GymRatLocalizations {
       'scalePreview': 'Growth scale preview',
       'assetPending':
           'A complete identity and view asset set is still pending.',
-      'authoredMotion': 'Authored breathing, blink and tail frames are active.',
+      'authoredMotion': 'Authored character motion frames are active.',
       'safeMotionFallback':
           'Safe torso breathing is active. Blink and tail frames are pending.',
       'premium': 'GymRat Premium',
@@ -658,8 +658,7 @@ class GymRatLocalizations {
       'scalePreview': 'Förhandsvisad tillväxtskala',
       'assetPending':
           'En komplett asset-uppsättning för identitet och vy saknas ännu.',
-      'authoredMotion':
-          'Skapade bildrutor för andning, blinkning och svans är aktiva.',
+      'authoredMotion': 'Skapade rörelsebildrutor för karaktären är aktiva.',
       'safeMotionFallback':
           'Säker bröstandning är aktiv. Blink- och svansrutor saknas ännu.',
       'premium': 'GymRat Premium',
@@ -1105,7 +1104,7 @@ class GymRatLocalizations {
       'assetPending':
           'Aún falta un conjunto completo de recursos de identidad y vista.',
       'authoredMotion':
-          'Los fotogramas de respiración, parpadeo y cola están activos.',
+          'Los fotogramas de movimiento del personaje están activos.',
       'safeMotionFallback':
           'La respiración del torso está activa. Faltan parpadeo y cola.',
       'premium': 'GymRat Premium',
@@ -1555,7 +1554,7 @@ class GymRatLocalizations {
       'scalePreview': 'Предпросмотр роста',
       'assetPending':
           'Полный набор ресурсов для образа и ракурса ещё не готов.',
-      'authoredMotion': 'Готовые кадры дыхания, моргания и хвоста активны.',
+      'authoredMotion': 'Готовые кадры движения персонажа активны.',
       'safeMotionFallback':
           'Безопасное дыхание корпуса активно. Кадры глаз и хвоста ожидаются.',
       'premium': 'GymRat Premium',
@@ -1983,7 +1982,7 @@ class GymRatLocalizations {
       'approvedAssetStage': '已批准资源等级',
       'scalePreview': '成长比例预览',
       'assetPending': '完整的身份与视角资源组仍在制作中。',
-      'authoredMotion': '已启用制作完成的呼吸、眨眼与尾巴动画帧。',
+      'authoredMotion': '已启用制作完成的角色动作帧。',
       'safeMotionFallback': '已启用安全的躯干呼吸；眨眼和尾巴动画帧仍待完成。',
       'premium': 'GymRat Premium',
       'startWorkout': '开始训练',

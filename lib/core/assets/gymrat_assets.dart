@@ -57,14 +57,116 @@ abstract final class GymRatAssets {
     'assets/characters/male/level_01/tail/tail_11.png',
   ];
 
+  static const List<String> maleLevel1EmoteFrames = [
+    maleLevel1,
+    'assets/characters/male/level_01/emotes/double_biceps_01.png',
+    'assets/characters/male/level_01/emotes/double_biceps_02.png',
+    'assets/characters/male/level_01/emotes/double_biceps_01.png',
+    maleLevel1,
+  ];
+
   static const String femaleLevel1 = 'assets/characters/female/level_01.png';
   static const String femaleLevel1Back =
       'assets/characters/female/level_01_back.png';
+
+  static const List<String> femaleLevel1IdleFrames = [
+    femaleLevel1,
+    'assets/characters/female/level_01/idle/breath_01.png',
+    'assets/characters/female/level_01/idle/breath_02.png',
+    'assets/characters/female/level_01/idle/breath_03.png',
+    'assets/characters/female/level_01/idle/breath_04.png',
+    'assets/characters/female/level_01/idle/breath_03.png',
+    'assets/characters/female/level_01/idle/breath_02.png',
+    'assets/characters/female/level_01/idle/breath_01.png',
+    femaleLevel1,
+  ];
+
+  static const List<String> femaleLevel1BlinkFrames = [
+    femaleLevel1,
+    'assets/characters/female/level_01/blink/blink_01.png',
+    'assets/characters/female/level_01/blink/blink_02.png',
+    'assets/characters/female/level_01/blink/blink_03.png',
+  ];
+
+  static const List<String> femaleLevel1TailFrames = [
+    femaleLevel1,
+    'assets/characters/female/level_01/tail/tail_01.png',
+    'assets/characters/female/level_01/tail/tail_02.png',
+    'assets/characters/female/level_01/tail/tail_01.png',
+    femaleLevel1,
+  ];
+
+  static const List<String> femaleLevel1BackIdleFrames = [
+    femaleLevel1Back,
+    'assets/characters/female/level_01_back/idle/breath_01.png',
+    'assets/characters/female/level_01_back/idle/breath_02.png',
+    'assets/characters/female/level_01_back/idle/breath_01.png',
+    femaleLevel1Back,
+  ];
+
+  static const List<String> femaleLevel1EmoteFrames = [
+    femaleLevel1,
+    'assets/characters/female/level_01/emotes/double_biceps_01.png',
+    'assets/characters/female/level_01/emotes/double_biceps_02.png',
+    'assets/characters/female/level_01/emotes/double_biceps_03.png',
+    'assets/characters/female/level_01/emotes/double_biceps_02.png',
+    'assets/characters/female/level_01/emotes/double_biceps_01.png',
+    femaleLevel1,
+  ];
 
   static const String nonBinaryLevel1 =
       'assets/characters/non_binary/level_01.png';
   static const String nonBinaryLevel1Back =
       'assets/characters/non_binary/level_01_back.png';
+
+  static const List<String> nonBinaryLevel1IdleFrames = [
+    nonBinaryLevel1,
+    'assets/characters/non_binary/level_01/idle/breath_01.png',
+    'assets/characters/non_binary/level_01/idle/breath_02.png',
+    'assets/characters/non_binary/level_01/idle/breath_03.png',
+    'assets/characters/non_binary/level_01/idle/breath_02.png',
+    'assets/characters/non_binary/level_01/idle/breath_01.png',
+    nonBinaryLevel1,
+  ];
+
+  static const List<String> nonBinaryLevel1BlinkFrames = [
+    nonBinaryLevel1,
+    'assets/characters/non_binary/level_01/blink/blink_01.png',
+    'assets/characters/non_binary/level_01/blink/blink_02.png',
+    'assets/characters/non_binary/level_01/blink/blink_03.png',
+  ];
+
+  static const List<String> nonBinaryLevel1TailFrames = [
+    nonBinaryLevel1,
+    'assets/characters/non_binary/level_01/tail/tail_01.png',
+    'assets/characters/non_binary/level_01/tail/tail_02.png',
+    'assets/characters/non_binary/level_01/tail/tail_01.png',
+    nonBinaryLevel1,
+  ];
+
+  static const List<String> nonBinaryLevel1BackIdleFrames = [
+    nonBinaryLevel1Back,
+    'assets/characters/non_binary/level_01_back/idle/breath_01.png',
+    'assets/characters/non_binary/level_01_back/idle/breath_02.png',
+    'assets/characters/non_binary/level_01_back/idle/breath_01.png',
+    nonBinaryLevel1Back,
+  ];
+
+  static const List<String> nonBinaryLevel1EmoteFrames = [
+    nonBinaryLevel1,
+    'assets/characters/non_binary/level_01/emotes/double_biceps_01.png',
+    'assets/characters/non_binary/level_01/emotes/double_biceps_02.png',
+    'assets/characters/non_binary/level_01/emotes/double_biceps_01.png',
+    nonBinaryLevel1,
+  ];
+
+  static const List<String> maleLevel1BackIdleFrames = [
+    maleLevel1Back,
+    'assets/characters/male/level_01_back/idle/breath_01.png',
+    'assets/characters/male/level_01_back/idle/breath_02.png',
+    'assets/characters/male/level_01_back/idle/breath_01.png',
+    maleLevel1Back,
+  ];
 
   static const String effectsRoot = 'assets/effects/';
   static const String itemsRoot = 'assets/items/';

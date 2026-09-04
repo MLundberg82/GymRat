@@ -3,7 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymrat/features/character/domain/rat_animation_set.dart';
 import 'package:gymrat/features/character/domain/rat_appearance.dart';
+import 'package:gymrat/features/character/domain/rat_character_view.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
 
@@ -116,6 +118,29 @@ void main() {
             lessThan(.03),
             reason: '$front / $back height',
           );
+        }
+      }
+    },
+  );
+
+  test(
+    'every authored motion frame is transparent and canvas-stable',
+    () async {
+      for (final gender in RatGender.values) {
+        for (final view in RatCharacterView.values) {
+          final set = RatAnimationCatalog.forCharacter(
+            gender: gender,
+            view: view,
+            level: 1,
+          );
+          final neutralInfo = await _inspect(set.neutral);
+
+          for (final asset in set.allFrames.toSet()) {
+            final info = await _inspect(asset);
+            expect(info.cornerAlphas, everyElement(0), reason: asset);
+            expect(info.width, neutralInfo.width, reason: asset);
+            expect(info.height, neutralInfo.height, reason: asset);
+          }
         }
       }
     },

@@ -60,8 +60,12 @@ never awarded as a personal best. A PB is awarded only when a later result is
 strictly greater than the stored baseline.
 
 Evolution milestones are fixed at levels 5, 10, 15, 20, 30, 40, and 50. The
-same accepted rat master asset is used across stages until real, approved
-milestone assets are available. The rat must not be regenerated with AI.
+accepted level-1 front/back rat assets are the identity masters for each gender.
+Motion frames and future milestone variants may be generated from the matching
+master, but they must preserve gender presentation, identity, palette, canvas
+alignment, and true alpha transparency. The app keeps using the latest complete
+approved stage until the full six-asset milestone matrix is approved; muscular
+growth is never faked by scaling the same raster.
 
 Reward and evolution animation may use overshooting curves for bounce, scale,
 and movement. Values passed to APIs with bounded contracts, including opacity

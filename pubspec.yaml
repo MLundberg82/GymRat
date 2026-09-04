@@ -23,8 +23,20 @@ flutter:
     - assets/characters/male/level_01/idle/
     - assets/characters/male/level_01/blink/
     - assets/characters/male/level_01/tail/
+    - assets/characters/male/level_01/emotes/
+    - assets/characters/male/level_01_back/idle/
     - assets/characters/female/
+    - assets/characters/female/level_01/idle/
+    - assets/characters/female/level_01/blink/
+    - assets/characters/female/level_01/tail/
+    - assets/characters/female/level_01/emotes/
+    - assets/characters/female/level_01_back/idle/
     - assets/characters/non_binary/
+    - assets/characters/non_binary/level_01/idle/
+    - assets/characters/non_binary/level_01/blink/
+    - assets/characters/non_binary/level_01/tail/
+    - assets/characters/non_binary/level_01/emotes/
+    - assets/characters/non_binary/level_01_back/idle/
     - assets/gyms/
     - assets/items/
     - assets/effects/

@@ -79,7 +79,7 @@ class GymRatCharacter extends StatefulWidget {
     required RatCharacterView view,
     required int level,
     String appearanceId = RatAppearanceCatalog.baseId,
-  }) => RatAnimationCatalog.hasCompleteMotion(
+  }) => RatAnimationCatalog.hasAnyAuthoredMotion(
     gender: gender,
     view: view,
     level: level,
@@ -90,7 +90,7 @@ class GymRatCharacter extends StatefulWidget {
   State<GymRatCharacter> createState() => _GymRatCharacterState();
 }
 
-enum _IdleAction { neutral, breathing, blinking, tail }
+enum _IdleAction { neutral, breathing, blinking, tail, emote }
 
 class _GymRatCharacterState extends State<GymRatCharacter>
     with TickerProviderStateMixin {
@@ -178,6 +178,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     }
 
     _animationTimer?.cancel();
+    _breathScheduleTimer?.cancel();
     _blinkScheduleTimer?.cancel();
     _tailScheduleTimer?.cancel();
     _activeFrames = <String>[];
@@ -187,6 +188,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _precacheAssets();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _scheduleBreath(initial: true);
       _scheduleBlink(initial: true);
       _scheduleTail(initial: true);
     });
@@ -228,7 +230,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       return;
     }
 
-    if (!_usesAuthoredSpriteFrames) {
+    if (!_animationSet.hasAuthoredBreathing) {
       _action = _IdleAction.breathing;
       _breathingController.forward(from: 0).whenComplete(() {
         if (!mounted) return;
@@ -249,7 +251,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   void _scheduleBlink({bool initial = false}) {
     _blinkScheduleTimer?.cancel();
-    if (!_usesAuthoredSpriteFrames) return;
+    if (!_animationSet.hasAuthoredBlink) return;
 
     final delay = initial
         ? 2500 + _random.nextInt(3000)
@@ -312,7 +314,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   void _scheduleTail({bool initial = false}) {
     _tailScheduleTimer?.cancel();
-    if (!_usesAuthoredSpriteFrames) return;
+    if (!_animationSet.hasAuthoredTail) return;
 
     final delay = initial
         ? 3500 + _random.nextInt(3500)
@@ -384,7 +386,6 @@ class _GymRatCharacterState extends State<GymRatCharacter>
   }
 
   String get _currentFrame {
-    if (!_usesAuthoredSpriteFrames) return _identityMaster;
     if (_action == _IdleAction.neutral || _activeFrames.isEmpty) {
       return _identityMaster;
     }
@@ -401,18 +402,25 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   String get _identityMaster => _animationSet.neutral;
 
-  bool get _usesAuthoredSpriteFrames =>
-      GymRatCharacter.usesAuthoredSpriteFrames(
-        gender: widget.gender,
-        view: widget.view,
-        level: widget.level,
-        appearanceId: widget.appearanceId,
-      );
-
   void _playFlexEmote() {
     if (!widget.enableEmotes || _emoteController.isAnimating) return;
     HapticFeedback.mediumImpact();
     _emoteController.forward(from: 0);
+
+    final emotes = _animationSet.emotes;
+    if (emotes.isEmpty) return;
+
+    final frames = emotes[_random.nextInt(emotes.length)];
+    _playAnimation(
+      action: _IdleAction.emote,
+      frames: frames,
+      frameDuration: const Duration(milliseconds: 105),
+      onComplete: () {
+        _scheduleBreath();
+        _scheduleBlink();
+        _scheduleTail();
+      },
+    );
   }
 
   @override
@@ -433,6 +441,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       button: widget.enableEmotes,
       label: widget.emoteSemanticLabel,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.enableEmotes ? _playFlexEmote : null,
         child: AnimatedBuilder(
           animation: Listenable.merge([_breathingController, _emoteController]),
@@ -494,7 +503,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                         semanticLabel: widget.gender.name,
                       ),
                       if (_action == _IdleAction.breathing &&
-                          !_usesAuthoredSpriteFrames)
+                          !_animationSet.hasAuthoredBreathing)
                         Positioned.fill(
                           child: ClipRect(
                             clipper: _BreathingTorsoClipper(view: widget.view),

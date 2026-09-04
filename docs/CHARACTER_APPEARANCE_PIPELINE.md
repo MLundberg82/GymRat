@@ -81,14 +81,19 @@ animation cannot jump or drift.
 
 ## Motion matrix
 
-Authored breathing, blink, and tail motion follows the same identity, view,
-appearance, and approved-stage routing as the neutral render. A motion set is
-enabled only when all three frame groups are present. The current authored set
-is male, base appearance, level 1, front view. Every other combination uses a
-torso-only breathing fallback; it does not fake eye or tail movement.
+Authored breathing, blink, tail, and emote motion follows the same identity,
+view, appearance, and approved-stage routing as the neutral render. The base
+level-1 front and back masters for male, female, and non-binary each have
+deterministic full-canvas breathing frames derived from their own exact
+approved master. The frames preserve identity and transparency and are reused
+for every player level that currently resolves to approved stage 1. Every
+level-1 front view also has identity-specific authored blink, tail, and double
+biceps frames. Back views currently use authored breathing only; front-only
+motion is never mislabeled or reused behind the character.
 
-Female, non-binary, back-view, later-stage, and outfit motion frames must be
-exported from their matching approved neutral render. Never reuse male frames
-for another identity and never reuse front frames for the back view. Character
-Lab reports whether the selected combination uses a complete authored set or
-the safe breathing fallback.
+Later-stage, back-view, and outfit motion frames must be exported from their
+matching approved neutral render. Never reuse one identity's frames for another
+and never reuse front frames for the back view. The level 1-100 Blender source
+and export contract lives in `tool/character_pipeline/pipeline_manifest.json`.
+Character Lab reports whether the selected combination has authored motion or
+uses the safe fallback.

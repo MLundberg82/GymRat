@@ -217,6 +217,8 @@ class GymRatLocalizations {
       'assetPending':
           'A complete identity and view asset set is still pending.',
       'authoredMotion': 'Authored character motion frames are active.',
+      'authoredBreathing':
+          'Authored breathing frames are active. Other motion is pending.',
       'safeMotionFallback':
           'Safe torso breathing is active. Blink and tail frames are pending.',
       'premium': 'GymRat Premium',
@@ -659,6 +661,8 @@ class GymRatLocalizations {
       'assetPending':
           'En komplett asset-uppsättning för identitet och vy saknas ännu.',
       'authoredMotion': 'Skapade rörelsebildrutor för karaktären är aktiva.',
+      'authoredBreathing':
+          'Skapade andningsrutor är aktiva. Övrig rörelse saknas ännu.',
       'safeMotionFallback':
           'Säker bröstandning är aktiv. Blink- och svansrutor saknas ännu.',
       'premium': 'GymRat Premium',
@@ -1105,6 +1109,8 @@ class GymRatLocalizations {
           'Aún falta un conjunto completo de recursos de identidad y vista.',
       'authoredMotion':
           'Los fotogramas de movimiento del personaje están activos.',
+      'authoredBreathing':
+          'Los fotogramas de respiración están activos. Falta otro movimiento.',
       'safeMotionFallback':
           'La respiración del torso está activa. Faltan parpadeo y cola.',
       'premium': 'GymRat Premium',
@@ -1555,6 +1561,8 @@ class GymRatLocalizations {
       'assetPending':
           'Полный набор ресурсов для образа и ракурса ещё не готов.',
       'authoredMotion': 'Готовые кадры движения персонажа активны.',
+      'authoredBreathing':
+          'Готовые кадры дыхания активны. Остальные движения ожидаются.',
       'safeMotionFallback':
           'Безопасное дыхание корпуса активно. Кадры глаз и хвоста ожидаются.',
       'premium': 'GymRat Premium',
@@ -1983,6 +1991,7 @@ class GymRatLocalizations {
       'scalePreview': '成长比例预览',
       'assetPending': '完整的身份与视角资源组仍在制作中。',
       'authoredMotion': '已启用制作完成的角色动作帧。',
+      'authoredBreathing': '已启用制作完成的呼吸动画帧；其他动作仍待完成。',
       'safeMotionFallback': '已启用安全的躯干呼吸；眨眼和尾巴动画帧仍待完成。',
       'premium': 'GymRat Premium',
       'startWorkout': '开始训练',

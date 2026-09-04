@@ -12,6 +12,11 @@ void main() {
         30,
         40,
         50,
+        60,
+        70,
+        80,
+        90,
+        100,
       ]);
     });
 
@@ -21,7 +26,10 @@ void main() {
       expect(EvolutionMilestones.stageForLevel(5), 5);
       expect(EvolutionMilestones.stageForLevel(29), 20);
       expect(EvolutionMilestones.stageForLevel(50), 50);
-      expect(EvolutionMilestones.stageForLevel(80), 50);
+      expect(EvolutionMilestones.stageForLevel(80), 80);
+      expect(EvolutionMilestones.stageForLevel(99), 90);
+      expect(EvolutionMilestones.stageForLevel(100), 100);
+      expect(EvolutionMilestones.stageForLevel(180), 100);
     });
 
     test('resolves the previous milestone for morphing', () {
@@ -29,6 +37,7 @@ void main() {
       expect(EvolutionMilestones.previousStageFor(10), 5);
       expect(EvolutionMilestones.previousStageFor(30), 20);
       expect(EvolutionMilestones.previousStageFor(50), 40);
+      expect(EvolutionMilestones.previousStageFor(100), 90);
     });
 
     test('evolution intensity is monotonic without scaling the same asset', () {

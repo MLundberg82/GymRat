@@ -7,8 +7,9 @@ and view. Male, female, and non-binary are three independent character lines;
 front and back are paired views of the same character. A later stage must be an
 identity-preserving progression, never a newly invented rat.
 
-The runtime stages are level 1, 5, 10, 15, 20, 30, 40, and 50. A stage is not
-eligible for release until all six files exist and pass the asset contract.
+The runtime stages are level 1, 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90,
+and 100. A stage is not eligible for release until all six files exist and
+pass the asset contract.
 
 ## Physique progression
 
@@ -21,7 +22,12 @@ eligible for release until all six files exist and pass the asset contract.
 | 20 | Serious lifter; dense chest/back, shoulders, arms, and legs | Highly muscular |
 | 30 | Competitive build; imposing without losing the character silhouette | Elite |
 | 40 | Near-final champion; extreme but anatomically coherent | Near Olympia |
-| 50 | Maximum transformation and unmistakable final reward | Mr Olympia scale |
+| 50 | National champion; substantially larger while retaining room to evolve | Champion |
+| 60 | International competitor; dense and imposing | Elite champion |
+| 70 | Professional bodybuilding silhouette with balanced extreme mass | Pro |
+| 80 | Top professional; exceptional whole-body size and separation | Top pro |
+| 90 | Near-final champion; extreme but anatomically coherent | Near Olympia |
+| 100 | Maximum transformation and unmistakable final reward | Mr Olympia scale |
 
 Growth must be visible in both views and distributed over the whole body. Do
 not express progression by enlarging only the chest or arms. Keep hands, feet,

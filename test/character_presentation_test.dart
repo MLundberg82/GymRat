@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/features/character/domain/rat_animation_set.dart';
 import 'package:gymrat/features/character/presentation/gymrat_character.dart';
+import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
 
 void main() {
@@ -114,6 +115,75 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  test(
+    'approved stage breathing frames cover every identity, view and level',
+    () {
+      for (var level = 1; level <= 100; level++) {
+        for (final gender in RatGender.values) {
+          for (final view in RatCharacterView.values) {
+            expect(
+              GymRatCharacter.usesAuthoredBreathingFrames(
+                gender: gender,
+                view: view,
+                level: level,
+              ),
+              isTrue,
+              reason: '$gender $view level $level',
+            );
+          }
+        }
+      }
+    },
+  );
+
+  test(
+    'front-only motion never leaks into a back view or another identity',
+    () {
+      for (final gender in RatGender.values) {
+        final front = RatAnimationCatalog.forCharacter(
+          gender: gender,
+          view: RatCharacterView.front,
+          level: 1,
+        );
+        final back = RatAnimationCatalog.forCharacter(
+          gender: gender,
+          view: RatCharacterView.back,
+          level: 1,
+        );
+        final identityFolder = switch (gender) {
+          RatGender.male => '/male/',
+          RatGender.female => '/female/',
+          RatGender.nonBinary => '/non_binary/',
+        };
+
+        expect(front.hasAuthoredBlink, isTrue, reason: gender.name);
+        expect(front.hasAuthoredTail, isTrue, reason: gender.name);
+        expect(front.hasAuthoredEmotes, isTrue, reason: gender.name);
+        expect(front.isComplete, isTrue, reason: gender.name);
+        expect(front.allFrames, everyElement(contains(identityFolder)));
+        expect(back.hasAuthoredBreathing, isTrue, reason: gender.name);
+        expect(back.hasAuthoredBlink, isFalse, reason: gender.name);
+        expect(back.hasAuthoredTail, isFalse, reason: gender.name);
+        expect(back.hasAuthoredEmotes, isFalse, reason: gender.name);
+        expect(back.isComplete, isFalse, reason: gender.name);
+        expect(back.allFrames, everyElement(contains(identityFolder)));
+      }
+    },
+  );
+
+  test('every evolution milestone resolves the approved breathing stage', () {
+    for (final level in EvolutionMilestones.stages) {
+      expect(
+        GymRatCharacter.usesAuthoredBreathingFrames(
+          gender: RatGender.nonBinary,
+          view: RatCharacterView.back,
+          level: level,
+        ),
+        isTrue,
+      );
+    }
+  });
 
   for (final gender in RatGender.values) {
     testWidgets('${gender.name} supports front and back breathing views', (

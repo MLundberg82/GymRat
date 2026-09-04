@@ -163,8 +163,10 @@ class _CharacterLabScreenState extends State<CharacterLabScreen> {
                   const SizedBox(height: 5),
                   Text(
                     context.tr.t(
-                      motion.hasAnyAuthoredMotion
+                      motion.isComplete
                           ? 'authoredMotion'
+                          : motion.hasAuthoredBreathing
+                          ? 'authoredBreathing'
                           : 'safeMotionFallback',
                     ),
                     style: const TextStyle(

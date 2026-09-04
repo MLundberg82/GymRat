@@ -80,18 +80,18 @@ void main() {
     },
   );
 
-  test('missing level 50 art never fakes an Olympia physique by scaling', () {
+  test('missing level 100 art never fakes an Olympia physique by scaling', () {
     expect(
       RatAppearanceCatalog.approvedStageForLevel(
         appearanceId: RatAppearanceCatalog.baseId,
-        level: 50,
+        level: 100,
       ),
       1,
     );
     expect(
       RatAppearanceCatalog.hasDistinctStageAtLevel(
         appearanceId: RatAppearanceCatalog.baseId,
-        level: 50,
+        level: 100,
       ),
       isFalse,
     );
@@ -119,7 +119,9 @@ void main() {
     );
     expect(EvolutionMilestones.nextMilestoneAfter(1), 5);
     expect(EvolutionMilestones.nextMilestoneAfter(5), 10);
-    expect(EvolutionMilestones.nextMilestoneAfter(50), isNull);
+    expect(EvolutionMilestones.nextMilestoneAfter(50), 60);
+    expect(EvolutionMilestones.nextMilestoneAfter(99), 100);
+    expect(EvolutionMilestones.nextMilestoneAfter(100), isNull);
   });
 
   test('every level after level one unlocks a character reward', () {

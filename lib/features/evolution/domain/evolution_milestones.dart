@@ -1,5 +1,18 @@
 abstract final class EvolutionMilestones {
-  static const List<int> unlockLevels = <int>[5, 10, 15, 20, 30, 40, 50];
+  static const List<int> unlockLevels = <int>[
+    5,
+    10,
+    15,
+    20,
+    30,
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+  ];
   static const List<int> stages = <int>[1, ...unlockLevels];
 
   static bool isMilestone(int level) => unlockLevels.contains(level);

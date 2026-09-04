@@ -74,6 +74,7 @@ void main() {
       'onboardingTitle',
       'genderFemale',
       'genderNonBinary',
+      'authoredBreathing',
       'experienceExpert',
       'goalBuildMuscle',
       'ratLoadout',

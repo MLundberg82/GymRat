@@ -31,7 +31,8 @@ See `docs/GYMRAT_VISION.md` for the durable product and architecture vision.
   owned by `WorkoutSessionStore`.
 - A first recorded result establishes the personal-best baseline. It must not
   award a PB. Only a later result above that baseline awards a PB.
-- Evolution milestones are levels 5, 10, 15, 20, 30, 40, and 50.
+- Evolution milestones are levels 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90,
+  and 100.
 - Treat the accepted level-1 rat assets as identity masters for their gender and
   view. Generated motion frames and future milestone variants may derive from
   those masters only when gender presentation, face, palette, canvas alignment,
@@ -41,7 +42,7 @@ See `docs/GYMRAT_VISION.md` for the durable product and architecture vision.
 - First launch collects rat identity, training experience, intended weekly
   frequency, height, weight, and training goal. Identity options are male,
   female, and non-binary; they never change workout access or progression.
-- The rat grows through evolution stages toward a deliberately massive level-50
+- The rat grows through evolution stages toward a deliberately massive level-100
   physique. Cosmetic items may unlock from level-ups or Armory Credits, but
   must remain separate from workout performance.
 - Premium coaching may use the saved profile and workout history for safe

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "canvas": {
+    "width": 1024,
+    "height": 1792,
+    "format": "PNG",
+    "color_mode": "RGBA",
+    "transparent": true,
+    "frame_rate": 24
+  },
+  "stages": [1, 5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+  "identities": {
+    "male": {
+      "front_master": "assets/characters/male/level_01.png",
+      "back_master": "assets/characters/male/level_01_back.png"
+    },
+    "female": {
+      "front_master": "assets/characters/female/level_01.png",
+      "back_master": "assets/characters/female/level_01_back.png"
+    },
+    "non_binary": {
+      "front_master": "assets/characters/non_binary/level_01.png",
+      "back_master": "assets/characters/non_binary/level_01_back.png"
+    }
+  },
+  "motions": {
+    "idle_breath": {"frames": 96, "loop": true},
+    "blink": {"frames": 12, "loop": false},
+    "tail_idle": {"frames": 96, "loop": true},
+    "power_flex": {"frames": 48, "loop": false},
+    "victory": {"frames": 72, "loop": false},
+    "pb_celebration": {"frames": 72, "loop": false},
+    "recovery": {"frames": 96, "loop": true}
+  },
+  "release_contract": {
+    "views": ["front", "back"],
+    "require_every_identity": true,
+    "require_every_motion": true,
+    "activate_partial_stage": false,
+    "runtime_physique_scaling": false
+  }
+}

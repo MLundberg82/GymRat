@@ -106,6 +106,8 @@ void main() {
           final frontInfo = await _inspect(front);
           final backInfo = await _inspect(back);
 
+          expect(frontInfo.pngColorType, 6, reason: '$front is not RGBA PNG');
+          expect(backInfo.pngColorType, 6, reason: '$back is not RGBA PNG');
           expect(frontInfo.cornerAlphas, everyElement(0), reason: front);
           expect(backInfo.cornerAlphas, everyElement(0), reason: back);
           expect(
@@ -169,6 +171,30 @@ void main() {
       }
     }
   });
+
+  test(
+    'breathing frames are RGBA-safe and canvas-matched for every character',
+    () async {
+      for (final gender in RatGender.values) {
+        for (final view in RatCharacterView.values) {
+          final motion = RatAnimationCatalog.forCharacter(
+            gender: gender,
+            view: view,
+            level: 50,
+          );
+          expect(motion.hasAuthoredBreathing, isTrue, reason: '$gender $view');
+          final neutralInfo = await _inspect(motion.neutral);
+          for (final frame in motion.breathing.toSet()) {
+            final frameInfo = await _inspect(frame);
+            expect(frameInfo.width, neutralInfo.width, reason: frame);
+            expect(frameInfo.height, neutralInfo.height, reason: frame);
+            expect(frameInfo.pngColorType, 6, reason: '$frame is not RGBA PNG');
+            expect(frameInfo.cornerAlphas, everyElement(0), reason: frame);
+          }
+        }
+      }
+    },
+  );
 }
 
 List<String> _stagePaths(int level) {
@@ -185,7 +211,12 @@ List<String> _stagePaths(int level) {
 
 Future<_ImageInfo> _inspect(String asset) async {
   final data = await rootBundle.load(asset);
-  final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+  final encoded = data.buffer.asUint8List(
+    data.offsetInBytes,
+    data.lengthInBytes,
+  );
+  final pngColorType = encoded.length > 25 ? encoded[25] : -1;
+  final codec = await ui.instantiateImageCodec(encoded);
   final frame = await codec.getNextFrame();
   final image = frame.image;
   final pixels = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
@@ -201,13 +232,19 @@ Future<_ImageInfo> _inspect(String asset) async {
   ];
   image.dispose();
   codec.dispose();
-  return _ImageInfo(width, height, corners);
+  return _ImageInfo(width, height, corners, pngColorType);
 }
 
 class _ImageInfo {
-  const _ImageInfo(this.width, this.height, this.cornerAlphas);
+  const _ImageInfo(
+    this.width,
+    this.height,
+    this.cornerAlphas,
+    this.pngColorType,
+  );
 
   final int width;
   final int height;
   final List<int> cornerAlphas;
+  final int pngColorType;
 }

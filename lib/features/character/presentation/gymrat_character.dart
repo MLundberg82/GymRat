@@ -86,6 +86,18 @@ class GymRatCharacter extends StatefulWidget {
     appearanceId: appearanceId,
   );
 
+  static bool usesAuthoredBreathingFrames({
+    required RatGender gender,
+    required RatCharacterView view,
+    required int level,
+    String appearanceId = RatAppearanceCatalog.baseId,
+  }) => RatAnimationCatalog.hasAuthoredBreathing(
+    gender: gender,
+    view: view,
+    level: level,
+    appearanceId: appearanceId,
+  );
+
   @override
   State<GymRatCharacter> createState() => _GymRatCharacterState();
 }
@@ -244,7 +256,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _playAnimation(
       action: _IdleAction.breathing,
       frames: _animationSet.breathing,
-      frameDuration: const Duration(milliseconds: 110),
+      frameDuration: const Duration(milliseconds: 175),
       onComplete: _scheduleBreath,
     );
   }

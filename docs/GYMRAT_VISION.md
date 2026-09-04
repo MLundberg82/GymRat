@@ -59,8 +59,9 @@ A user's first recorded result for an exercise establishes the baseline. It is
 never awarded as a personal best. A PB is awarded only when a later result is
 strictly greater than the stored baseline.
 
-Evolution milestones are fixed at levels 5, 10, 15, 20, 30, 40, and 50. The
-accepted level-1 front/back rat assets are the identity masters for each gender.
+Evolution milestones are fixed at levels 5, 10, 15, 20, 30, 40, 50, 60, 70,
+80, 90, and 100. The accepted level-1 front/back rat assets are the identity
+masters for each gender.
 Motion frames and future milestone variants may be generated from the matching
 master, but they must preserve gender presentation, identity, palette, canvas
 alignment, and true alpha transparency. The app keeps using the latest complete
@@ -137,7 +138,7 @@ fall back safely to the latest complete approved stage without stretching or
 enlarging the same image as fake muscle growth.
 
 The rat grows at each evolution milestone. Growth is modest at early levels and
-ends in an intentionally massive Mr Olympia-scale silhouette at level 50.
+ends in an intentionally massive Mr Olympia-scale silhouette at level 100.
 Cosmetics are never positioned over the rat at runtime. A wearable look is
 released only as a complete, authored full-character appearance covering male,
 female, and non-binary identities from both the front and back. Individual
@@ -170,7 +171,8 @@ As verified from the repository on 2026-09-02:
   then returns to a refreshed `HubScreen`.
 - `WorkoutSessionStore` persists progress through `shared_preferences` and uses
   prior history to distinguish a baseline from a later PB.
-- `EvolutionMilestones.unlockLevels` contains 5, 10, 15, 20, 30, 40, and 50.
+- `EvolutionMilestones.unlockLevels` contains 5, 10, 15, 20, 30, 40, 50, 60,
+  70, 80, 90, and 100.
 - Male, female, and non-binary level-1 front/back masters are active, and the
   stage-aware appearance catalog falls back to the latest complete approved
   stage at a stable display scale whenever a later milestone matrix is missing.
@@ -181,7 +183,7 @@ As verified from the repository on 2026-09-02:
   range into workout preview and the active workout without inventing a load
   target.
 - Progress shows the exact XP distance to the next evolution milestone and its
-  featured collection reward. Level 50 is represented as the completed final
+  featured collection reward. Level 100 is represented as the completed final
   form rather than a fictional next stage.
 - Workout and exercise names remain stable canonical values in persisted
   history and PB calculations, while every presentation layer resolves them

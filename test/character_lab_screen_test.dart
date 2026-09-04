@@ -49,7 +49,9 @@ void main() {
     expect(character.level, 1);
     expect(find.textContaining('Approved asset stage:'), findsOneWidget);
     expect(
-      find.text('Authored character motion frames are active.'),
+      find.text(
+        'Authored breathing frames are active. Other motion is pending.',
+      ),
       findsOneWidget,
     );
     expect(

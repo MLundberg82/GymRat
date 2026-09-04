@@ -28,7 +28,10 @@ class RatAnimationSet {
       hasAuthoredTail ||
       hasAuthoredEmotes;
   bool get isComplete =>
-      hasAuthoredBreathing && hasAuthoredBlink && hasAuthoredTail;
+      hasAuthoredBreathing &&
+      hasAuthoredBlink &&
+      hasAuthoredTail &&
+      hasAuthoredEmotes;
 
   Iterable<String> get allFrames sync* {
     yield neutral;
@@ -64,36 +67,30 @@ abstract final class RatAnimationCatalog {
 
     if (appearanceId == RatAppearanceCatalog.baseId && approvedStage == 1) {
       if (view == RatCharacterView.back) {
-        final backFrames = switch (gender) {
-          RatGender.male => GymRatAssets.maleLevel1BackIdleFrames,
-          RatGender.female => GymRatAssets.femaleLevel1BackIdleFrames,
-          RatGender.nonBinary => GymRatAssets.nonBinaryLevel1BackIdleFrames,
-        };
         return RatAnimationSet(
           neutral: neutral,
-          breathing: backFrames,
-          tail: backFrames,
+          breathing: _breathingFrames(gender: gender, view: view),
         );
       }
 
       return switch (gender) {
         RatGender.male => RatAnimationSet(
           neutral: neutral,
-          breathing: GymRatAssets.maleLevel1IdleFrames,
+          breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.maleLevel1BlinkFrames,
           tail: GymRatAssets.maleLevel1TailFrames,
           emotes: const [GymRatAssets.maleLevel1EmoteFrames],
         ),
         RatGender.female => RatAnimationSet(
           neutral: neutral,
-          breathing: GymRatAssets.femaleLevel1IdleFrames,
+          breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.femaleLevel1BlinkFrames,
           tail: GymRatAssets.femaleLevel1TailFrames,
           emotes: const [GymRatAssets.femaleLevel1EmoteFrames],
         ),
         RatGender.nonBinary => RatAnimationSet(
           neutral: neutral,
-          breathing: GymRatAssets.nonBinaryLevel1IdleFrames,
+          breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.nonBinaryLevel1BlinkFrames,
           tail: GymRatAssets.nonBinaryLevel1TailFrames,
           emotes: const [GymRatAssets.nonBinaryLevel1EmoteFrames],
@@ -127,4 +124,45 @@ abstract final class RatAnimationCatalog {
     level: level,
     appearanceId: appearanceId,
   ).hasAnyAuthoredMotion;
+
+  static bool hasAuthoredBreathing({
+    required RatGender gender,
+    required RatCharacterView view,
+    required int level,
+    String appearanceId = RatAppearanceCatalog.baseId,
+  }) => forCharacter(
+    gender: gender,
+    view: view,
+    level: level,
+    appearanceId: appearanceId,
+  ).hasAuthoredBreathing;
+
+  static List<String> _breathingFrames({
+    required RatGender gender,
+    required RatCharacterView view,
+  }) {
+    final identity = switch (gender) {
+      RatGender.male => 'male',
+      RatGender.female => 'female',
+      RatGender.nonBinary => 'non_binary',
+    };
+    final viewToken = switch (view) {
+      RatCharacterView.front => 'front',
+      RatCharacterView.back => 'back',
+    };
+    String frame(int index) =>
+        'assets/characters/$identity/motion/level_01/$viewToken/'
+        'breath_${index.toString().padLeft(2, '0')}.png';
+    return <String>[
+      frame(0),
+      frame(1),
+      frame(2),
+      frame(3),
+      frame(4),
+      frame(3),
+      frame(2),
+      frame(1),
+      frame(0),
+    ];
+  }
 }

@@ -53,11 +53,23 @@ class GymRatCharacter extends StatefulWidget {
   static double emoteDrop(double progress) =>
       sin(progress.clamp(0.0, 1.0) * pi) * 7;
 
+  static double emoteTransformProgress({
+    required double progress,
+    required bool hasAuthoredFrames,
+  }) => hasAuthoredFrames ? 0 : progress.clamp(0.0, 1.0);
+
   static Rect breathingTorsoRect(Size size, RatCharacterView view) {
     final top = size.height * (view == RatCharacterView.front ? .20 : .19);
     final bottom = size.height * (view == RatCharacterView.front ? .48 : .47);
     return Rect.fromLTRB(size.width * .20, top, size.width * .80, bottom);
   }
+
+  static Rect blinkRect(Size size) => Rect.fromLTRB(
+    size.width * .31,
+    size.height * .075,
+    size.width * .69,
+    size.height * .185,
+  );
 
   static String assetFor({
     required RatGender gender,
@@ -459,17 +471,23 @@ class _GymRatCharacterState extends State<GymRatCharacter>
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
+            final transformProgress = GymRatCharacter.emoteTransformProgress(
+              progress: emote,
+              hasAuthoredFrames:
+                  _action == _IdleAction.emote &&
+                  _animationSet.hasAuthoredEmotes,
+            );
             return Transform.translate(
-              offset: Offset(0, GymRatCharacter.emoteDrop(emote)),
+              offset: Offset(0, GymRatCharacter.emoteDrop(transformProgress)),
               child: Transform.rotate(
-                angle: GymRatCharacter.emoteRotation(emote),
+                angle: GymRatCharacter.emoteRotation(transformProgress),
                 alignment: Alignment.bottomCenter,
                 child: Transform(
                   transform: Matrix4.diagonal3Values(
                     GymRatCharacter.displayScale *
-                        GymRatCharacter.emoteScaleX(emote),
+                        GymRatCharacter.emoteScaleX(transformProgress),
                     GymRatCharacter.displayScale *
-                        GymRatCharacter.emoteScaleY(emote),
+                        GymRatCharacter.emoteScaleY(transformProgress),
                     1,
                   ),
                   alignment: Alignment.bottomCenter,
@@ -505,7 +523,9 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                           ),
                         ),
                       Image.asset(
-                        _currentFrame,
+                        _action == _IdleAction.blinking
+                            ? _identityMaster
+                            : _currentFrame,
                         height: widget.height,
                         fit: BoxFit.contain,
                         alignment: Alignment.bottomCenter,
@@ -514,6 +534,21 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                         cacheHeight: _cacheHeight,
                         semanticLabel: widget.gender.name,
                       ),
+                      if (_action == _IdleAction.blinking)
+                        Positioned.fill(
+                          child: ClipRect(
+                            clipper: const _BlinkClipper(),
+                            child: Image.asset(
+                              _currentFrame,
+                              height: widget.height,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.bottomCenter,
+                              gaplessPlayback: true,
+                              filterQuality: FilterQuality.high,
+                              cacheHeight: _cacheHeight,
+                            ),
+                          ),
+                        ),
                       if (_action == _IdleAction.breathing &&
                           !_animationSet.hasAuthoredBreathing)
                         Positioned.fill(
@@ -549,6 +584,16 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       ),
     );
   }
+}
+
+class _BlinkClipper extends CustomClipper<Rect> {
+  const _BlinkClipper();
+
+  @override
+  Rect getClip(Size size) => GymRatCharacter.blinkRect(size);
+
+  @override
+  bool shouldReclip(covariant _BlinkClipper oldClipper) => false;
 }
 
 class _BreathingTorsoClipper extends CustomClipper<Rect> {

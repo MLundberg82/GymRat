@@ -62,3 +62,8 @@ The owner reviews four things; no Blender work is required from them:
 
 Everything between those gates is an authored production task and must not be
 replaced by runtime scaling, cross-identity frames, or a newly invented rat.
+
+Approved direction references are recorded in the external source directory's
+`approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds
+them as locked, non-rendering Blender references. A direction approval does not
+make an image runtime-ready; the full export contract still applies.

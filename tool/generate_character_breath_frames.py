@@ -92,9 +92,9 @@ def _breathing_frame(source: Image.Image, power: float) -> Image.Image:
     envelope = np.maximum(np.sin(progress * np.pi), 0.0) ** 1.7
     envelope *= ((y >= top) & (y <= bottom)).astype(np.float32)
 
-    # Peak inhale widens the ribcage by 1.35%. The deformation tapers to zero
+    # Peak inhale widens the ribcage by 0.7%. The deformation tapers to zero
     # before the head and waistband, so the face and foot line remain fixed.
-    expansion = 1.0 + envelope * (0.0135 * power)
+    expansion = 1.0 + envelope * (0.007 * power)
     source_x = center_x + (x - center_x) / expansion
     source_x = np.broadcast_to(source_x, (height, width))
 

@@ -22,12 +22,32 @@ void main() {
     expect(torso.right, lessThan(320));
   });
 
-  test('power stance emote squats and settles without changing its asset', () {
+  test('fallback power stance transforms but authored emotes stay stable', () {
     expect(GymRatCharacter.emoteScaleX(0), 1);
     expect(GymRatCharacter.emoteScaleX(.5), greaterThan(1));
     expect(GymRatCharacter.emoteScaleY(.5), lessThan(1));
     expect(GymRatCharacter.emoteDrop(.5), greaterThan(0));
     expect(GymRatCharacter.emoteScaleX(1), closeTo(1, .000001));
+    expect(
+      GymRatCharacter.emoteTransformProgress(
+        progress: .5,
+        hasAuthoredFrames: true,
+      ),
+      0,
+    );
+    expect(
+      GymRatCharacter.emoteTransformProgress(
+        progress: .5,
+        hasAuthoredFrames: false,
+      ),
+      .5,
+    );
+
+    final blink = GymRatCharacter.blinkRect(const Size(320, 600));
+    expect(blink.left, greaterThan(0));
+    expect(blink.right, lessThan(320));
+    expect(blink.top, greaterThan(0));
+    expect(blink.bottom, lessThan(600 / 4));
   });
 
   test('every level-1 identity and view has authored motion', () {

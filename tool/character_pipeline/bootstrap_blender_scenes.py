@@ -253,6 +253,28 @@ def _configure_scene(
         (math.pi / 2, 0, math.pi),
         references,
     )
+
+    approvals_path = source_root / "approvals.json"
+    if approvals_path.is_file():
+        approvals = json.loads(approvals_path.read_text(encoding="utf-8"))
+        approval = approvals.get(f"{identity}_level_100_front_direction")
+        if approval is not None:
+            direction = (source_root / approval["file"]).resolve()
+            if _sha256(direction) != approval["sha256"]:
+                raise ValueError(
+                    f"Approved level-100 direction checksum drifted: {identity}"
+                )
+            direction_reference = _reference(
+                "REF_LEVEL_100_FRONT_DIRECTION",
+                direction,
+                (4.4, 0.8, 3.7),
+                (math.pi / 2, 0, 0),
+                references,
+            )
+            direction_reference["gymrat_approval_status"] = approval["status"]
+            scene["gymrat_level_100_front_direction_sha256"] = approval[
+                "sha256"
+            ]
     front_camera = _camera(
         "CAM_FRONT",
         (0, -12, 3.7),

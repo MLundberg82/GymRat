@@ -1,5 +1,9 @@
 # GymRat character evolution art direction
 
+The male level-100 front-view silhouette direction was approved on 2026-09-04.
+It remains a production reference, not a runtime milestone asset, until its
+matching back view, exact canvas export, motion set, and validation gate pass.
+
 ## Source of truth
 
 Every evolution line starts from the approved level-1 master for that identity

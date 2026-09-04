@@ -29,6 +29,7 @@ The command creates one scene per identity with:
 - stable front/back orthographic cameras;
 - separate model, rig, reference, camera, and lighting collections;
 - a humanoid-plus-tail armature template;
+- an explicit coccyx-level `tail_root` locked to the rear pelvis midline;
 - named action slots for every required motion;
 - transparent, fixed-size render settings;
 - the complete level 1-100 stage contract embedded in the scene.
@@ -45,6 +46,18 @@ Validate a release export after all stages have been rendered:
 
 ```sh
 python3 tool/character_pipeline/validate_character_pipeline.py
+```
+
+Validate the Blender scene anatomy and embedded contracts:
+
+```sh
+/Users/mattias/Applications/Blender.app/Contents/MacOS/Blender \
+  --background \
+  --python-exit-code 1 \
+  --python tool/character_pipeline/validate_blender_scenes.py \
+  -- \
+  --repo-root "$PWD" \
+  --source-root "$(dirname "$PWD")/GymRat-character-source"
 ```
 
 A milestone is registered in Flutter only after all three identities, both

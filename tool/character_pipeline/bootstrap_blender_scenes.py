@@ -100,7 +100,10 @@ def _bone(
     return bone
 
 
-def _rig(collection: bpy.types.Collection) -> bpy.types.Object:
+def _rig(
+    collection: bpy.types.Collection,
+    anatomy_contract: dict[str, object],
+) -> bpy.types.Object:
     bpy.ops.object.armature_add(enter_editmode=True, location=(0, 0, 0))
     rig = bpy.context.object
     rig.name = "RIG_GYMRAT"
@@ -173,21 +176,29 @@ def _rig(collection: bpy.types.Collection) -> bpy.types.Object:
             shin,
         )
 
-    tail_parent = pelvis
+    tail_anchor = anatomy_contract["tail_anchor"]
+    tail_parent = _bone(
+        armature,
+        str(tail_anchor["bone"]),
+        tuple(float(value) for value in tail_anchor["head"]),
+        tuple(float(value) for value in tail_anchor["tail"]),
+        pelvis,
+    )
     for index in range(10):
-        x = 0.08 + index * 0.33
-        z = 3.0 - index * 0.12
+        x = index * 0.30
+        z = 3.12 - index * 0.10
         tail_parent = _bone(
             armature,
             f"tail_{index + 1:02d}",
-            (x, 0.18, z),
-            (x + 0.33, 0.18, z - 0.12),
+            (x, 0.42, z),
+            (x + 0.30, 0.42, z - 0.10),
             tail_parent,
         )
 
     bpy.ops.object.mode_set(mode="OBJECT")
     rig.show_in_front = True
     rig["gymrat_rig_contract"] = 1
+    rig["gymrat_tail_anchor_contract"] = json.dumps(tail_anchor)
     return rig
 
 
@@ -223,6 +234,7 @@ def _configure_scene(
     scene["gymrat_identity"] = identity
     scene["gymrat_stages"] = json.dumps(manifest["stages"])
     scene["gymrat_release_contract"] = json.dumps(manifest["release_contract"])
+    scene["gymrat_anatomy_contract"] = json.dumps(manifest["anatomy_contract"])
 
     references = _collection("REFERENCES_LOCKED")
     model = _collection("MODEL_AUTHORED")
@@ -288,7 +300,7 @@ def _configure_scene(
         cameras,
     )
     scene.camera = front_camera
-    _rig(rig_collection)
+    _rig(rig_collection, manifest["anatomy_contract"])
     _actions(manifest)
 
     scene_path = source_root / "scenes" / f"{identity}_character.blend"

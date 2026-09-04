@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "canvas": {
     "width": 1024,
     "height": 1792,
@@ -31,6 +31,18 @@
     "victory": {"frames": 72, "loop": false},
     "pb_celebration": {"frames": 72, "loop": false},
     "recovery": {"frames": 96, "loop": true}
+  },
+  "anatomy_contract": {
+    "tail_anchor": {
+      "bone": "tail_root",
+      "parent": "pelvis",
+      "head": [0.0, 0.12, 3.35],
+      "tail": [0.0, 0.42, 3.12],
+      "rear_midline": true,
+      "concealed_by_rear_waistband": true,
+      "forbid_between_thigh_origin": true,
+      "preserve_across_views_and_motions": true
+    }
   },
   "release_contract": {
     "views": ["front", "back"],

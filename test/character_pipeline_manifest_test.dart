@@ -28,5 +28,19 @@ void main() {
           as Map<String, dynamic>)['runtime_physique_scaling'],
       isFalse,
     );
+
+    final anatomy = manifest['anatomy_contract'] as Map<String, dynamic>;
+    final tail = anatomy['tail_anchor'] as Map<String, dynamic>;
+    final head = (tail['head'] as List<dynamic>).cast<num>();
+    final tip = (tail['tail'] as List<dynamic>).cast<num>();
+
+    expect(tail['bone'], 'tail_root');
+    expect(tail['parent'], 'pelvis');
+    expect(tail['rear_midline'], isTrue);
+    expect(tail['concealed_by_rear_waistband'], isTrue);
+    expect(tail['forbid_between_thigh_origin'], isTrue);
+    expect(tail['preserve_across_views_and_motions'], isTrue);
+    expect(head[0], 0);
+    expect(head[2], greaterThan(tip[2]));
   });
 }

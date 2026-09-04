@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Validate GymRat Blender scenes against the checked-in rig contract."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import sys
+from pathlib import Path
+
+import bpy
+
+
+def _arguments() -> argparse.Namespace:
+    argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo-root", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, required=True)
+    return parser.parse_args(argv)
+
+
+def _close(actual: float, expected: float) -> bool:
+    return math.isclose(actual, expected, abs_tol=0.0001)
+
+
+def _validate_scene(
+    scene_path: Path,
+    identity: str,
+    manifest: dict[str, object],
+) -> list[str]:
+    if not scene_path.is_file():
+        return [f"missing scene: {scene_path}"]
+
+    bpy.ops.wm.open_mainfile(filepath=str(scene_path))
+    scene = bpy.context.scene
+    errors: list[str] = []
+    if scene.get("gymrat_identity") != identity:
+        errors.append(f"{identity}: embedded identity is incorrect")
+    if scene.get("gymrat_pipeline_version") != manifest["version"]:
+        errors.append(f"{identity}: embedded pipeline version is stale")
+
+    rig = bpy.data.objects.get("RIG_GYMRAT")
+    if rig is None or rig.type != "ARMATURE":
+        return errors + [f"{identity}: RIG_GYMRAT armature is missing"]
+
+    tail = manifest["anatomy_contract"]["tail_anchor"]
+    root = rig.data.bones.get(tail["bone"])
+    if root is None:
+        return errors + [f"{identity}: {tail['bone']} bone is missing"]
+    if root.parent is None or root.parent.name != tail["parent"]:
+        errors.append(f"{identity}: tail root is not parented to pelvis")
+
+    for label, actual, expected in (
+        ("head", root.head_local, tail["head"]),
+        ("tail", root.tail_local, tail["tail"]),
+    ):
+        if any(
+            not _close(float(actual[index]), float(expected[index]))
+            for index in range(3)
+        ):
+            errors.append(f"{identity}: tail root {label} violates manifest")
+
+    embedded = rig.get("gymrat_tail_anchor_contract")
+    if embedded is None or json.loads(embedded) != tail:
+        errors.append(f"{identity}: embedded tail contract is stale")
+    return errors
+
+
+def main() -> int:
+    args = _arguments()
+    manifest_path = args.repo_root / "tool/character_pipeline/pipeline_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    errors: list[str] = []
+    for identity in manifest["identities"]:
+        errors.extend(
+            _validate_scene(
+                args.source_root / "scenes" / f"{identity}_character.blend",
+                identity,
+                manifest,
+            )
+        )
+
+    if errors:
+        print("Blender scene validation failed:", file=sys.stderr)
+        for error in errors:
+            print(f"- {error}", file=sys.stderr)
+        return 1
+    print(f"Validated Blender anatomy for {len(manifest['identities'])} identities.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

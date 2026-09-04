@@ -97,3 +97,18 @@ and never reuse front frames for the back view. The level 1-100 Blender source
 and export contract lives in `tool/character_pipeline/pipeline_manifest.json`.
 Character Lab reports whether the selected combination has authored motion or
 uses the safe fallback.
+
+## Tail anchor contract
+
+Every identity uses one anatomical tail root on the rear midline at the
+coccyx. The rear waistband conceals the attachment; the tail must never appear
+to begin at the crotch, below the shorts, or between the thighs. The Blender
+rig therefore has an explicit `tail_root` bone parented to `pelvis`, followed
+by the articulated tail chain.
+
+The root position is identical in neutral, breathing, blinking, tail, and emote
+exports. Motion may bend the articulated chain but may not translate its root.
+Both front and back review renders must pass this check for male, female, and
+non-binary before a stage is activated. The current female and non-binary
+level-1 back references require an authored rerender at this anchor; an AI edit
+that changes the shorts, body, framing, or transparency is not acceptable.

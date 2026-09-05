@@ -14,6 +14,10 @@ identities. Identity, proportions, face, outfit, fur, palette, and muscle mass
 remain those of the matching approved master. Women's Physique uses open hands
 for double biceps; the male and non-binary lines use clenched, downward-turned
 fists unless a later reviewed identity-specific direction says otherwise.
+Female masters and every derived frame use the approved opaque black sports
+bra. Non-binary masters and every derived frame use the approved opaque black
+high-neck compression top. Neither identity may fall back to an uncovered
+torso during breathing, blinking, evolution, or emotes.
 
 ## Double biceps
 
@@ -51,8 +55,10 @@ and back exports use independently authored sides.
 Every sequence uses 48 frames at 24 fps: neutral at frame 1, readable entry at
 frame 10, full contraction at frame 24, held contraction through frame 38, and
 the exact neutral master again at frame 48. The root, canvas, camera, lighting,
-foot line, and coccyx-level tail attachment stay fixed. Only the pose bones and
-the muscle deformation needed for contraction may change.
+foot line, and rear-midline tail attachment stay fixed. The tail exits the
+shorts a small distance below the waistband's lower edge, never through the
+waistband or between the thighs. Only the pose bones and the muscle deformation
+needed for contraction may change.
 
 No emote is registered in Flutter until all four poses exist for male, female,
 and non-binary, front and back, at the matching evolution stage and appearance.

@@ -42,7 +42,8 @@
       "head": [0.0, 0.12, 3.35],
       "tail": [0.0, 0.42, 3.12],
       "rear_midline": true,
-      "concealed_by_rear_waistband": true,
+      "concealed_by_rear_waistband": false,
+      "exit_below_waistband": true,
       "forbid_between_thigh_origin": true,
       "preserve_across_views_and_motions": true
     }

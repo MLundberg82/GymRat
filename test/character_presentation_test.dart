@@ -46,21 +46,33 @@ void main() {
     }
   });
 
-  test('rejected emote sequences are not registered at runtime', () {
-    for (final gender in RatGender.values) {
-      for (final view in RatCharacterView.values) {
-        final set = RatAnimationCatalog.forCharacter(
-          gender: gender,
-          view: view,
-          level: 1,
-        );
-        expect(set.emotes, isEmpty, reason: '${gender.name}/${view.name}');
+  test('all emotes are registered for every level, identity and view', () {
+    for (var level = 1; level <= 100; level++) {
+      for (final gender in RatGender.values) {
+        for (final view in RatCharacterView.values) {
+          final set = RatAnimationCatalog.forCharacter(
+            gender: gender,
+            view: view,
+            level: level,
+          );
+          expect(
+            set.emotes.map((emote) => emote.type).toSet(),
+            RatEmoteType.values.toSet(),
+            reason: '$level/${gender.name}/${view.name}',
+          );
+          expect(set.hasCompleteEmoteSet, isTrue);
+          for (final emote in set.emotes) {
+            expect(emote.frames, hasLength(48));
+            expect(emote.frames.first, set.neutral);
+            expect(emote.frames.last, set.neutral);
+          }
+        }
       }
     }
   });
 
   for (final gender in RatGender.values) {
-    testWidgets('${gender.name} stays neutral without an approved pose', (
+    testWidgets('${gender.name} plays an approved pose without body bounce', (
       tester,
     ) async {
       for (final view in RatCharacterView.values) {
@@ -86,10 +98,23 @@ void main() {
           of: character,
           matching: find.byType(GestureDetector),
         );
-        expect(tester.widget<GestureDetector>(gesture).onTap, isNull);
+        final detector = tester.widget<GestureDetector>(gesture);
+        expect(detector.onTap, isNotNull);
+        detector.onTap!();
+        await tester.pump(const Duration(milliseconds: 260));
+        final animatedAssets = tester
+            .widgetList<Image>(
+              find.descendant(of: character, matching: find.byType(Image)),
+            )
+            .map((image) => image.image)
+            .whereType<ResizeImage>()
+            .map((image) => image.imageProvider)
+            .whereType<AssetImage>()
+            .map((image) => image.assetName);
+        expect(animatedAssets, contains(contains('emote_')));
         expect(
           find.descendant(of: character, matching: find.byType(CustomPaint)),
-          findsNothing,
+          findsOneWidget,
         );
         expect(tester.takeException(), isNull);
       }
@@ -117,41 +142,39 @@ void main() {
     },
   );
 
-  test(
-    'front-only motion never leaks into a back view or another identity',
-    () {
-      for (final gender in RatGender.values) {
-        final front = RatAnimationCatalog.forCharacter(
-          gender: gender,
-          view: RatCharacterView.front,
-          level: 1,
-        );
-        final back = RatAnimationCatalog.forCharacter(
-          gender: gender,
-          view: RatCharacterView.back,
-          level: 1,
-        );
-        final identityFolder = switch (gender) {
-          RatGender.male => '/male/',
-          RatGender.female => '/female/',
-          RatGender.nonBinary => '/non_binary/',
-        };
+  test('motion never leaks into another view or identity', () {
+    for (final gender in RatGender.values) {
+      final front = RatAnimationCatalog.forCharacter(
+        gender: gender,
+        view: RatCharacterView.front,
+        level: 1,
+      );
+      final back = RatAnimationCatalog.forCharacter(
+        gender: gender,
+        view: RatCharacterView.back,
+        level: 1,
+      );
+      final identityFolder = switch (gender) {
+        RatGender.male => '/male/',
+        RatGender.female => '/female/',
+        RatGender.nonBinary => '/non_binary/',
+      };
 
-        expect(front.hasAuthoredBlink, isTrue, reason: gender.name);
-        expect(front.hasAuthoredTail, isTrue, reason: gender.name);
-        expect(front.hasAuthoredEmotes, isFalse, reason: gender.name);
-        expect(front.hasCompleteEmoteSet, isFalse, reason: gender.name);
-        expect(front.isComplete, isFalse, reason: gender.name);
-        expect(front.allFrames, everyElement(contains(identityFolder)));
-        expect(back.hasAuthoredBreathing, isTrue, reason: gender.name);
-        expect(back.hasAuthoredBlink, isFalse, reason: gender.name);
-        expect(back.hasAuthoredTail, isFalse, reason: gender.name);
-        expect(back.hasAuthoredEmotes, isFalse, reason: gender.name);
-        expect(back.isComplete, isFalse, reason: gender.name);
-        expect(back.allFrames, everyElement(contains(identityFolder)));
-      }
-    },
-  );
+      expect(front.hasAuthoredBlink, isTrue, reason: gender.name);
+      expect(front.hasAuthoredTail, isFalse, reason: gender.name);
+      expect(front.hasAuthoredEmotes, isTrue, reason: gender.name);
+      expect(front.hasCompleteEmoteSet, isTrue, reason: gender.name);
+      expect(front.isComplete, isFalse, reason: gender.name);
+      expect(front.allFrames, everyElement(contains(identityFolder)));
+      expect(back.hasAuthoredBreathing, isTrue, reason: gender.name);
+      expect(back.hasAuthoredBlink, isFalse, reason: gender.name);
+      expect(back.hasAuthoredTail, isFalse, reason: gender.name);
+      expect(back.hasAuthoredEmotes, isTrue, reason: gender.name);
+      expect(back.hasCompleteEmoteSet, isTrue, reason: gender.name);
+      expect(back.isComplete, isFalse, reason: gender.name);
+      expect(back.allFrames, everyElement(contains(identityFolder)));
+    }
+  });
 
   test('random emotes do not repeat when another authored pose exists', () {
     const doubleBiceps = RatEmoteSequence(

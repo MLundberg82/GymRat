@@ -41,7 +41,8 @@ void main() {
     expect(tail['bone'], 'tail_root');
     expect(tail['parent'], 'pelvis');
     expect(tail['rear_midline'], isTrue);
-    expect(tail['concealed_by_rear_waistband'], isTrue);
+    expect(tail['concealed_by_rear_waistband'], isFalse);
+    expect(tail['exit_below_waistband'], isTrue);
     expect(tail['forbid_between_thigh_origin'], isTrue);
     expect(tail['preserve_across_views_and_motions'], isTrue);
     expect(head[0], 0);

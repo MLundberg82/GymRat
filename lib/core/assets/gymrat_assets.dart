@@ -36,7 +36,7 @@ abstract final class GymRatAssets {
   ];
 
   static const List<String> maleLevel1BlinkFrames = [
-    'assets/characters/male/level_01/idle/idle_00.png',
+    maleLevel1,
     'assets/characters/male/level_01/blink/blink_01.png',
     'assets/characters/male/level_01/blink/blink_02.png',
     'assets/characters/male/level_01/blink/blink_03.png',

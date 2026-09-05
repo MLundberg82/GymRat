@@ -140,7 +140,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     );
     _emoteController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 720),
+      duration: const Duration(milliseconds: 2000),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -447,7 +447,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _playAnimation(
       action: _IdleAction.emote,
       frames: emote.frames,
-      frameDuration: const Duration(milliseconds: 105),
+      frameDuration: const Duration(milliseconds: 42),
       onComplete: () {
         _scheduleBreath();
         _scheduleBlink();

@@ -81,10 +81,16 @@ abstract final class RatAnimationCatalog {
     );
 
     if (appearanceId == RatAppearanceCatalog.baseId && approvedStage == 1) {
+      final emotes = _emoteSequences(
+        gender: gender,
+        view: view,
+        neutral: neutral,
+      );
       if (view == RatCharacterView.back) {
         return RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
+          emotes: emotes,
         );
       }
 
@@ -93,19 +99,19 @@ abstract final class RatAnimationCatalog {
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.maleLevel1BlinkFrames,
-          tail: GymRatAssets.maleLevel1TailFrames,
+          emotes: emotes,
         ),
         RatGender.female => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.femaleLevel1BlinkFrames,
-          tail: GymRatAssets.femaleLevel1TailFrames,
+          emotes: emotes,
         ),
         RatGender.nonBinary => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.nonBinaryLevel1BlinkFrames,
-          tail: GymRatAssets.nonBinaryLevel1TailFrames,
+          emotes: emotes,
         ),
       };
     }
@@ -175,6 +181,49 @@ abstract final class RatAnimationCatalog {
       frame(2),
       frame(1),
       frame(0),
+    ];
+  }
+
+  static List<RatEmoteSequence> _emoteSequences({
+    required RatGender gender,
+    required RatCharacterView view,
+    required String neutral,
+  }) {
+    final identity = switch (gender) {
+      RatGender.male => 'male',
+      RatGender.female => 'female',
+      RatGender.nonBinary => 'non_binary',
+    };
+    final viewToken = switch (view) {
+      RatCharacterView.front => 'front',
+      RatCharacterView.back => 'back',
+    };
+    String frame(RatEmoteType type, String phase) {
+      final pose = switch (type) {
+        RatEmoteType.doubleBiceps => 'double_biceps',
+        RatEmoteType.chestFlex => 'chest_flex',
+        RatEmoteType.legPose => 'leg_pose',
+        RatEmoteType.triceps => 'triceps',
+      };
+      return 'assets/characters/$identity/motion/level_01/$viewToken/'
+          'emote_${pose}_$phase.png';
+    }
+
+    List<String> sequenceFor(RatEmoteType type) {
+      final entry = frame(type, 'entry');
+      final hold = frame(type, 'hold');
+      return <String>[
+        ...List<String>.filled(4, neutral),
+        ...List<String>.filled(6, entry),
+        ...List<String>.filled(28, hold),
+        ...List<String>.filled(6, entry),
+        ...List<String>.filled(4, neutral),
+      ];
+    }
+
+    return <RatEmoteSequence>[
+      for (final type in RatEmoteType.values)
+        RatEmoteSequence(type: type, frames: sequenceFor(type)),
     ];
   }
 }

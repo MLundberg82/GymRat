@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
@@ -142,6 +143,13 @@ void main() {
             expect(info.cornerAlphas, everyElement(0), reason: asset);
             expect(info.width, neutralInfo.width, reason: asset);
             expect(info.height, neutralInfo.height, reason: asset);
+            if (asset.contains('/emote_')) {
+              expect(
+                info.largeAlphaComponents,
+                1,
+                reason: '$asset contains a neighbouring pose fragment',
+              );
+            }
           }
         }
       }
@@ -230,9 +238,66 @@ Future<_ImageInfo> _inspect(String asset) async {
     pixels.getUint8((height - 1) * width * 4 + 3),
     pixels.getUint8(lastPixel * 4 + 3),
   ];
+  final largeAlphaComponents = _countLargeAlphaComponents(
+    pixels,
+    width,
+    height,
+  );
   image.dispose();
   codec.dispose();
-  return _ImageInfo(width, height, corners, pngColorType);
+  return _ImageInfo(width, height, corners, pngColorType, largeAlphaComponents);
+}
+
+int _countLargeAlphaComponents(ByteData pixels, int width, int height) {
+  const blockSize = 4;
+  const alphaThreshold = 16;
+  const minimumComponentBlocks = 250;
+  final gridWidth = (width + blockSize - 1) ~/ blockSize;
+  final gridHeight = (height + blockSize - 1) ~/ blockSize;
+  final occupied = Uint8List(gridWidth * gridHeight);
+
+  for (var y = 0; y < height; y++) {
+    final gridY = y ~/ blockSize;
+    for (var x = 0; x < width; x++) {
+      if (pixels.getUint8((y * width + x) * 4 + 3) > alphaThreshold) {
+        occupied[gridY * gridWidth + x ~/ blockSize] = 1;
+      }
+    }
+  }
+
+  final visited = Uint8List(occupied.length);
+  final queue = Int32List(occupied.length);
+  var largeComponents = 0;
+  for (var start = 0; start < occupied.length; start++) {
+    if (occupied[start] == 0 || visited[start] != 0) continue;
+    var head = 0;
+    var tail = 1;
+    var componentSize = 0;
+    queue[0] = start;
+    visited[start] = 1;
+
+    while (head < tail) {
+      final current = queue[head++];
+      componentSize++;
+      final x = current % gridWidth;
+      final y = current ~/ gridWidth;
+      final neighbours = <int>[
+        if (x > 0) current - 1,
+        if (x + 1 < gridWidth) current + 1,
+        if (y > 0) current - gridWidth,
+        if (y + 1 < gridHeight) current + gridWidth,
+      ];
+      for (final neighbour in neighbours) {
+        if (occupied[neighbour] != 0 && visited[neighbour] == 0) {
+          visited[neighbour] = 1;
+          queue[tail++] = neighbour;
+        }
+      }
+    }
+
+    if (componentSize >= minimumComponentBlocks) largeComponents++;
+  }
+  return largeComponents;
 }
 
 class _ImageInfo {
@@ -241,10 +306,12 @@ class _ImageInfo {
     this.height,
     this.cornerAlphas,
     this.pngColorType,
+    this.largeAlphaComponents,
   );
 
   final int width;
   final int height;
   final List<int> cornerAlphas;
   final int pngColorType;
+  final int largeAlphaComponents;
 }

@@ -55,7 +55,7 @@ Run the following on Android and iOS, on narrow and large phones:
 - first launch in every supported system language;
 - onboarding for male, female, and non-binary identities;
 - front/back selection retained after relaunch;
-- rat power-flex and breathing without image drift;
+- all four rat muscle poses and breathing without bounce or image drift;
 - Chest, Back, Legs, Arms, and Walk from preview through completion;
 - active strength workout restored after forced app termination;
 - active walk time and journal restored after forced app termination;

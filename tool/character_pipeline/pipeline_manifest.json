@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "canvas": {
     "width": 1024,
     "height": 1792,
@@ -27,7 +27,10 @@
     "idle_breath": {"frames": 96, "loop": true},
     "blink": {"frames": 12, "loop": false},
     "tail_idle": {"frames": 96, "loop": true},
-    "power_flex": {"frames": 48, "loop": false},
+    "double_biceps": {"frames": 48, "loop": false},
+    "chest_flex": {"frames": 48, "loop": false},
+    "leg_pose": {"frames": 48, "loop": false},
+    "triceps": {"frames": 48, "loop": false},
     "victory": {"frames": 72, "loop": false},
     "pb_celebration": {"frames": 72, "loop": false},
     "recovery": {"frames": 96, "loop": true}
@@ -43,6 +46,15 @@
       "forbid_between_thigh_origin": true,
       "preserve_across_views_and_motions": true
     }
+  },
+  "emote_contract": {
+    "types": ["double_biceps", "chest_flex", "leg_pose", "triceps"],
+    "selection": "random_without_immediate_repeat",
+    "views": ["front", "back"],
+    "require_every_identity": true,
+    "require_every_stage": true,
+    "require_every_appearance": true,
+    "synthetic_body_transform": false
   },
   "release_contract": {
     "views": ["front", "back"],

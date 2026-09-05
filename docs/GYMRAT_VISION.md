@@ -194,8 +194,9 @@ As verified from the repository on 2026-09-02:
   integration, and declares the same five supported languages as the app.
 - Active strength sessions are saved locally while they are entered and resume
   after process termination without granting duplicate rewards.
-- The selected front/back character view follows level-up and evolution; the
-  hub character also supports a bounded tap-triggered power-flex.
+- The selected front/back character view follows level-up and evolution. A tap
+  may play a matching authored muscle pose without synthetic body movement;
+  unavailable identity/view/level/appearance combinations stay neutral.
 - Exercise detail tracks actual PB, estimated strength, and session volume,
   while earned hub record stations open the same canonical history.
 - Users can copy a local JSON export and erase GymRat-owned local data from

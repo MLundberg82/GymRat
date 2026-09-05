@@ -39,6 +39,21 @@ def _validate_scene(
         errors.append(f"{identity}: embedded identity is incorrect")
     if scene.get("gymrat_pipeline_version") != manifest["version"]:
         errors.append(f"{identity}: embedded pipeline version is stale")
+    embedded_emotes = scene.get("gymrat_emote_contract")
+    if embedded_emotes is None or json.loads(embedded_emotes) != manifest[
+        "emote_contract"
+    ]:
+        errors.append(f"{identity}: embedded emote contract is stale")
+
+    for motion, definition in manifest["motions"].items():
+        action = bpy.data.actions.get(f"ACT_{motion}")
+        if action is None:
+            errors.append(f"{identity}: ACT_{motion} action is missing")
+            continue
+        if action.get("gymrat_frames") != definition["frames"]:
+            errors.append(f"{identity}: ACT_{motion} frame contract is stale")
+        if action.get("gymrat_loop") != definition["loop"]:
+            errors.append(f"{identity}: ACT_{motion} loop contract is stale")
 
     rig = bpy.data.objects.get("RIG_GYMRAT")
     if rig is None or rig.type != "ARMATURE":

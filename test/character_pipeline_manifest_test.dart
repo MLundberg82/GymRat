@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymrat/features/character/domain/rat_animation_set.dart';
+import 'package:gymrat/features/character/domain/rat_appearance.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 
 void main() {
@@ -9,6 +11,8 @@ void main() {
     final manifest = jsonDecode(
       File('tool/character_pipeline/pipeline_manifest.json').readAsStringSync(),
     ) as Map<String, dynamic>;
+
+    expect(manifest['version'], RatAppearanceCatalog.motionContractVersion);
 
     expect(
       (manifest['stages'] as List<dynamic>).cast<int>(),
@@ -42,5 +46,24 @@ void main() {
     expect(tail['preserve_across_views_and_motions'], isTrue);
     expect(head[0], 0);
     expect(head[2], greaterThan(tip[2]));
+
+    final emotes = manifest['emote_contract'] as Map<String, dynamic>;
+    expect(
+      (emotes['types'] as List<dynamic>).cast<String>(),
+      RatEmoteType.values.map(
+        (type) => switch (type) {
+          RatEmoteType.doubleBiceps => 'double_biceps',
+          RatEmoteType.chestFlex => 'chest_flex',
+          RatEmoteType.legPose => 'leg_pose',
+          RatEmoteType.triceps => 'triceps',
+        },
+      ),
+    );
+    expect(emotes['selection'], 'random_without_immediate_repeat');
+    expect(emotes['views'], orderedEquals(<String>['front', 'back']));
+    expect(emotes['require_every_identity'], isTrue);
+    expect(emotes['require_every_stage'], isTrue);
+    expect(emotes['require_every_appearance'], isTrue);
+    expect(emotes['synthetic_body_transform'], isFalse);
   });
 }

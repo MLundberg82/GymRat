@@ -76,6 +76,12 @@ The owner reviews four things; no Blender work is required from them:
 Everything between those gates is an authored production task and must not be
 replaced by runtime scaling, cross-identity frames, or a newly invented rat.
 
+The four mandatory emote actions are `double_biceps`, `chest_flex`,
+`leg_pose`, and `triceps`. Each one must be authored in both camera views for
+every identity, evolution stage, and complete purchasable appearance. Runtime
+selection is random without immediate repetition and never adds a synthetic
+body transform.
+
 Approved direction references are recorded in the external source directory's
 `approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds
 them as locked, non-rendering Blender references. A direction approval does not

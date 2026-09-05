@@ -17,11 +17,17 @@ class RatAppearanceAssets {
 }
 
 class RatAppearance {
-  const RatAppearance({required this.id, required this.stages, this.productId});
+  const RatAppearance({
+    required this.id,
+    required this.stages,
+    this.productId,
+    this.approvedMotionContractVersion,
+  });
 
   final String id;
   final Map<int, Map<RatGender, RatAppearanceAssets>> stages;
   final String? productId;
+  final int? approvedMotionContractVersion;
 
   Map<RatGender, RatAppearanceAssets> get assetsByGender => stages[1] ?? {};
 
@@ -63,6 +69,7 @@ class RatAppearance {
 
 abstract final class RatAppearanceCatalog {
   static const String baseId = 'base';
+  static const int motionContractVersion = 3;
 
   static const RatAppearance base = RatAppearance(
     id: baseId,
@@ -90,7 +97,9 @@ abstract final class RatAppearanceCatalog {
 
   static bool _isReleaseComplete(RatAppearance appearance) {
     if (!appearance.isComplete) return false;
-    return base.approvedStages.every(appearance.stages.containsKey);
+    if (!base.approvedStages.every(appearance.stages.containsKey)) return false;
+    return appearance.id == baseId ||
+        appearance.approvedMotionContractVersion == motionContractVersion;
   }
 
   static RatAppearance byId(String? id) {

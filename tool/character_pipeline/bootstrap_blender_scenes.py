@@ -235,6 +235,7 @@ def _configure_scene(
     scene["gymrat_stages"] = json.dumps(manifest["stages"])
     scene["gymrat_release_contract"] = json.dumps(manifest["release_contract"])
     scene["gymrat_anatomy_contract"] = json.dumps(manifest["anatomy_contract"])
+    scene["gymrat_emote_contract"] = json.dumps(manifest["emote_contract"])
 
     references = _collection("REFERENCES_LOCKED")
     model = _collection("MODEL_AUTHORED")

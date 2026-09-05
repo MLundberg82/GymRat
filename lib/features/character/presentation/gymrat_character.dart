@@ -39,24 +39,18 @@ class GymRatCharacter extends StatefulWidget {
   static double breathingScaleY(double progress) =>
       1 + sin(progress.clamp(0.0, 1.0) * pi) * .002;
 
-  static double emoteScaleX(double progress) =>
-      1 + sin(progress.clamp(0.0, 1.0) * pi) * .025;
-
-  static double emoteScaleY(double progress) =>
-      1 - sin(progress.clamp(0.0, 1.0) * pi) * .018;
-
-  static double emoteRotation(double progress) {
-    final safe = progress.clamp(0.0, 1.0);
-    return sin(safe * pi * 6) * (1 - safe) * .014;
+  static RatEmoteSequence selectEmote({
+    required List<RatEmoteSequence> available,
+    required int randomValue,
+    RatEmoteType? previousType,
+  }) {
+    assert(available.isNotEmpty);
+    final alternatives = available
+        .where((sequence) => sequence.type != previousType)
+        .toList(growable: false);
+    final candidates = alternatives.isEmpty ? available : alternatives;
+    return candidates[randomValue % candidates.length];
   }
-
-  static double emoteDrop(double progress) =>
-      sin(progress.clamp(0.0, 1.0) * pi) * 7;
-
-  static double emoteTransformProgress({
-    required double progress,
-    required bool hasAuthoredFrames,
-  }) => hasAuthoredFrames ? 0 : progress.clamp(0.0, 1.0);
 
   static Rect breathingTorsoRect(Size size, RatCharacterView view) {
     final top = size.height * (view == RatCharacterView.front ? .20 : .19);
@@ -131,6 +125,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   List<String> _activeFrames = <String>[];
   int _frameIndex = 0;
+  RatEmoteType? _lastEmoteType;
 
   bool _assetsPrecached = false;
   late final AnimationController _breathingController;
@@ -208,6 +203,9 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     _activeFrames = <String>[];
     _frameIndex = 0;
     _action = _IdleAction.neutral;
+    _lastEmoteType = null;
+    _breathingController.reset();
+    _emoteController.reset();
     _assetsPrecached = false;
     _precacheAssets();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -426,18 +424,26 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   String get _identityMaster => _animationSet.neutral;
 
-  void _playFlexEmote() {
-    if (!widget.enableEmotes || _emoteController.isAnimating) return;
-    HapticFeedback.mediumImpact();
-    _emoteController.forward(from: 0);
-
+  void _playRandomEmote() {
+    if (!widget.enableEmotes ||
+        _emoteController.isAnimating ||
+        _action != _IdleAction.neutral) {
+      return;
+    }
     final emotes = _animationSet.emotes;
     if (emotes.isEmpty) return;
 
-    final frames = emotes[_random.nextInt(emotes.length)];
+    final emote = GymRatCharacter.selectEmote(
+      available: emotes,
+      previousType: _lastEmoteType,
+      randomValue: _random.nextInt(1 << 31),
+    );
+    _lastEmoteType = emote.type;
+    HapticFeedback.mediumImpact();
+    _emoteController.forward(from: 0);
     _playAnimation(
       action: _IdleAction.emote,
-      frames: frames,
+      frames: emote.frames,
       frameDuration: const Duration(milliseconds: 105),
       onComplete: () {
         _scheduleBreath();
@@ -466,117 +472,98 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       label: widget.emoteSemanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: widget.enableEmotes ? _playFlexEmote : null,
+        onTap: widget.enableEmotes ? _playRandomEmote : null,
         child: AnimatedBuilder(
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
-            final transformProgress = GymRatCharacter.emoteTransformProgress(
-              progress: emote,
-              hasAuthoredFrames:
-                  _action == _IdleAction.emote &&
-                  _animationSet.hasAuthoredEmotes,
-            );
-            return Transform.translate(
-              offset: Offset(0, GymRatCharacter.emoteDrop(transformProgress)),
-              child: Transform.rotate(
-                angle: GymRatCharacter.emoteRotation(transformProgress),
+            return Transform.scale(
+              scale: GymRatCharacter.displayScale,
+              alignment: Alignment.bottomCenter,
+              child: Stack(
                 alignment: Alignment.bottomCenter,
-                child: Transform(
-                  transform: Matrix4.diagonal3Values(
-                    GymRatCharacter.displayScale *
-                        GymRatCharacter.emoteScaleX(transformProgress),
-                    GymRatCharacter.displayScale *
-                        GymRatCharacter.emoteScaleY(transformProgress),
-                    1,
-                  ),
-                  alignment: Alignment.bottomCenter,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      if (_emoteController.isAnimating)
-                        Positioned.fill(
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Opacity(
-                                opacity: (sin(emote * pi) * .24)
-                                    .clamp(0.0, 1.0)
-                                    .toDouble(),
-                                child: const DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    gradient: RadialGradient(
-                                      center: Alignment(0, .05),
-                                      radius: .48,
-                                      colors: [
-                                        Color(0x66FFC107),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
+                children: [
+                  if (_emoteController.isAnimating)
+                    Positioned.fill(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Opacity(
+                            opacity: (sin(emote * pi) * .24)
+                                .clamp(0.0, 1.0)
+                                .toDouble(),
+                            child: const DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  center: Alignment(0, .05),
+                                  radius: .48,
+                                  colors: [
+                                    Color(0x66FFC107),
+                                    Colors.transparent,
+                                  ],
                                 ),
                               ),
-                              CustomPaint(
-                                painter: _PowerStancePainter(progress: emote),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      Image.asset(
-                        _action == _IdleAction.blinking
-                            ? _identityMaster
-                            : _currentFrame,
-                        height: widget.height,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.bottomCenter,
-                        gaplessPlayback: true,
-                        filterQuality: FilterQuality.high,
-                        cacheHeight: _cacheHeight,
-                        semanticLabel: widget.gender.name,
+                          CustomPaint(
+                            painter: _EmoteEffectPainter(progress: emote),
+                          ),
+                        ],
                       ),
-                      if (_action == _IdleAction.blinking)
-                        Positioned.fill(
-                          child: ClipRect(
-                            clipper: const _BlinkClipper(),
-                            child: Image.asset(
-                              _currentFrame,
-                              height: widget.height,
-                              fit: BoxFit.contain,
-                              alignment: Alignment.bottomCenter,
-                              gaplessPlayback: true,
-                              filterQuality: FilterQuality.high,
-                              cacheHeight: _cacheHeight,
-                            ),
-                          ),
-                        ),
-                      if (_action == _IdleAction.breathing &&
-                          !_animationSet.hasAuthoredBreathing)
-                        Positioned.fill(
-                          child: ClipRect(
-                            clipper: _BreathingTorsoClipper(view: widget.view),
-                            child: Transform.scale(
-                              alignment: const Alignment(0, -.26),
-                              scaleX: GymRatCharacter.breathingScaleX(
-                                _breathingController.value,
-                              ),
-                              scaleY: GymRatCharacter.breathingScaleY(
-                                _breathingController.value,
-                              ),
-                              child: Image.asset(
-                                _identityMaster,
-                                height: widget.height,
-                                fit: BoxFit.contain,
-                                alignment: Alignment.bottomCenter,
-                                gaplessPlayback: true,
-                                filterQuality: FilterQuality.high,
-                                cacheHeight: _cacheHeight,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
+                  Image.asset(
+                    _action == _IdleAction.blinking
+                        ? _identityMaster
+                        : _currentFrame,
+                    height: widget.height,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.bottomCenter,
+                    gaplessPlayback: true,
+                    filterQuality: FilterQuality.high,
+                    cacheHeight: _cacheHeight,
+                    semanticLabel: widget.gender.name,
                   ),
-                ),
+                  if (_action == _IdleAction.blinking)
+                    Positioned.fill(
+                      child: ClipRect(
+                        clipper: const _BlinkClipper(),
+                        child: Image.asset(
+                          _currentFrame,
+                          height: widget.height,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.bottomCenter,
+                          gaplessPlayback: true,
+                          filterQuality: FilterQuality.high,
+                          cacheHeight: _cacheHeight,
+                        ),
+                      ),
+                    ),
+                  if (_action == _IdleAction.breathing &&
+                      !_animationSet.hasAuthoredBreathing)
+                    Positioned.fill(
+                      child: ClipRect(
+                        clipper: _BreathingTorsoClipper(view: widget.view),
+                        child: Transform.scale(
+                          alignment: const Alignment(0, -.26),
+                          scaleX: GymRatCharacter.breathingScaleX(
+                            _breathingController.value,
+                          ),
+                          scaleY: GymRatCharacter.breathingScaleY(
+                            _breathingController.value,
+                          ),
+                          child: Image.asset(
+                            _identityMaster,
+                            height: widget.height,
+                            fit: BoxFit.contain,
+                            alignment: Alignment.bottomCenter,
+                            gaplessPlayback: true,
+                            filterQuality: FilterQuality.high,
+                            cacheHeight: _cacheHeight,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             );
           },
@@ -609,8 +596,8 @@ class _BreathingTorsoClipper extends CustomClipper<Rect> {
       oldClipper.view != view;
 }
 
-class _PowerStancePainter extends CustomPainter {
-  const _PowerStancePainter({required this.progress});
+class _EmoteEffectPainter extends CustomPainter {
+  const _EmoteEffectPainter({required this.progress});
 
   final double progress;
 
@@ -652,6 +639,6 @@ class _PowerStancePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PowerStancePainter oldDelegate) =>
+  bool shouldRepaint(covariant _EmoteEffectPainter oldDelegate) =>
       oldDelegate.progress != progress;
 }

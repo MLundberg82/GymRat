@@ -22,27 +22,7 @@ void main() {
     expect(torso.right, lessThan(320));
   });
 
-  test('fallback power stance transforms but authored emotes stay stable', () {
-    expect(GymRatCharacter.emoteScaleX(0), 1);
-    expect(GymRatCharacter.emoteScaleX(.5), greaterThan(1));
-    expect(GymRatCharacter.emoteScaleY(.5), lessThan(1));
-    expect(GymRatCharacter.emoteDrop(.5), greaterThan(0));
-    expect(GymRatCharacter.emoteScaleX(1), closeTo(1, .000001));
-    expect(
-      GymRatCharacter.emoteTransformProgress(
-        progress: .5,
-        hasAuthoredFrames: true,
-      ),
-      0,
-    );
-    expect(
-      GymRatCharacter.emoteTransformProgress(
-        progress: .5,
-        hasAuthoredFrames: false,
-      ),
-      .5,
-    );
-
+  test('emote playback never adds a synthetic body bounce', () {
     final blink = GymRatCharacter.blinkRect(const Size(320, 600));
     expect(blink.left, greaterThan(0));
     expect(blink.right, lessThan(320));
@@ -81,11 +61,11 @@ void main() {
 
       expect(set.emotes, isNotEmpty, reason: gender.name);
       for (final sequence in set.emotes) {
-        expect(sequence.length, greaterThanOrEqualTo(5));
-        expect(sequence.first, set.neutral);
-        expect(sequence.last, set.neutral);
+        expect(sequence.frames.length, greaterThanOrEqualTo(5));
+        expect(sequence.frames.first, set.neutral);
+        expect(sequence.frames.last, set.neutral);
         expect(
-          sequence,
+          sequence.frames,
           everyElement(contains(genderFolder)),
           reason: '${gender.name} must not use another identity',
         );
@@ -134,6 +114,47 @@ void main() {
       expect(asset.assetName, contains('${genderFolder}level_01/emotes/'));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('${gender.name} back tap stays neutral without authored pose', (
+      tester,
+    ) async {
+      final key = ValueKey('back-character-${gender.name}');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: GymRatCharacter(
+                key: key,
+                height: 500,
+                gender: gender,
+                view: RatCharacterView.back,
+                enableEmotes: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final character = find.byKey(key);
+      final gesture = find.descendant(
+        of: character,
+        matching: find.byType(GestureDetector),
+      );
+      tester.widget<GestureDetector>(gesture).onTap!.call();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      final image = tester.widget<Image>(
+        find.descendant(of: character, matching: find.byType(Image)).last,
+      );
+      final resized = image.image as ResizeImage;
+      final asset = resized.imageProvider as AssetImage;
+      expect(asset.assetName, contains('level_01_back.png'));
+      expect(
+        find.descendant(of: character, matching: find.byType(CustomPaint)),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
   }
 
   test(
@@ -180,7 +201,8 @@ void main() {
         expect(front.hasAuthoredBlink, isTrue, reason: gender.name);
         expect(front.hasAuthoredTail, isTrue, reason: gender.name);
         expect(front.hasAuthoredEmotes, isTrue, reason: gender.name);
-        expect(front.isComplete, isTrue, reason: gender.name);
+        expect(front.hasCompleteEmoteSet, isFalse, reason: gender.name);
+        expect(front.isComplete, isFalse, reason: gender.name);
         expect(front.allFrames, everyElement(contains(identityFolder)));
         expect(back.hasAuthoredBreathing, isTrue, reason: gender.name);
         expect(back.hasAuthoredBlink, isFalse, reason: gender.name);
@@ -191,6 +213,25 @@ void main() {
       }
     },
   );
+
+  test('random emotes do not repeat when another authored pose exists', () {
+    const doubleBiceps = RatEmoteSequence(
+      type: RatEmoteType.doubleBiceps,
+      frames: ['neutral', 'biceps', 'neutral'],
+    );
+    const chestFlex = RatEmoteSequence(
+      type: RatEmoteType.chestFlex,
+      frames: ['neutral', 'chest', 'neutral'],
+    );
+
+    final selected = GymRatCharacter.selectEmote(
+      available: const [doubleBiceps, chestFlex],
+      previousType: RatEmoteType.doubleBiceps,
+      randomValue: 0,
+    );
+
+    expect(selected.type, RatEmoteType.chestFlex);
+  });
 
   test('every evolution milestone resolves the approved breathing stage', () {
     for (final level in EvolutionMilestones.stages) {

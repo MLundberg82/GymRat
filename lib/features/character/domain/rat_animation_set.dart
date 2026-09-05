@@ -3,25 +3,40 @@ import '../../profile/domain/training_profile.dart';
 import 'rat_appearance.dart';
 import 'rat_character_view.dart';
 
+enum RatEmoteType { doubleBiceps, chestFlex, legPose, triceps }
+
+class RatEmoteSequence {
+  const RatEmoteSequence({required this.type, required this.frames});
+
+  final RatEmoteType type;
+  final List<String> frames;
+}
+
 class RatAnimationSet {
   const RatAnimationSet({
     required this.neutral,
     this.breathing = const <String>[],
     this.blinking = const <String>[],
     this.tail = const <String>[],
-    this.emotes = const <List<String>>[],
+    this.emotes = const <RatEmoteSequence>[],
   });
 
   final String neutral;
   final List<String> breathing;
   final List<String> blinking;
   final List<String> tail;
-  final List<List<String>> emotes;
+  final List<RatEmoteSequence> emotes;
 
   bool get hasAuthoredBreathing => breathing.length >= 2;
   bool get hasAuthoredBlink => blinking.length >= 4;
   bool get hasAuthoredTail => tail.length >= 2;
-  bool get hasAuthoredEmotes => emotes.any((frames) => frames.length >= 3);
+  bool get hasAuthoredEmotes =>
+      emotes.any((sequence) => sequence.frames.length >= 3);
+  bool get hasCompleteEmoteSet => RatEmoteType.values.every(
+    (type) => emotes.any(
+      (sequence) => sequence.type == type && sequence.frames.length >= 3,
+    ),
+  );
   bool get hasAnyAuthoredMotion =>
       hasAuthoredBreathing ||
       hasAuthoredBlink ||
@@ -31,7 +46,7 @@ class RatAnimationSet {
       hasAuthoredBreathing &&
       hasAuthoredBlink &&
       hasAuthoredTail &&
-      hasAuthoredEmotes;
+      hasCompleteEmoteSet;
 
   Iterable<String> get allFrames sync* {
     yield neutral;
@@ -39,7 +54,7 @@ class RatAnimationSet {
     yield* blinking;
     yield* tail;
     for (final emote in emotes) {
-      yield* emote;
+      yield* emote.frames;
     }
   }
 }
@@ -79,21 +94,36 @@ abstract final class RatAnimationCatalog {
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.maleLevel1BlinkFrames,
           tail: GymRatAssets.maleLevel1TailFrames,
-          emotes: const [GymRatAssets.maleLevel1EmoteFrames],
+          emotes: const [
+            RatEmoteSequence(
+              type: RatEmoteType.doubleBiceps,
+              frames: GymRatAssets.maleLevel1EmoteFrames,
+            ),
+          ],
         ),
         RatGender.female => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.femaleLevel1BlinkFrames,
           tail: GymRatAssets.femaleLevel1TailFrames,
-          emotes: const [GymRatAssets.femaleLevel1EmoteFrames],
+          emotes: const [
+            RatEmoteSequence(
+              type: RatEmoteType.doubleBiceps,
+              frames: GymRatAssets.femaleLevel1EmoteFrames,
+            ),
+          ],
         ),
         RatGender.nonBinary => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.nonBinaryLevel1BlinkFrames,
           tail: GymRatAssets.nonBinaryLevel1TailFrames,
-          emotes: const [GymRatAssets.nonBinaryLevel1EmoteFrames],
+          emotes: const [
+            RatEmoteSequence(
+              type: RatEmoteType.doubleBiceps,
+              frames: GymRatAssets.nonBinaryLevel1EmoteFrames,
+            ),
+          ],
         ),
       };
     }

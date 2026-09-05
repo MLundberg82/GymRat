@@ -68,16 +68,22 @@ the base appearance.
 
 ## Poses and emotes
 
-The built-in power stance is a bounded squash, recoil, energy-ring, and haptic
-response around the currently approved full-character asset. It works for every
-identity and view, never pretends to change the limb pose, never composites an
-item, and never replaces the selected master.
+Tapping the rat may play one of four authored poses: double biceps, chest flex,
+leg pose, or triceps. Selection is random without immediately repeating the
+same pose when another authored choice exists. The character remains locked to
+its foot line and display scale throughout playback: no synthetic squash,
+bounce, drop, rotation, or whole-body scaling is allowed. A bounded gold effect
+and haptic response may accompany an authored pose without moving the rat.
 
-Any future authored pose or multi-frame emote follows the same release matrix
-as an appearance: male, female, and non-binary, front and back, at every stage
-where it is offered. A partial pose remains unavailable. Frames must preserve
-canvas size, foot line, lighting, identity, outfit, and transparency so the
-animation cannot jump or drift.
+Every authored pose follows the same release matrix as an appearance: male,
+female, and non-binary, front and back, at every evolution stage and for every
+purchasable full-character appearance. A partial pose remains unavailable.
+Frames must preserve canvas size, foot line, lighting, identity, outfit, tail
+root, and transparency so the animation cannot jump or drift. If the exact
+character/view combination has no authored pose, tapping it does nothing.
+Purchased appearances additionally require the current approved motion-contract
+version in `RatAppearanceCatalog`; static front/back images alone can never make
+a store appearance equipable.
 
 ## Motion matrix
 
@@ -89,7 +95,8 @@ approved master. The frames preserve identity and transparency and are reused
 for every player level that currently resolves to approved stage 1. Every
 level-1 front view also has identity-specific authored blink, tail, and double
 biceps frames. Back views currently use authored breathing only; front-only
-motion is never mislabeled or reused behind the character.
+motion is never mislabeled or reused behind the character, and the removed
+synthetic fallback must never be used to imitate a missing pose.
 
 Later-stage, back-view, and outfit motion frames must be exported from their
 matching approved neutral render. Never reuse one identity's frames for another

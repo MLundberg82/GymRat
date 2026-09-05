@@ -133,6 +133,13 @@ void main() {
         );
         final detector = tester.widget<GestureDetector>(gesture);
         expect(detector.onTap, isNotNull);
+        expect(
+          find.descendant(
+            of: character,
+            matching: find.byType(AnimatedSwitcher),
+          ),
+          findsNothing,
+        );
         detector.onTap!();
         await tester.pump(const Duration(milliseconds: 260));
         final animatedAssets = tester

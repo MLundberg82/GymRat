@@ -1052,11 +1052,55 @@ class _StoreHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
+        _StoreBenefit(text: context.tr.t('premiumBenefitHistory')),
+        _StoreBenefit(text: context.tr.t('premiumBenefitCoach')),
+        _StoreBenefit(text: context.tr.t('premiumBenefitInsights')),
+        const SizedBox(height: 4),
         TextButton.icon(
           onPressed: canRestore ? onRestore : null,
           icon: const Icon(Icons.restore_rounded, size: 18),
           label: Text(context.tr.t('restorePurchases')),
           style: TextButton.styleFrom(foregroundColor: GymRatColors.premium),
+        ),
+      ],
+    ),
+  );
+}
+
+class _StoreBenefit extends StatelessWidget {
+  const _StoreBenefit({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: GymRatColors.premium.withValues(alpha: .14),
+          ),
+          child: const Icon(
+            Icons.check_rounded,
+            color: GymRatColors.premium,
+            size: 13,
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 10,
+              height: 1.35,
+            ),
+          ),
         ),
       ],
     ),
@@ -1075,60 +1119,157 @@ class _OfferCard extends StatelessWidget {
   final VoidCallback onPurchase;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(17),
-    decoration: BoxDecoration(
-      color: GymRatColors.surface,
-      borderRadius: BorderRadius.circular(19),
-      border: Border.all(color: GymRatColors.premium.withValues(alpha: .34)),
-    ),
-    child: Row(
-      children: [
-        const Icon(Icons.diamond_outlined, color: GymRatColors.premium),
-        const SizedBox(width: 13),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                offer.title,
-                style: const TextStyle(fontWeight: FontWeight.w900),
-              ),
-              if (offer.description.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  offer.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: GymRatColors.textSecondary,
-                    fontSize: 10,
+  Widget build(BuildContext context) {
+    final premium = RatItemCatalog.byStoreProductId(offer.identifier) == null;
+    final purchaseButton = FilledButton(
+      onPressed: busy || offer.isOwned ? null : onPurchase,
+      style: FilledButton.styleFrom(
+        backgroundColor: GymRatColors.premium,
+        foregroundColor: GymRatColors.black,
+        minimumSize: premium ? const Size.fromHeight(48) : null,
+      ),
+      child: busy
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Text(
+              offer.isOwned ? context.tr.t('armoryOwned') : offer.price,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+    );
+
+    return Container(
+      key: ValueKey('store-offer-${offer.identifier}'),
+      padding: EdgeInsets.all(premium ? 20 : 17),
+      decoration: BoxDecoration(
+        color: GymRatColors.surface,
+        gradient: premium
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF3B2265),
+                  Color(0xFF1B1328),
+                  GymRatColors.surface,
+                ],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(premium ? 23 : 19),
+        border: Border.all(
+          color: GymRatColors.premium.withValues(alpha: premium ? .68 : .34),
+        ),
+        boxShadow: premium
+            ? [
+                BoxShadow(
+                  color: GymRatColors.premium.withValues(alpha: .12),
+                  blurRadius: 28,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: premium
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: GymRatColors.premium.withValues(alpha: .16),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: GymRatColors.premium.withValues(alpha: .42),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: GymRatColors.premium,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr.t('premiumLabel'),
+                            style: const TextStyle(
+                              color: GymRatColors.premium,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.8,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            offer.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: GymRatColors.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (offer.description.isNotEmpty) ...[
+                  const SizedBox(height: 13),
+                  Text(
+                    offer.description,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: GymRatColors.textSecondary,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                purchaseButton,
+              ],
+            )
+          : Row(
+              children: [
+                const Icon(Icons.diamond_outlined, color: GymRatColors.premium),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        offer.title,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      if (offer.description.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          offer.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: GymRatColors.textSecondary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
+                const SizedBox(width: 10),
+                purchaseButton,
               ],
-            ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        FilledButton(
-          onPressed: busy || offer.isOwned ? null : onPurchase,
-          style: FilledButton.styleFrom(
-            backgroundColor: GymRatColors.premium,
-            foregroundColor: GymRatColors.black,
-          ),
-          child: busy
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(
-                  offer.isOwned ? context.tr.t('armoryOwned') : offer.price,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-        ),
-      ],
-    ),
-  );
+            ),
+    );
+  }
 }
 
 class _StoreState extends StatelessWidget {

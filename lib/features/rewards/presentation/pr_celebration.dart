@@ -326,37 +326,66 @@ class _PrCelebrationState extends State<PrCelebration>
                   const SizedBox(height: 18),
                   Transform.scale(
                     scale: .30 + reward * .70,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: <Color>[
-                            Color(0xFFFF8F00),
-                            GymRatColors.gold,
-                            Color(0xFFFFF3B0),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(100),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: GymRatColors.gold.withValues(alpha: .68),
-                            blurRadius: 38,
-                            spreadRadius: 6,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 17,
+                            vertical: 12,
                           ),
-                        ],
-                      ),
-                      child: const Text(
-                        '+18 XP',
-                        style: TextStyle(
-                          color: GymRatColors.black,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
+                          decoration: BoxDecoration(
+                            color: GymRatColors.black.withValues(alpha: .78),
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(
+                              color: GymRatColors.gold,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            '▲ +${WeightUnitStore.formatKilograms(widget.pr.newWeight - widget.pr.previousBest, includeUnit: false)} '
+                            '${WeightUnitStore.symbolUpper}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: <Color>[
+                                Color(0xFFFF8F00),
+                                GymRatColors.gold,
+                                Color(0xFFFFF3B0),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(100),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: GymRatColors.gold.withValues(alpha: .68),
+                                blurRadius: 38,
+                                spreadRadius: 6,
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            '+18 XP',
+                            style: TextStyle(
+                              color: GymRatColors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

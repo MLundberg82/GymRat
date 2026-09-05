@@ -481,6 +481,22 @@ class _GymRatCharacterState extends State<GymRatCharacter>
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
+            final currentAsset = _action == _IdleAction.blinking
+                ? _identityMaster
+                : _currentFrame;
+            final characterImage = Image.asset(
+              currentAsset,
+              key: _action == _IdleAction.emote
+                  ? ValueKey<String>(currentAsset)
+                  : null,
+              height: widget.height,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              gaplessPlayback: true,
+              filterQuality: FilterQuality.high,
+              cacheHeight: _cacheHeight,
+              semanticLabel: widget.gender.name,
+            );
             return Transform.scale(
               scale: GymRatCharacter.displayScale,
               alignment: Alignment.bottomCenter,
@@ -512,33 +528,20 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                         ],
                       ),
                     ),
-                  AnimatedSwitcher(
-                    duration: GymRatCharacter.frameBlendDuration,
-                    reverseDuration: GymRatCharacter.frameBlendDuration,
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    layoutBuilder: (currentChild, previousChildren) => Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: <Widget>[...previousChildren, ?currentChild],
-                    ),
-                    child: Image.asset(
-                      _action == _IdleAction.blinking
-                          ? _identityMaster
-                          : _currentFrame,
-                      key: ValueKey<String>(
-                        _action == _IdleAction.blinking
-                            ? _identityMaster
-                            : _currentFrame,
+                  if (_action == _IdleAction.emote)
+                    AnimatedSwitcher(
+                      duration: GymRatCharacter.frameBlendDuration,
+                      reverseDuration: GymRatCharacter.frameBlendDuration,
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: <Widget>[...previousChildren, ?currentChild],
                       ),
-                      height: widget.height,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.bottomCenter,
-                      gaplessPlayback: true,
-                      filterQuality: FilterQuality.high,
-                      cacheHeight: _cacheHeight,
-                      semanticLabel: widget.gender.name,
-                    ),
-                  ),
+                      child: characterImage,
+                    )
+                  else
+                    characterImage,
                   if (_action == _IdleAction.blinking)
                     Positioned.fill(
                       child: ClipRect(

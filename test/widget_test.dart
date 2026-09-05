@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/app/gymrat_app.dart';
 import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:gymrat/features/armory/data/rat_inventory_store.dart';
 import 'package:gymrat/features/profile/data/training_profile_store.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
 import 'package:gymrat/features/workout/data/workout_session_store.dart';
@@ -155,6 +156,72 @@ void main() {
 
     expect(find.text('THE PREMIUM VAULT'), findsOneWidget);
     expect(find.text('THE VAULT IS BEING FORGED'), findsOneWidget);
+    expect(
+      find.text('Unlimited training and PB history with full trend graphs.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Adaptive workout guidance based on profile, volume and recovery.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Deeper progression insights as your training history grows.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('claiming a completed quest awards credits once', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await _prepareTrainingProfile();
+    await WorkoutSessionStore.complete(
+      workoutName: 'CHEST',
+      walk: false,
+      durationSeconds: 25 * 60,
+      exercises: const <WorkoutExerciseResult>[
+        WorkoutExerciseResult(
+          name: 'Bench Press',
+          muscleGroup: 'chest',
+          sets: <WorkoutSetResult>[WorkoutSetResult(weight: 60, reps: 8)],
+        ),
+        WorkoutExerciseResult(
+          name: 'Incline Press',
+          muscleGroup: 'chest',
+          sets: <WorkoutSetResult>[WorkoutSetResult(weight: 40, reps: 10)],
+        ),
+        WorkoutExerciseResult(
+          name: 'Cable Fly',
+          muscleGroup: 'chest',
+          sets: <WorkoutSetResult>[WorkoutSetResult(weight: 20, reps: 12)],
+        ),
+      ],
+    );
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('WEEKLY 1/3'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('CLAIM'), findsNWidgets(3));
+    await tester.tap(find.text('CLAIM').first);
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('+10 ARMORY CREDITS'), findsOneWidget);
+    expect((await RatInventoryStore.load()).credits, 10);
+
+    await tester.pump(const Duration(milliseconds: 1400));
+    expect(find.text('+10 ARMORY CREDITS'), findsNothing);
+    expect(find.text('CLAIMED'), findsOneWidget);
+    expect((await RatInventoryStore.load()).credits, 10);
   });
 
   testWidgets('hub PB uses the gym detail as an invisible hit zone', (

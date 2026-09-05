@@ -192,6 +192,33 @@ class _XpRewardStageState extends State<XpRewardStage>
       0,
       widget.result.totalXP - widget.result.xp.totalXP,
     );
+    final workoutXP =
+        widget.result.xp.baseXP +
+        widget.result.xp.activityXP +
+        widget.result.xp.durationXP +
+        widget.result.xp.firstWorkoutXP;
+    final sources = <({IconData icon, String label, int value})>[
+      (
+        icon: Icons.fitness_center_rounded,
+        label: context.tr.t('workout'),
+        value: workoutXP,
+      ),
+      (
+        icon: Icons.monitor_weight_outlined,
+        label: context.tr.t('totalVolume'),
+        value: widget.result.xp.volumeXP,
+      ),
+      (
+        icon: Icons.local_fire_department_rounded,
+        label: context.tr.t('streak'),
+        value: widget.result.xp.consistencyXP,
+      ),
+      (
+        icon: Icons.emoji_events_rounded,
+        label: context.tr.t('personalBest'),
+        value: widget.result.xp.prXP,
+      ),
+    ].where((source) => source.value > 0).toList(growable: false);
     return ColoredBox(
       color: GymRatColors.black,
       child: AnimatedBuilder(
@@ -249,7 +276,21 @@ class _XpRewardStageState extends State<XpRewardStage>
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 34),
+                  const SizedBox(height: 22),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final source in sources)
+                        _XpSourceChip(
+                          icon: source.icon,
+                          label: source.label,
+                          value: source.value,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 26),
                   Row(
                     children: [
                       Text(
@@ -287,4 +328,53 @@ class _XpRewardStageState extends State<XpRewardStage>
       ),
     );
   }
+}
+
+class _XpSourceChip extends StatelessWidget {
+  const _XpSourceChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: '$label, +$value XP',
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: GymRatColors.gold.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: GymRatColors.gold.withValues(alpha: .24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: GymRatColors.gold, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              color: GymRatColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '+$value',
+            style: const TextStyle(
+              color: GymRatColors.gold,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

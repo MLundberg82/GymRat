@@ -112,7 +112,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             ),
         ],
       ),
-      floatingActionButton: _isPremium && profile?.ageYears != null
+      floatingActionButton: _isPremium && (profile?.ageYears ?? 0) >= 18
           ? FloatingActionButton.extended(
               onPressed: _addMeal,
               backgroundColor: GymRatColors.green,
@@ -177,13 +177,17 @@ class _PremiumNutritionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (profile == null || profile!.ageYears == null) {
+    if (profile == null ||
+        profile!.ageYears == null ||
+        profile!.ageYears! < 18) {
+      final adultOnly = profile?.ageYears != null && profile!.ageYears! < 18;
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
         children: [
           const _NutritionHero(locked: false),
           const SizedBox(height: 18),
           _AgeRequiredCard(
+            adultOnly: adultOnly,
             onOpenProfile: () async {
               await Navigator.of(
                 context,
@@ -349,9 +353,10 @@ class _LockedMetric extends StatelessWidget {
 }
 
 class _AgeRequiredCard extends StatelessWidget {
-  const _AgeRequiredCard({required this.onOpenProfile});
+  const _AgeRequiredCard({required this.onOpenProfile, this.adultOnly = false});
 
   final VoidCallback onOpenProfile;
+  final bool adultOnly;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -365,24 +370,30 @@ class _AgeRequiredCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          context.tr.t('ageRequiredTitle'),
+          context.tr.t(
+            adultOnly ? 'nutritionAdultOnlyTitle' : 'ageRequiredTitle',
+          ),
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 7),
         Text(
-          context.tr.t('ageRequiredHelp'),
+          context.tr.t(
+            adultOnly ? 'nutritionAdultOnlyHelp' : 'ageRequiredHelp',
+          ),
           style: const TextStyle(
             color: GymRatColors.textSecondary,
             fontSize: 11,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 15),
-        FilledButton.icon(
-          onPressed: onOpenProfile,
-          icon: const Icon(Icons.person_outline_rounded),
-          label: Text(context.tr.t('openProfile')),
-        ),
+        if (!adultOnly) ...[
+          const SizedBox(height: 15),
+          FilledButton.icon(
+            onPressed: onOpenProfile,
+            icon: const Icon(Icons.person_outline_rounded),
+            label: Text(context.tr.t('openProfile')),
+          ),
+        ],
       ],
     ),
   );

@@ -174,6 +174,8 @@ void main() {
       'logMeal',
       'sevenDayNutrition',
       'nutritionSafetyNote',
+      'nutritionAdultOnlyTitle',
+      'nutritionAdultOnlyHelp',
       'premiumXpBoost',
       'premiumBenefitNutrition',
       'premiumPaywallTitle',

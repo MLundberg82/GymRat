@@ -67,6 +67,8 @@ class GymRatLocalizations {
       'ageRequiredTitle': 'COMPLETE YOUR BODY PROFILE',
       'ageRequiredHelp':
           'Add your age before GymRat calculates a personal nutrition target.',
+      'nutritionAdultOnlyTitle': 'NUTRITION TARGETS ARE 18+',
+      'nutritionAdultOnlyHelp': 'GymRat does not calculate calorie or macro targets for minors. Ask a parent or guardian and a qualified clinician or dietitian for personal guidance.',
       'openProfile': 'OPEN PROFILE',
       'deleteMealTitle': 'Delete meal?',
       'deleteMealHelp': 'This removes the entry from today and your history.',
@@ -562,6 +564,8 @@ class GymRatLocalizations {
       'ageRequiredTitle': 'KOMPLETTERA DIN KROPPSPROFIL',
       'ageRequiredHelp':
           'Lägg till din ålder innan GymRat beräknar ett personligt kostmål.',
+      'nutritionAdultOnlyTitle': 'KOSTMÅL ÄR FÖR 18+',
+      'nutritionAdultOnlyHelp': 'GymRat beräknar inte kalori- eller makromål för minderåriga. Be en vårdnadshavare och legitimerad vårdpersonal eller dietist om personliga råd.',
       'openProfile': 'ÖPPNA PROFIL',
       'deleteMealTitle': 'Ta bort måltiden?',
       'deleteMealHelp': 'Detta tar bort posten från idag och din historik.',
@@ -1060,6 +1064,8 @@ class GymRatLocalizations {
       'ageRequiredTitle': 'COMPLETA TU PERFIL CORPORAL',
       'ageRequiredHelp':
           'Añade tu edad antes de calcular un objetivo nutricional personal.',
+      'nutritionAdultOnlyTitle': 'LOS OBJETIVOS SON PARA 18+',
+      'nutritionAdultOnlyHelp': 'GymRat no calcula objetivos de calorías o macros para menores. Pide orientación personal a un tutor y a un profesional sanitario o dietista cualificado.',
       'openProfile': 'ABRIR PERFIL',
       'deleteMealTitle': '¿Eliminar comida?',
       'deleteMealHelp': 'Esto elimina la entrada de hoy y de tu historial.',
@@ -1563,6 +1569,8 @@ class GymRatLocalizations {
       'ageRequiredTitle': 'ЗАПОЛНИТЕ ПРОФИЛЬ ТЕЛА',
       'ageRequiredHelp':
           'Укажите возраст для расчёта персональной цели питания.',
+      'nutritionAdultOnlyTitle': 'ЦЕЛИ ПИТАНИЯ — ТОЛЬКО 18+',
+      'nutritionAdultOnlyHelp': 'GymRat не рассчитывает калории или макронутриенты для несовершеннолетних. Обратитесь к родителю или опекуну и квалифицированному врачу или диетологу.',
       'openProfile': 'ОТКРЫТЬ ПРОФИЛЬ',
       'deleteMealTitle': 'Удалить блюдо?',
       'deleteMealHelp': 'Запись будет удалена из сегодняшнего дня и истории.',
@@ -2064,6 +2072,9 @@ class GymRatLocalizations {
       'nutritionTargetHelp': '根据已保存的资料和训练频率得出的起始估算。',
       'ageRequiredTitle': '完善身体资料',
       'ageRequiredHelp': '添加年龄后，GymRat 才能计算个人营养目标。',
+      'nutritionAdultOnlyTitle': '营养目标仅适用于 18 岁以上用户',
+      'nutritionAdultOnlyHelp':
+          'GymRat 不为未成年人计算热量或宏量营养目标。请向家长或监护人以及合格的临床医生或营养师寻求个人指导。',
       'openProfile': '打开资料',
       'deleteMealTitle': '删除餐食？',
       'deleteMealHelp': '这会从今天和历史记录中移除此条目。',

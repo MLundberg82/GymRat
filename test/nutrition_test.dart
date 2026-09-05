@@ -29,6 +29,10 @@ void main() {
         goal: TrainingGoal.buildMuscle,
       );
       expect(NutritionCalculator.targetsFor(legacyProfile), isNull);
+      expect(
+        NutritionCalculator.targetsFor(profile.copyWith(ageYears: 17)),
+        isNull,
+      );
     });
 
     test('uses profile identity, activity and goal in the estimate', () {

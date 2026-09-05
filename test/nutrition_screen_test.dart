@@ -81,6 +81,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Power bowl'), findsOneWidget);
   });
+
+  testWidgets('minor never receives an adult calorie recommendation', (
+    tester,
+  ) async {
+    TrainingProfileStore.profile.value = profile.copyWith(ageYears: 17);
+    await _setPhoneSurface(tester);
+    await tester.pumpWidget(_testApp(premium: true));
+    await tester.pumpAndSettle();
+
+    expect(find.text('NUTRITION TARGETS ARE 18+'), findsOneWidget);
+    expect(find.text('DAILY ENERGY TARGET'), findsNothing);
+    expect(find.byType(FloatingActionButton), findsNothing);
+  });
 }
 
 Widget _testApp({required bool premium}) => MaterialApp(

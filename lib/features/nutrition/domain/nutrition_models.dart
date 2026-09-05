@@ -109,7 +109,7 @@ class NutritionTargets {
 abstract final class NutritionCalculator {
   static NutritionTargets? targetsFor(TrainingProfile profile) {
     final age = profile.ageYears;
-    if (age == null) return null;
+    if (age == null || age < 18) return null;
 
     final genderAdjustment = switch (profile.gender) {
       RatGender.male => 5.0,

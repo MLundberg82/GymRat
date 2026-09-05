@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "canvas": {
     "width": 1024,
     "height": 1792,
@@ -54,7 +54,28 @@
     "require_every_identity": true,
     "require_every_stage": true,
     "require_every_appearance": true,
-    "synthetic_body_transform": false
+    "synthetic_body_transform": false,
+    "pose_specs": {
+      "double_biceps": {
+        "entry": "both arms extend straight outward to shoulder height",
+        "hold_front": "elbows bend inward, upper arms remain at shoulder height, one leg steps forward and outward",
+        "hold_back": "elbows bend as in front pose, one foot steps back onto the toes",
+        "hands_male_non_binary": "fists clenched and turned down",
+        "hands_female": "open hands in the Women's Physique convention"
+      },
+      "chest_flex": {
+        "canonical_pose": "side chest",
+        "hold": "near arm bends to a right angle, far hand grips the wrist, near leg bends and rests on toes, chest expands"
+      },
+      "leg_pose": {
+        "canonical_pose": "abdominals and thighs",
+        "hold": "both hands behind head, one leg forward, torso crunches slightly while abdominals and front thigh contract"
+      },
+      "triceps": {
+        "canonical_pose": "side triceps",
+        "hold": "both arms behind the back, rear hand grips front wrist, near foot flat, far foot on toes, chest raised"
+      }
+    }
   },
   "release_contract": {
     "views": ["front", "back"],

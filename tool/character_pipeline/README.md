@@ -60,6 +60,11 @@ Validate the Blender scene anatomy and embedded contracts:
   --source-root "$(dirname "$PWD")/GymRat-character-source"
 ```
 
+Before rendering runtime emotes, repeat the same command with
+`--require-render-ready`. This stricter gate also requires a rig-bound authored
+mesh and real bone keyframes covering every pose action. Reference-only scenes
+must fail this gate and cannot be exported into the app.
+
 A milestone is registered in Flutter only after all three identities, both
 views, and all mandatory animation exports pass review. Missing or partial
 stages deliberately remain unavailable.
@@ -80,7 +85,8 @@ The four mandatory emote actions are `double_biceps`, `chest_flex`,
 `leg_pose`, and `triceps`. Each one must be authored in both camera views for
 every identity, evolution stage, and complete purchasable appearance. Runtime
 selection is random without immediate repetition and never adds a synthetic
-body transform.
+body transform. Anatomical pose definitions and frame checkpoints live in
+`docs/CHARACTER_EMOTE_POSE_CONTRACT.md`.
 
 Approved direction references are recorded in the external source directory's
 `approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds

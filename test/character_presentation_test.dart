@@ -46,114 +46,53 @@ void main() {
     }
   });
 
-  test('emote sequences are multi-frame and never cross gender', () {
+  test('rejected emote sequences are not registered at runtime', () {
     for (final gender in RatGender.values) {
-      final set = RatAnimationCatalog.forCharacter(
-        gender: gender,
-        view: RatCharacterView.front,
-        level: 1,
-      );
-      final genderFolder = switch (gender) {
-        RatGender.male => '/male/',
-        RatGender.female => '/female/',
-        RatGender.nonBinary => '/non_binary/',
-      };
-
-      expect(set.emotes, isNotEmpty, reason: gender.name);
-      for (final sequence in set.emotes) {
-        expect(sequence.frames.length, greaterThanOrEqualTo(5));
-        expect(sequence.frames.first, set.neutral);
-        expect(sequence.frames.last, set.neutral);
-        expect(
-          sequence.frames,
-          everyElement(contains(genderFolder)),
-          reason: '${gender.name} must not use another identity',
+      for (final view in RatCharacterView.values) {
+        final set = RatAnimationCatalog.forCharacter(
+          gender: gender,
+          view: view,
+          level: 1,
         );
+        expect(set.emotes, isEmpty, reason: '${gender.name}/${view.name}');
       }
     }
   });
 
   for (final gender in RatGender.values) {
-    testWidgets('${gender.name} tap plays only its authored emote frames', (
+    testWidgets('${gender.name} stays neutral without an approved pose', (
       tester,
     ) async {
-      final key = ValueKey('character-${gender.name}');
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: GymRatCharacter(
-                key: key,
-                height: 500,
-                gender: gender,
-                enableEmotes: true,
+      for (final view in RatCharacterView.values) {
+        final key = ValueKey('${view.name}-character-${gender.name}');
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: GymRatCharacter(
+                  key: key,
+                  height: 500,
+                  gender: gender,
+                  view: view,
+                  enableEmotes: true,
+                ),
               ),
             ),
           ),
-        ),
-      );
-      await tester.pump();
-      final gesture = find.descendant(
-        of: find.byKey(key),
-        matching: find.byType(GestureDetector),
-      );
-      final detector = tester.widget<GestureDetector>(gesture);
-      expect(detector.onTap, isNotNull);
-      detector.onTap!.call();
-      await tester.pump(const Duration(milliseconds: 120));
-
-      final image = tester.widget<Image>(find.byType(Image).last);
-      final resized = image.image as ResizeImage;
-      final asset = resized.imageProvider as AssetImage;
-      final genderFolder = switch (gender) {
-        RatGender.male => '/male/',
-        RatGender.female => '/female/',
-        RatGender.nonBinary => '/non_binary/',
-      };
-
-      expect(asset.assetName, contains('${genderFolder}level_01/emotes/'));
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('${gender.name} back tap stays neutral without authored pose', (
-      tester,
-    ) async {
-      final key = ValueKey('back-character-${gender.name}');
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: GymRatCharacter(
-                key: key,
-                height: 500,
-                gender: gender,
-                view: RatCharacterView.back,
-                enableEmotes: true,
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-      final character = find.byKey(key);
-      final gesture = find.descendant(
-        of: character,
-        matching: find.byType(GestureDetector),
-      );
-      tester.widget<GestureDetector>(gesture).onTap!.call();
-      await tester.pump(const Duration(milliseconds: 120));
-
-      final image = tester.widget<Image>(
-        find.descendant(of: character, matching: find.byType(Image)).last,
-      );
-      final resized = image.image as ResizeImage;
-      final asset = resized.imageProvider as AssetImage;
-      expect(asset.assetName, contains('level_01_back.png'));
-      expect(
-        find.descendant(of: character, matching: find.byType(CustomPaint)),
-        findsNothing,
-      );
-      expect(tester.takeException(), isNull);
+        );
+        await tester.pump();
+        final character = find.byKey(key);
+        final gesture = find.descendant(
+          of: character,
+          matching: find.byType(GestureDetector),
+        );
+        expect(tester.widget<GestureDetector>(gesture).onTap, isNull);
+        expect(
+          find.descendant(of: character, matching: find.byType(CustomPaint)),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      }
     });
   }
 
@@ -200,7 +139,7 @@ void main() {
 
         expect(front.hasAuthoredBlink, isTrue, reason: gender.name);
         expect(front.hasAuthoredTail, isTrue, reason: gender.name);
-        expect(front.hasAuthoredEmotes, isTrue, reason: gender.name);
+        expect(front.hasAuthoredEmotes, isFalse, reason: gender.name);
         expect(front.hasCompleteEmoteSet, isFalse, reason: gender.name);
         expect(front.isComplete, isFalse, reason: gender.name);
         expect(front.allFrames, everyElement(contains(identityFolder)));

@@ -424,8 +424,11 @@ class _GymRatCharacterState extends State<GymRatCharacter>
 
   String get _identityMaster => _animationSet.neutral;
 
+  bool get _canPlayEmote =>
+      widget.enableEmotes && _animationSet.hasAuthoredEmotes;
+
   void _playRandomEmote() {
-    if (!widget.enableEmotes ||
+    if (!_canPlayEmote ||
         _emoteController.isAnimating ||
         _action != _IdleAction.neutral) {
       return;
@@ -468,11 +471,11 @@ class _GymRatCharacterState extends State<GymRatCharacter>
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      button: widget.enableEmotes,
-      label: widget.emoteSemanticLabel,
+      button: _canPlayEmote,
+      label: _canPlayEmote ? widget.emoteSemanticLabel : null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: widget.enableEmotes ? _playRandomEmote : null,
+        onTap: _canPlayEmote ? _playRandomEmote : null,
         child: AnimatedBuilder(
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {

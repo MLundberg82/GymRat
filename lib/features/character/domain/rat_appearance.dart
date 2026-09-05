@@ -69,7 +69,7 @@ class RatAppearance {
 
 abstract final class RatAppearanceCatalog {
   static const String baseId = 'base';
-  static const int motionContractVersion = 3;
+  static const int motionContractVersion = 4;
 
   static const RatAppearance base = RatAppearance(
     id: baseId,

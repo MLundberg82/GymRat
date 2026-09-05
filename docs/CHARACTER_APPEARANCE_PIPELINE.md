@@ -93,10 +93,12 @@ level-1 front and back masters for male, female, and non-binary each have
 deterministic full-canvas breathing frames derived from their own exact
 approved master. The frames preserve identity and transparency and are reused
 for every player level that currently resolves to approved stage 1. Every
-level-1 front view also has identity-specific authored blink, tail, and double
-biceps frames. Back views currently use authored breathing only; front-only
-motion is never mislabeled or reused behind the character, and the removed
-synthetic fallback must never be used to imitate a missing pose.
+level-1 front view also has identity-specific authored blink and tail frames.
+The former double-biceps drafts were rejected because their arm, leg, and
+identity continuity did not satisfy `docs/CHARACTER_EMOTE_POSE_CONTRACT.md`.
+Back views currently use authored breathing only; front-only motion is never
+mislabeled or reused behind the character, and the removed synthetic fallback
+must never be used to imitate a missing pose.
 
 Later-stage, back-view, and outfit motion frames must be exported from their
 matching approved neutral render. Never reuse one identity's frames for another

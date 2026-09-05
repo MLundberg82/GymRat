@@ -203,11 +203,29 @@ def _rig(
 
 
 def _actions(manifest: dict[str, object]) -> None:
+    emote_contract = manifest["emote_contract"]
+    emote_types = set(emote_contract["types"])
+    pose_specs = emote_contract["pose_specs"]
     for name, definition in manifest["motions"].items():
-        action = bpy.data.actions.new(name=f"ACT_{name}")
-        action.use_fake_user = True
-        action["gymrat_frames"] = int(definition["frames"])
-        action["gymrat_loop"] = bool(definition["loop"])
+        views = emote_contract["views"] if name in emote_types else (None,)
+        for view in views:
+            action_name = name if view is None else f"{view}_{name}"
+            action = bpy.data.actions.new(name=f"ACT_{action_name}")
+            action.use_fake_user = True
+            action["gymrat_frames"] = int(definition["frames"])
+            action["gymrat_loop"] = bool(definition["loop"])
+            if view is not None:
+                action["gymrat_view"] = view
+                action["gymrat_pose_spec"] = json.dumps(pose_specs[name])
+                for marker_name, frame in (
+                    ("NEUTRAL_START", 1),
+                    ("ENTRY_READABLE", 10),
+                    ("FULL_CONTRACTION", 24),
+                    ("HOLD_END", 38),
+                    ("NEUTRAL_END", 48),
+                ):
+                    marker = action.pose_markers.new(marker_name)
+                    marker.frame = frame
 
 
 def _configure_scene(

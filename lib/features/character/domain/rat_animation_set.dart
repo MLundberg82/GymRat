@@ -94,36 +94,18 @@ abstract final class RatAnimationCatalog {
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.maleLevel1BlinkFrames,
           tail: GymRatAssets.maleLevel1TailFrames,
-          emotes: const [
-            RatEmoteSequence(
-              type: RatEmoteType.doubleBiceps,
-              frames: GymRatAssets.maleLevel1EmoteFrames,
-            ),
-          ],
         ),
         RatGender.female => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.femaleLevel1BlinkFrames,
           tail: GymRatAssets.femaleLevel1TailFrames,
-          emotes: const [
-            RatEmoteSequence(
-              type: RatEmoteType.doubleBiceps,
-              frames: GymRatAssets.femaleLevel1EmoteFrames,
-            ),
-          ],
         ),
         RatGender.nonBinary => RatAnimationSet(
           neutral: neutral,
           breathing: _breathingFrames(gender: gender, view: view),
           blinking: GymRatAssets.nonBinaryLevel1BlinkFrames,
           tail: GymRatAssets.nonBinaryLevel1TailFrames,
-          emotes: const [
-            RatEmoteSequence(
-              type: RatEmoteType.doubleBiceps,
-              frames: GymRatAssets.nonBinaryLevel1EmoteFrames,
-            ),
-          ],
         ),
       };
     }

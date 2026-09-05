@@ -17,6 +17,7 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--source-root", type=Path, required=True)
+    parser.add_argument("--require-render-ready", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -28,6 +29,7 @@ def _validate_scene(
     scene_path: Path,
     identity: str,
     manifest: dict[str, object],
+    require_render_ready: bool,
 ) -> list[str]:
     if not scene_path.is_file():
         return [f"missing scene: {scene_path}"]
@@ -45,15 +47,59 @@ def _validate_scene(
     ]:
         errors.append(f"{identity}: embedded emote contract is stale")
 
+    emote_contract = manifest["emote_contract"]
+    emote_types = set(emote_contract["types"])
     for motion, definition in manifest["motions"].items():
-        action = bpy.data.actions.get(f"ACT_{motion}")
-        if action is None:
-            errors.append(f"{identity}: ACT_{motion} action is missing")
-            continue
-        if action.get("gymrat_frames") != definition["frames"]:
-            errors.append(f"{identity}: ACT_{motion} frame contract is stale")
-        if action.get("gymrat_loop") != definition["loop"]:
-            errors.append(f"{identity}: ACT_{motion} loop contract is stale")
+        views = emote_contract["views"] if motion in emote_types else (None,)
+        for view in views:
+            action_name = motion if view is None else f"{view}_{motion}"
+            action = bpy.data.actions.get(f"ACT_{action_name}")
+            if action is None:
+                errors.append(f"{identity}: ACT_{action_name} action is missing")
+                continue
+            if action.get("gymrat_frames") != definition["frames"]:
+                errors.append(
+                    f"{identity}: ACT_{action_name} frame contract is stale"
+                )
+            if action.get("gymrat_loop") != definition["loop"]:
+                errors.append(
+                    f"{identity}: ACT_{action_name} loop contract is stale"
+                )
+            if view is not None:
+                if action.get("gymrat_view") != view:
+                    errors.append(f"{identity}: ACT_{action_name} view is stale")
+                pose_spec = action.get("gymrat_pose_spec")
+                if pose_spec is None or json.loads(pose_spec) != emote_contract[
+                    "pose_specs"
+                ][motion]:
+                    errors.append(
+                        f"{identity}: ACT_{action_name} pose spec is stale"
+                    )
+                markers = {
+                    marker.name: marker.frame for marker in action.pose_markers
+                }
+                expected_markers = {
+                    "NEUTRAL_START": 1,
+                    "ENTRY_READABLE": 10,
+                    "FULL_CONTRACTION": 24,
+                    "HOLD_END": 38,
+                    "NEUTRAL_END": 48,
+                }
+                if markers != expected_markers:
+                    errors.append(
+                        f"{identity}: ACT_{action_name} markers are stale"
+                    )
+                if require_render_ready:
+                    curve_start, curve_end = action.curve_frame_range
+                    if (
+                        len(action.layers) == 0
+                        or curve_start > 1
+                        or curve_end < definition["frames"]
+                    ):
+                        errors.append(
+                            f"{identity}: ACT_{action_name} has no complete "
+                            "authored bone animation"
+                        )
 
     rig = bpy.data.objects.get("RIG_GYMRAT")
     if rig is None or rig.type != "ARMATURE":
@@ -79,6 +125,26 @@ def _validate_scene(
     embedded = rig.get("gymrat_tail_anchor_contract")
     if embedded is None or json.loads(embedded) != tail:
         errors.append(f"{identity}: embedded tail contract is stale")
+
+    if require_render_ready:
+        model = bpy.data.collections.get("MODEL_AUTHORED")
+        meshes = (
+            []
+            if model is None
+            else [obj for obj in model.objects if obj.type == "MESH"]
+        )
+        if not meshes:
+            errors.append(f"{identity}: authored character mesh is missing")
+        for mesh in meshes:
+            modifiers = [
+                modifier
+                for modifier in mesh.modifiers
+                if modifier.type == "ARMATURE" and modifier.object == rig
+            ]
+            if not modifiers:
+                errors.append(
+                    f"{identity}: {mesh.name} is not bound to RIG_GYMRAT"
+                )
     return errors
 
 
@@ -93,6 +159,7 @@ def main() -> int:
                 args.source_root / "scenes" / f"{identity}_character.blend",
                 identity,
                 manifest,
+                args.require_render_ready,
             )
         )
 
@@ -101,7 +168,12 @@ def main() -> int:
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
-    print(f"Validated Blender anatomy for {len(manifest['identities'])} identities.")
+    scope = (
+        "render-ready Blender scenes"
+        if args.require_render_ready
+        else "Blender contracts"
+    )
+    print(f"Validated {scope} for {len(manifest['identities'])} identities.")
     return 0
 
 

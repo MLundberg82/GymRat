@@ -23,7 +23,6 @@ flutter:
     - assets/characters/male/level_01/idle/
     - assets/characters/male/level_01/blink/
     - assets/characters/male/level_01/tail/
-    - assets/characters/male/level_01/emotes/
     - assets/characters/male/level_01_back/idle/
     - assets/characters/male/motion/level_01/front/
     - assets/characters/male/motion/level_01/back/
@@ -31,7 +30,6 @@ flutter:
     - assets/characters/female/level_01/idle/
     - assets/characters/female/level_01/blink/
     - assets/characters/female/level_01/tail/
-    - assets/characters/female/level_01/emotes/
     - assets/characters/female/level_01_back/idle/
     - assets/characters/female/motion/level_01/front/
     - assets/characters/female/motion/level_01/back/
@@ -39,7 +37,6 @@ flutter:
     - assets/characters/non_binary/level_01/idle/
     - assets/characters/non_binary/level_01/blink/
     - assets/characters/non_binary/level_01/tail/
-    - assets/characters/non_binary/level_01/emotes/
     - assets/characters/non_binary/level_01_back/idle/
     - assets/characters/non_binary/motion/level_01/front/
     - assets/characters/non_binary/motion/level_01/back/

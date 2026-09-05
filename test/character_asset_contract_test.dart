@@ -150,6 +150,19 @@ void main() {
                 reason: '$asset contains a neighbouring pose fragment',
               );
             }
+            if (asset.contains('/emote_double_biceps_')) {
+              expect(
+                (info.alphaBounds.top - neutralInfo.alphaBounds.top).abs(),
+                lessThanOrEqualTo(20),
+                reason: '$asset shrinks or moves down during the pose',
+              );
+              expect(
+                (info.alphaBounds.bottom - neutralInfo.alphaBounds.bottom)
+                    .abs(),
+                lessThanOrEqualTo(20),
+                reason: '$asset does not preserve the neutral foot line',
+              );
+            }
           }
         }
       }
@@ -243,9 +256,41 @@ Future<_ImageInfo> _inspect(String asset) async {
     width,
     height,
   );
+  final alphaBounds = _alphaBounds(pixels, width, height);
   image.dispose();
   codec.dispose();
-  return _ImageInfo(width, height, corners, pngColorType, largeAlphaComponents);
+  return _ImageInfo(
+    width,
+    height,
+    corners,
+    pngColorType,
+    largeAlphaComponents,
+    alphaBounds,
+  );
+}
+
+ui.Rect _alphaBounds(ByteData pixels, int width, int height) {
+  const alphaThreshold = 16;
+  var left = width;
+  var top = height;
+  var right = 0;
+  var bottom = 0;
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      if (pixels.getUint8((y * width + x) * 4 + 3) <= alphaThreshold) continue;
+      if (x < left) left = x;
+      if (x + 1 > right) right = x + 1;
+      if (y < top) top = y;
+      if (y + 1 > bottom) bottom = y + 1;
+    }
+  }
+  if (right == 0 || bottom == 0) return ui.Rect.zero;
+  return ui.Rect.fromLTRB(
+    left.toDouble(),
+    top.toDouble(),
+    right.toDouble(),
+    bottom.toDouble(),
+  );
 }
 
 int _countLargeAlphaComponents(ByteData pixels, int width, int height) {
@@ -307,6 +352,7 @@ class _ImageInfo {
     this.cornerAlphas,
     this.pngColorType,
     this.largeAlphaComponents,
+    this.alphaBounds,
   );
 
   final int width;
@@ -314,4 +360,5 @@ class _ImageInfo {
   final List<int> cornerAlphas;
   final int pngColorType;
   final int largeAlphaComponents;
+  final ui.Rect alphaBounds;
 }

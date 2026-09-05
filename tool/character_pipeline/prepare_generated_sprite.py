@@ -18,7 +18,10 @@ from PIL import Image
 
 CANVAS = (1024, 1792)
 TOP_MARGIN = 54
-SIDE_MARGIN = 54
+# Poses such as double biceps are intentionally wider than the neutral stance.
+# Keep enough transparent padding for filtering without shrinking the whole rat
+# vertically just to preserve the neutral pose's larger side gutter.
+SIDE_MARGIN = 32
 BOTTOM_MARGIN = 48
 
 

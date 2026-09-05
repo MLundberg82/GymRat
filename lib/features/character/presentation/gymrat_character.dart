@@ -32,6 +32,7 @@ class GymRatCharacter extends StatefulWidget {
   final String? emoteSemanticLabel;
 
   static const double displayScale = .70;
+  static const Duration frameBlendDuration = Duration(milliseconds: 160);
 
   static double breathingScaleX(double progress) =>
       1 + sin(progress.clamp(0.0, 1.0) * pi) * .006;
@@ -508,23 +509,35 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                               ),
                             ),
                           ),
-                          CustomPaint(
-                            painter: _EmoteEffectPainter(progress: emote),
-                          ),
                         ],
                       ),
                     ),
-                  Image.asset(
-                    _action == _IdleAction.blinking
-                        ? _identityMaster
-                        : _currentFrame,
-                    height: widget.height,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.bottomCenter,
-                    gaplessPlayback: true,
-                    filterQuality: FilterQuality.high,
-                    cacheHeight: _cacheHeight,
-                    semanticLabel: widget.gender.name,
+                  AnimatedSwitcher(
+                    duration: GymRatCharacter.frameBlendDuration,
+                    reverseDuration: GymRatCharacter.frameBlendDuration,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (currentChild, previousChildren) => Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: <Widget>[...previousChildren, ?currentChild],
+                    ),
+                    child: Image.asset(
+                      _action == _IdleAction.blinking
+                          ? _identityMaster
+                          : _currentFrame,
+                      key: ValueKey<String>(
+                        _action == _IdleAction.blinking
+                            ? _identityMaster
+                            : _currentFrame,
+                      ),
+                      height: widget.height,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.bottomCenter,
+                      gaplessPlayback: true,
+                      filterQuality: FilterQuality.high,
+                      cacheHeight: _cacheHeight,
+                      semanticLabel: widget.gender.name,
+                    ),
                   ),
                   if (_action == _IdleAction.blinking)
                     Positioned.fill(
@@ -597,51 +610,4 @@ class _BreathingTorsoClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(covariant _BreathingTorsoClipper oldClipper) =>
       oldClipper.view != view;
-}
-
-class _EmoteEffectPainter extends CustomPainter {
-  const _EmoteEffectPainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final power = sin(progress.clamp(0.0, 1.0) * pi).clamp(0.0, 1.0);
-    if (power <= 0) return;
-    final paint = Paint()
-      ..color = const Color(0xFFFFC107).withValues(alpha: power * .72)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round;
-    final center = Offset(size.width / 2, size.height * .91);
-    final radius = size.width * (.12 + .24 * progress);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      pi * .10,
-      pi * .80,
-      false,
-      paint,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      pi * 1.10,
-      pi * .80,
-      false,
-      paint,
-    );
-    for (final direction in const <double>[-1, 1]) {
-      canvas.drawLine(
-        Offset(center.dx + direction * size.width * .16, center.dy - 8),
-        Offset(
-          center.dx + direction * size.width * (.24 + .07 * progress),
-          center.dy - size.height * .10,
-        ),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _EmoteEffectPainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }

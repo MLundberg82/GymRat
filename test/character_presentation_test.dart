@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/features/character/domain/rat_animation_set.dart';
+import 'package:gymrat/features/character/domain/rat_appearance.dart';
 import 'package:gymrat/features/character/presentation/gymrat_character.dart';
 import 'package:gymrat/features/evolution/domain/evolution_milestones.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
@@ -22,8 +23,12 @@ void main() {
     expect(torso.right, lessThan(320));
   });
 
-  test('emote playback never adds a synthetic body bounce', () {
+  test('emote playback uses a smooth blend without synthetic effects', () {
     final blink = GymRatCharacter.blinkRect(const Size(320, 600));
+    expect(
+      GymRatCharacter.frameBlendDuration,
+      const Duration(milliseconds: 160),
+    );
     expect(blink.left, greaterThan(0));
     expect(blink.right, lessThan(320));
     expect(blink.top, greaterThan(0));
@@ -65,6 +70,34 @@ void main() {
             expect(emote.frames, hasLength(48));
             expect(emote.frames.first, set.neutral);
             expect(emote.frames.last, set.neutral);
+          }
+        }
+      }
+    }
+  });
+
+  test('every release-ready appearance stage carries matching motion', () {
+    for (final appearance in RatAppearanceCatalog.all) {
+      if (!RatAppearanceCatalog.isReady(appearance.id)) continue;
+      for (final stage in appearance.approvedStages) {
+        for (final gender in RatGender.values) {
+          for (final view in RatCharacterView.values) {
+            final set = RatAnimationCatalog.forCharacter(
+              gender: gender,
+              view: view,
+              level: stage,
+              appearanceId: appearance.id,
+            );
+            expect(
+              set.hasAuthoredBreathing,
+              isTrue,
+              reason: '${appearance.id}/$stage/${gender.name}/${view.name}',
+            );
+            expect(
+              set.hasCompleteEmoteSet,
+              isTrue,
+              reason: '${appearance.id}/$stage/${gender.name}/${view.name}',
+            );
           }
         }
       }
@@ -113,8 +146,15 @@ void main() {
             .map((image) => image.assetName);
         expect(animatedAssets, contains(contains('emote_')));
         expect(
-          find.descendant(of: character, matching: find.byType(CustomPaint)),
+          find.descendant(
+            of: character,
+            matching: find.byType(AnimatedSwitcher),
+          ),
           findsOneWidget,
+        );
+        expect(
+          find.descendant(of: character, matching: find.byType(CustomPaint)),
+          findsNothing,
         );
         expect(tester.takeException(), isNull);
       }

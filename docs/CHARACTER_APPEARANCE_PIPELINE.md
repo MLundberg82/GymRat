@@ -92,13 +92,13 @@ view, appearance, and approved-stage routing as the neutral render. The base
 level-1 front and back masters for male, female, and non-binary each have
 deterministic full-canvas breathing frames derived from their own exact
 approved master. The frames preserve identity and transparency and are reused
-for every player level that currently resolves to approved stage 1. Every
-level-1 front view also has identity-specific authored blink and tail frames.
-The former double-biceps drafts were rejected because their arm, leg, and
-identity continuity did not satisfy `docs/CHARACTER_EMOTE_POSE_CONTRACT.md`.
-Back views currently use authored breathing only; front-only motion is never
-mislabeled or reused behind the character, and the removed synthetic fallback
-must never be used to imitate a missing pose.
+for every player level that currently resolves to approved stage 1. All six
+identity/view combinations also have the four authored emotes, including the
+accepted straight-arm entry and flexed hold for double biceps. Front views have
+identity-specific authored blink frames. Motion that has not passed the exact
+identity, view, stage, outfit, tail-anchor, canvas, and transparency contract
+stays disabled; a front frame is never reused behind the character and a
+synthetic transform is never used to imitate missing art.
 
 Later-stage, back-view, and outfit motion frames must be exported from their
 matching approved neutral render. Never reuse one identity's frames for another
@@ -118,6 +118,6 @@ by the articulated tail chain.
 The root position is identical in neutral, breathing, blinking, tail, and emote
 exports. Motion may bend the articulated chain but may not translate its root.
 Both front and back review renders must pass this check for male, female, and
-non-binary before a stage is activated. The current female and non-binary
-level-1 back references require an authored rerender at this anchor; an AI edit
-that changes the shorts, body, framing, or transparency is not acceptable.
+non-binary before a stage is activated. Any correction that changes the shorts,
+body identity, framing, or transparency outside the intended pose remains
+unacceptable.

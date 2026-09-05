@@ -9,6 +9,7 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../../../core/units/weight_unit_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../../workout/presentation/workout_copy.dart';
+import 'rpg_flame_painter.dart';
 
 class PrCelebration extends StatefulWidget {
   const PrCelebration({
@@ -111,6 +112,16 @@ class _PrCelebrationState extends State<PrCelebration>
             children: <Widget>[
               _background(p),
               CustomPaint(painter: _PrExplosionPainter(p)),
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: RpgFlamePainter(
+                    progress: p,
+                    intensity: .92,
+                    primary: const Color(0xFFFF8F00),
+                    secondary: GymRatColors.gold,
+                  ),
+                ),
+              ),
               SafeArea(child: _stage(context, p, impact, reveal, reward)),
               IgnorePointer(
                 child: ColoredBox(

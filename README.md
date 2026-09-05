@@ -21,7 +21,7 @@ owns history, XP, levels, streaks, and personal-best comparison.
 
 The app supports English, Swedish, Spanish, Russian, and Chinese, with system
 language used by default. Evolution milestones are levels 5, 10, 15, 20, 30,
-40, and 50.
+40, 50, 60, 70, 80, 90, and 100.
 
 Completed sessions are also available through the Training History combat log.
 Its Records tab derives earned personal bests from persisted history: the first
@@ -36,6 +36,12 @@ Workout weights may be entered in kg or lb while remaining canonical in kg for
 PB calculations. Optional session effort and journal notes power Premium
 workload/recovery insight, and the achievement vault derives RPG honors from
 real workouts, streaks, PB improvements, and evolution.
+
+Premium also adds a 10% post-workout XP boost, deeper history/results, and a
+Nutrition command center with profile-based starting targets, manual macro
+logging, and seven-day intake history. Purchases use store-localized RevenueCat
+packages; debug and explicitly configured owner builds can unlock Premium
+locally for device testing.
 
 ## Project structure
 

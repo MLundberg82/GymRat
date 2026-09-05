@@ -20,6 +20,7 @@ void main() {
     weightKg: 68.5,
     sessionsPerWeek: 4,
     goal: TrainingGoal.buildMuscle,
+    ageYears: 34,
   );
 
   test('training profile persists all onboarding choices', () async {
@@ -38,6 +39,21 @@ void main() {
     expect(TrainingProfileStore.profile.value?.weightKg, 68.5);
     expect(TrainingProfileStore.profile.value?.sessionsPerWeek, 4);
     expect(TrainingProfileStore.profile.value?.goal, TrainingGoal.buildMuscle);
+    expect(TrainingProfileStore.profile.value?.ageYears, 34);
+  });
+
+  test('legacy training profiles remain valid without an age', () {
+    final restored = TrainingProfile.tryParse(<String, dynamic>{
+      'gender': 'female',
+      'experience': 'advanced',
+      'heightCm': 168,
+      'weightKg': 68.5,
+      'sessionsPerWeek': 4,
+      'goal': 'buildMuscle',
+    });
+
+    expect(restored, isNotNull);
+    expect(restored?.ageYears, isNull);
   });
 
   test('quest rewards cannot be claimed twice', () async {
@@ -220,6 +236,20 @@ void main() {
     );
   });
 
+  test('Premium recognizes only the configured RevenueCat subscriptions', () {
+    expect(
+      PremiumAccess.isSubscriptionProduct('gymrat_premium_monthly'),
+      isTrue,
+    );
+    expect(
+      PremiumAccess.isSubscriptionProduct('gymrat_premium_yearly'),
+      isTrue,
+    );
+    expect(PremiumAccess.isSubscriptionProduct('unknown_product'), isFalse);
+    expect(PremiumAccess.monthlyProductId, 'gymrat_premium_monthly');
+    expect(PremiumAccess.yearlyProductId, 'gymrat_premium_yearly');
+  });
+
   test('changing rat identity preserves training profile data', () {
     final changed = profile.copyWith(gender: RatGender.nonBinary);
 
@@ -229,6 +259,7 @@ void main() {
     expect(changed.weightKg, profile.weightKg);
     expect(changed.sessionsPerWeek, profile.sessionsPerWeek);
     expect(changed.goal, profile.goal);
+    expect(changed.ageYears, profile.ageYears);
   });
 
   test('coach rotates toward the least recently trained area', () {

@@ -43,6 +43,7 @@ class PremiumGateCard extends StatelessWidget {
         _Benefit(text: context.tr.t('premiumBenefitHistory')),
         _Benefit(text: context.tr.t('premiumBenefitCoach')),
         _Benefit(text: context.tr.t('premiumBenefitInsights')),
+        _Benefit(text: context.tr.t('premiumBenefitNutrition')),
         if (!compact) ...[
           const SizedBox(height: 14),
           SizedBox(

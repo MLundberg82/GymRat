@@ -12,6 +12,7 @@ import '../../character/presentation/character_lab_screen.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../../history/presentation/history_screen.dart';
+import '../../nutrition/presentation/nutrition_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
@@ -109,6 +110,7 @@ class _HubScreenState extends State<HubScreen> {
       onProgress: () => _open(const ProgressScreen()),
       onHistory: () => _open(const HistoryScreen()),
       onMissions: () => _open(const QuestBoardScreen()),
+      onNutrition: () => _open(const NutritionScreen()),
       onArmory: () => _open(const ArmoryScreen()),
       onProfile: () => _open(const ProfileScreen()),
       onContact: () => _open(const ContactScreen()),
@@ -920,6 +922,7 @@ class _GymRatMenu extends StatelessWidget {
     required this.onProgress,
     required this.onHistory,
     required this.onMissions,
+    required this.onNutrition,
     required this.onArmory,
     required this.onProfile,
     required this.onContact,
@@ -930,6 +933,7 @@ class _GymRatMenu extends StatelessWidget {
       onProgress,
       onHistory,
       onMissions,
+      onNutrition,
       onArmory,
       onProfile,
       onContact,
@@ -1004,6 +1008,8 @@ class _GymRatMenu extends StatelessWidget {
                     _MenuItem(
                       icon: Icons.restaurant_rounded,
                       title: context.tr.t('nutrition'),
+                      premium: true,
+                      onTap: () => _open(context, onNutrition),
                     ),
                     _MenuItem(
                       icon: Icons.inventory_2_outlined,

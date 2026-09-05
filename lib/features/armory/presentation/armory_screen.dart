@@ -7,6 +7,7 @@ import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
+import '../../premium/data/premium_access.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../data/armory_billing.dart';
 import '../data/rat_inventory_store.dart';
@@ -61,9 +62,10 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
     final offers = store.offers
         .where((offer) {
           final item = RatItemCatalog.byStoreProductId(offer.identifier);
-          return item == null ||
-              (item.hasCompleteAppearance &&
-                  RatAppearanceCatalog.isReady(item.appearanceId));
+          return PremiumAccess.isSubscriptionProduct(offer.identifier) ||
+              item != null &&
+                  item.hasCompleteAppearance &&
+                  RatAppearanceCatalog.isReady(item.appearanceId);
         })
         .toList(growable: false);
     return ArmoryStoreSnapshot(
@@ -1055,6 +1057,7 @@ class _StoreHeader extends StatelessWidget {
         _StoreBenefit(text: context.tr.t('premiumBenefitHistory')),
         _StoreBenefit(text: context.tr.t('premiumBenefitCoach')),
         _StoreBenefit(text: context.tr.t('premiumBenefitInsights')),
+        _StoreBenefit(text: context.tr.t('premiumBenefitNutrition')),
         const SizedBox(height: 4),
         TextButton.icon(
           onPressed: canRestore ? onRestore : null,
@@ -1120,9 +1123,11 @@ class _OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final premium = RatItemCatalog.byStoreProductId(offer.identifier) == null;
+    final premium = PremiumAccess.isSubscriptionProduct(offer.identifier);
+    final yearly = offer.identifier == PremiumAccess.yearlyProductId;
+    final owned = offer.isOwned || premium && PremiumAccess.current;
     final purchaseButton = FilledButton(
-      onPressed: busy || offer.isOwned ? null : onPurchase,
+      onPressed: busy || owned ? null : onPurchase,
       style: FilledButton.styleFrom(
         backgroundColor: GymRatColors.premium,
         foregroundColor: GymRatColors.black,
@@ -1134,7 +1139,7 @@ class _OfferCard extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : Text(
-              offer.isOwned ? context.tr.t('armoryOwned') : offer.price,
+              owned ? context.tr.t('armoryOwned') : offer.price,
               style: const TextStyle(fontWeight: FontWeight.w900),
             ),
     );
@@ -1204,6 +1209,23 @@ class _OfferCard extends StatelessWidget {
                               letterSpacing: 1.8,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 5,
+                            children: [
+                              _PlanBadge(
+                                label: context.tr.t(
+                                  yearly ? 'yearlyPlan' : 'monthlyPlan',
+                                ),
+                              ),
+                              if (yearly)
+                                _PlanBadge(
+                                  label: context.tr.t('twoMonthsFree'),
+                                  highlighted: true,
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 3),
                           Text(
                             offer.title,
@@ -1270,6 +1292,38 @@ class _OfferCard extends StatelessWidget {
             ),
     );
   }
+}
+
+class _PlanBadge extends StatelessWidget {
+  const _PlanBadge({required this.label, this.highlighted = false});
+
+  final String label;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: highlighted
+          ? GymRatColors.gold.withValues(alpha: .16)
+          : Colors.white.withValues(alpha: .07),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(
+        color: highlighted
+            ? GymRatColors.gold.withValues(alpha: .55)
+            : Colors.white.withValues(alpha: .12),
+      ),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: highlighted ? GymRatColors.gold : GymRatColors.textSecondary,
+        fontSize: 8,
+        fontWeight: FontWeight.w900,
+        letterSpacing: .7,
+      ),
+    ),
+  );
 }
 
 class _StoreState extends StatelessWidget {

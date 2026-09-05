@@ -218,6 +218,11 @@ class _XpRewardStageState extends State<XpRewardStage>
         label: context.tr.t('personalBest'),
         value: widget.result.xp.prXP,
       ),
+      (
+        icon: Icons.workspace_premium_rounded,
+        label: context.tr.t('premiumXpBoost'),
+        value: widget.result.xp.premiumBonusXP,
+      ),
     ].where((source) => source.value > 0).toList(growable: false);
     return ColoredBox(
       color: GymRatColors.black,

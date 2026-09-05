@@ -304,6 +304,7 @@ abstract final class WorkoutSessionStore {
     required int streak,
     required int prs,
     required bool firstToday,
+    required bool premiumXPBoost,
   }) {
     final base = walk ? 22 : 50,
         activity = walk ? 0 : (exercises >= 4 ? 8 : 4),
@@ -316,6 +317,11 @@ abstract final class WorkoutSessionStore {
         first = firstToday ? 8 : 0,
         consistency = (streak * 2).clamp(2, 16),
         prXP = prs * 18;
+    final earnedXP =
+        base + activity + volumeXP + durationXP + first + consistency + prXP;
+    final premiumBonusXP = premiumXPBoost
+        ? (earnedXP * .10).round().clamp(1, 1000000)
+        : 0;
     return XPBreakdown(
       baseXP: base,
       activityXP: activity,
@@ -324,8 +330,8 @@ abstract final class WorkoutSessionStore {
       firstWorkoutXP: first,
       consistencyXP: consistency,
       prXP: prXP,
-      totalXP:
-          base + activity + volumeXP + durationXP + first + consistency + prXP,
+      premiumBonusXP: premiumBonusXP,
+      totalXP: earnedXP + premiumBonusXP,
     );
   }
 
@@ -336,6 +342,7 @@ abstract final class WorkoutSessionStore {
     required List<WorkoutExerciseResult> exercises,
     String sessionNote = '',
     int? effortRating,
+    bool premiumXPBoost = false,
   }) async {
     final now = DateTime.now(), p = await SharedPreferences.getInstance();
     final normalizedNote = _normalizedSessionNote(sessionNote);
@@ -382,6 +389,7 @@ abstract final class WorkoutSessionStore {
       streak: streak,
       prs: prs.length,
       firstToday: firstToday,
+      premiumXPBoost: premiumXPBoost,
     );
     final previousXP = p.getInt(_xpKey) ?? 0,
         previousLevel = levelFromXP(previousXP),

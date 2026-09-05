@@ -6,6 +6,7 @@ import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
 import '../../../core/units/weight_unit_store.dart';
 import '../../armory/data/rat_inventory_store.dart';
+import '../../premium/data/premium_access.dart';
 import '../data/workout_draft_store.dart';
 import '../data/workout_session_store.dart';
 import '../domain/workout_draft.dart';
@@ -118,6 +119,7 @@ class _WalkWorkoutScreenState extends State<WalkWorkoutScreen> {
       exercises: const [],
       sessionNote: noteController.text,
       effortRating: effortRating,
+      premiumXPBoost: PremiumAccess.current,
     );
     try {
       await draftSave;

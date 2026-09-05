@@ -57,6 +57,7 @@ class XPBreakdown {
     required this.firstWorkoutXP,
     required this.consistencyXP,
     required this.prXP,
+    this.premiumBonusXP = 0,
     required this.totalXP,
   });
   final int baseXP,
@@ -66,6 +67,7 @@ class XPBreakdown {
       firstWorkoutXP,
       consistencyXP,
       prXP,
+      premiumBonusXP,
       totalXP;
 }
 

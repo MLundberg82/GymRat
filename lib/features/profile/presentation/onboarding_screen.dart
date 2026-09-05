@@ -27,6 +27,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late double _height;
   late double _weight;
   late double _sessions;
+  late double _age;
   int _page = 0;
   bool _saving = false;
 
@@ -40,6 +41,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _height = profile.heightCm.toDouble();
     _weight = profile.weightKg;
     _sessions = profile.sessionsPerWeek.toDouble();
+    _age = (profile.ageYears ?? 30).toDouble();
   }
 
   @override
@@ -65,6 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         weightKg: double.parse(_weight.toStringAsFixed(1)),
         sessionsPerWeek: _sessions.round(),
         goal: _goal,
+        ageYears: _age.round(),
       ),
     );
     if (!mounted) return;
@@ -170,9 +173,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     selected: _goal,
                     height: _height,
                     weight: _weight,
+                    age: _age,
                     onSelected: (value) => setState(() => _goal = value),
                     onHeightChanged: (value) => setState(() => _height = value),
                     onWeightChanged: (value) => setState(() => _weight = value),
+                    onAgeChanged: (value) => setState(() => _age = value),
                   ),
                 ],
               ),
@@ -323,17 +328,21 @@ class _GoalStep extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.weight,
+    required this.age,
     required this.onSelected,
     required this.onHeightChanged,
     required this.onWeightChanged,
+    required this.onAgeChanged,
   });
 
   final TrainingGoal selected;
   final double height;
   final double weight;
+  final double age;
   final ValueChanged<TrainingGoal> onSelected;
   final ValueChanged<double> onHeightChanged;
   final ValueChanged<double> onWeightChanged;
+  final ValueChanged<double> onAgeChanged;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -354,6 +363,18 @@ class _GoalStep extends StatelessWidget {
         const SizedBox(height: 8),
       ],
       const SizedBox(height: 18),
+      _SliderCard(
+        label: context.tr.t('ageLabel'),
+        valueLabel: '${age.round()} ${context.tr.t('yearsShort')}',
+        child: Slider(
+          value: age,
+          min: 16,
+          max: 100,
+          divisions: 84,
+          onChanged: onAgeChanged,
+        ),
+      ),
+      const SizedBox(height: 10),
       _SliderCard(
         label: context.tr.t('heightLabel'),
         valueLabel: '${height.round()} cm',

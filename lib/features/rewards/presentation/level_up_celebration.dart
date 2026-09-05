@@ -12,6 +12,7 @@ import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/gym_upgrade.dart';
+import 'rpg_flame_painter.dart';
 
 class LevelUpCelebration extends StatefulWidget {
   const LevelUpCelebration({
@@ -144,6 +145,18 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                 painter: _LevelEnergyPainter(
                   progress: p,
                   evolution: widget.isEvolution,
+                ),
+              ),
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: RpgFlamePainter(
+                    progress: p,
+                    intensity: widget.isEvolution ? 1.45 : 1.08,
+                    primary: const Color(0xFFFF6D00),
+                    secondary: widget.isEvolution
+                        ? const Color(0xFFB45CFF)
+                        : GymRatColors.gold,
+                  ),
                 ),
               ),
               SafeArea(

@@ -165,6 +165,23 @@ void main() {
       'achievementFirstSession',
       'achievementFiveRecords',
       'achievementFirstEvolution',
+      'nutritionTitle',
+      'nutritionCommandCenter',
+      'calories',
+      'protein',
+      'carbohydrates',
+      'fat',
+      'logMeal',
+      'sevenDayNutrition',
+      'nutritionSafetyNote',
+      'premiumXpBoost',
+      'premiumBenefitNutrition',
+      'premiumPaywallTitle',
+      'notNow',
+      'localPremiumAccess',
+      'monthlyPlan',
+      'yearlyPlan',
+      'twoMonthsFree',
     ];
 
     for (final locale in AppLanguageStore.supported) {

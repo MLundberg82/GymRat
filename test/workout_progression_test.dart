@@ -79,6 +79,21 @@ void main() {
       expect(higherResult.prs.single.newWeight, 105);
       expect(higherResult.xp.prXP, 18);
     });
+
+    test('Premium adds exactly ten percent XP after normal rewards', () async {
+      final result = await WorkoutSessionStore.complete(
+        workoutName: 'WALK',
+        walk: true,
+        durationSeconds: 1800,
+        exercises: const <WorkoutExerciseResult>[],
+        premiumXPBoost: true,
+      );
+      final normalXP = result.xp.totalXP - result.xp.premiumBonusXP;
+
+      expect(result.xp.premiumBonusXP, (normalXP * .10).round());
+      expect(result.xp.totalXP, normalXP + result.xp.premiumBonusXP);
+      expect(result.prs, isEmpty);
+    });
   });
 
   group('WorkoutSessionStore progress snapshot', () {

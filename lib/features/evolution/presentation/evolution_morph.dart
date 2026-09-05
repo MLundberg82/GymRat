@@ -12,6 +12,7 @@ import '../../character/domain/rat_appearance.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/evolution_milestones.dart';
+import '../../rewards/presentation/rpg_flame_painter.dart';
 import 'evolution_energy_painter.dart';
 
 class EvolutionMorph extends StatefulWidget {
@@ -211,6 +212,16 @@ class _EvolutionMorphState extends State<EvolutionMorph>
                   painter: EvolutionEnergyPainter(
                     progress: p,
                     intensity: intensity,
+                  ),
+                ),
+              ),
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: RpgFlamePainter(
+                    progress: p,
+                    intensity: (1.25 + intensity * .28).clamp(1.25, 1.75),
+                    primary: const Color(0xFFFF6D00),
+                    secondary: const Color(0xFFC77DFF),
                   ),
                 ),
               ),

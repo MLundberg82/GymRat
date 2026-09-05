@@ -6,6 +6,9 @@ import '../../../core/units/weight_unit_store.dart';
 import '../../character/domain/rat_appearance.dart';
 import '../../character/domain/rat_character_view.dart';
 import '../../hub/presentation/hub_screen.dart';
+import '../../premium/data/premium_access.dart';
+import '../../premium/data/premium_prompt_policy.dart';
+import '../../premium/presentation/premium_paywall_sheet.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
 import '../../rewards/presentation/reward_sequence.dart';
@@ -35,6 +38,18 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
   void _showWorkoutSummary() {
     if (!mounted) return;
     setState(() => _showSummary = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowPaywall());
+  }
+
+  Future<void> _maybeShowPaywall() async {
+    if (!mounted || PremiumAccess.current) return;
+    final progress = await WorkoutSessionStore.getProgressSnapshot();
+    final shouldShow = await PremiumPromptPolicy.shouldShowAfterWorkout(
+      progress.totalWorkouts,
+    );
+    if (mounted && shouldShow && !PremiumAccess.current) {
+      await showPremiumPaywall(context);
+    }
   }
 
   void _continue() {

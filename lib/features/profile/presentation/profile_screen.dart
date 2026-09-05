@@ -8,6 +8,7 @@ import '../../../core/units/weight_unit_store.dart';
 import '../data/training_profile_store.dart';
 import '../data/local_data_archive.dart';
 import '../domain/training_profile.dart';
+import '../../premium/presentation/premium_access_unlock.dart';
 import 'onboarding_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -120,7 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: t.t('bodyProfile'),
                     value:
                         '${profile.heightCm} cm · '
-                        '${profile.weightKg.toStringAsFixed(1)} kg',
+                        '${profile.weightKg.toStringAsFixed(1)} kg'
+                        '${profile.ageYears == null ? '' : ' · ${profile.ageYears} ${t.t('yearsShort')}'}',
                   ),
                   _ProfileLine(
                     label: t.t('sessionsPerWeek'),
@@ -192,6 +194,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 28),
           ],
+          const PremiumAccessUnlock(),
+          const SizedBox(height: 28),
           Text(
             t.t('workoutWeightUnit'),
             style: const TextStyle(

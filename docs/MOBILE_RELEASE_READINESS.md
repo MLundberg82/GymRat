@@ -38,11 +38,30 @@ The app reads public RevenueCat SDK keys from `REVENUECAT_APPLE_API_KEY` and
 `REVENUECAT_GOOGLE_API_KEY` build-time defines. The dashboard must provide:
 
 - one `premium` entitlement attached to the subscription products;
+- monthly product `gymrat_premium_monthly`, configured at 69 SEK in both store
+  consoles;
+- yearly product `gymrat_premium_yearly`, configured at 699 SEK in both store
+  consoles;
 - a current offering containing the approved subscription packages;
 - one entitlement per permanent cosmetic appearance product;
 - matching product identifiers in App Store Connect and Google Play Console;
 - sandbox/test accounts for purchase, cancellation, renewal, expiry, offline,
   reinstall, and restore scenarios.
+
+The store consoles, not Flutter or RevenueCat, are the price source of truth.
+GymRat always renders the localized price returned by the active store package.
+The yearly plan is presented as approximately two months free compared with
+twelve monthly payments; local storefront tiers and taxes may vary.
+
+Debug builds expose an on-device local Premium switch for owner testing. An
+owner access code can also be enabled without storing the code by supplying its
+lowercase SHA-256 digest at build time:
+
+`--dart-define=GYMRAT_PREMIUM_ACCESS_CODE_SHA256=<64-character digest>`
+
+Only the digest may be used in a local/CI build definition. Never commit the
+access code, digest, RevenueCat keys, or generated command history containing
+them.
 
 Do not publish a cosmetic product until its complete authored appearance matrix
 passes the character asset contract. The app intentionally hides and blocks
@@ -67,6 +86,10 @@ Run the following on Android and iOS, on narrow and large phones:
 - Premium workload/recovery signals and derived achievement progress;
 - clickable hub record stations and their full progress route;
 - Premium locked, purchased, expired, offline, and restored states;
+- monthly/yearly localized prices, purchase, owner-code unlock, and the clear
+  dismiss path on every contextual paywall;
+- Premium Nutrition target estimation, manual calories/protein/carbohydrates/
+  fat entry, seven-day history, deletion, and relaunch persistence;
 - Armory Credits and quest claims remain idempotent;
 - local data export and confirmed deletion return to onboarding;
 - safe areas, text scaling, screen-reader labels, reduced motion, interruptions,

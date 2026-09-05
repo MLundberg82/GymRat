@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../premium/domain/premium_products.dart';
+
 enum ArmoryStoreStatus { notConfigured, ready, empty, unavailable }
 
 enum ArmoryPurchaseStatus { purchased, cancelled, failed }
@@ -87,6 +89,7 @@ abstract final class ArmoryBilling {
       }
       final ownedProductIds = customerInfo.allPurchasedProductIdentifiers
           .toSet();
+      final activeSubscriptions = customerInfo.activeSubscriptions.toSet();
       final offers = offering.availablePackages
           .map((package) {
             final product = package.storeProduct;
@@ -95,7 +98,9 @@ abstract final class ArmoryBilling {
               title: product.title,
               description: product.description,
               price: product.priceString,
-              isOwned: ownedProductIds.contains(product.identifier),
+              isOwned: PremiumProducts.contains(product.identifier)
+                  ? activeSubscriptions.contains(product.identifier)
+                  : ownedProductIds.contains(product.identifier),
               package: package,
             );
           })

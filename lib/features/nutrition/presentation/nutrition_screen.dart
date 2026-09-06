@@ -14,7 +14,9 @@ import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../data/nutrition_store.dart';
+import '../domain/food_product.dart';
 import '../domain/nutrition_models.dart';
+import 'barcode_scanner_screen.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key, this.premiumOverride});
@@ -77,7 +79,35 @@ class _NutritionScreenState extends State<NutritionScreen> {
       useSafeArea: true,
       builder: (_) => const _AddNutritionSheet(),
     );
-    if (draft == null || !mounted) return;
+    if (draft == null) return;
+    await _saveDraft(draft);
+  }
+
+  Future<void> _scanFood() async {
+    final product = await Navigator.of(context).push<FoodProduct>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (product == null || !mounted) return;
+    final calculated = await showModalBottomSheet<_NutritionDraft>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: GymRatColors.surface,
+      useSafeArea: true,
+      builder: (_) => _ScannedFoodSheet(product: product),
+    );
+    if (calculated == null || !mounted) return;
+    final reviewed = await showModalBottomSheet<_NutritionDraft>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: GymRatColors.surface,
+      useSafeArea: true,
+      builder: (_) => _AddNutritionSheet(initial: calculated),
+    );
+    if (reviewed == null) return;
+    await _saveDraft(reviewed);
+  }
+
+  Future<void> _saveDraft(_NutritionDraft draft) async {
     await NutritionStore.add(
       name: draft.name,
       calories: draft.calories,
@@ -129,6 +159,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
               profile: profile,
               entries: _entries,
               onReload: _reload,
+              onScan: _scanFood,
             )
           : const _LockedNutritionBody(),
     );
@@ -169,11 +200,13 @@ class _PremiumNutritionBody extends StatelessWidget {
     required this.profile,
     required this.entries,
     required this.onReload,
+    required this.onScan,
   });
 
   final TrainingProfile? profile;
   final Future<List<NutritionEntry>> entries;
   final Future<void> Function() onReload;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -226,6 +259,34 @@ class _PremiumNutritionBody extends StatelessWidget {
               _DailyEnergyCard(totals: totals, target: target),
               const SizedBox(height: 12),
               _MacroGrid(totals: totals, target: target),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onScan,
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: Text(
+                    context.tr.t('scanBarcode'),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                context.tr.t('barcodeDataNotice'),
+                style: const TextStyle(
+                  color: GymRatColors.textMuted,
+                  fontSize: 9,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 22),
+              _SectionTitle(
+                title: context.tr.t('dailyMealPlan'),
+                subtitle: context.tr.t('dailyMealPlanHelp'),
+              ),
+              const SizedBox(height: 10),
+              _MealPlanCard(suggestions: NutritionMealPlanner.planFor(target)),
               const SizedBox(height: 22),
               _SectionTitle(
                 title: context.tr.t('sevenDayNutrition'),
@@ -625,6 +686,106 @@ class _SectionTitle extends StatelessWidget {
   );
 }
 
+class _MealPlanCard extends StatelessWidget {
+  const _MealPlanCard({required this.suggestions});
+
+  final List<MealPlanSuggestion> suggestions;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.circular(21),
+      border: Border.all(color: GymRatColors.greenDark),
+    ),
+    child: Column(
+      children: [
+        for (var index = 0; index < suggestions.length; index++) ...[
+          _MealPlanRow(suggestion: suggestions[index]),
+          if (index != suggestions.length - 1)
+            const Divider(height: 22, color: GymRatColors.border),
+        ],
+        const SizedBox(height: 12),
+        Text(
+          context.tr.t('mealPlanSafety'),
+          style: const TextStyle(
+            color: GymRatColors.textMuted,
+            fontSize: 9,
+            height: 1.4,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MealPlanRow extends StatelessWidget {
+  const _MealPlanRow({required this.suggestion});
+
+  final MealPlanSuggestion suggestion;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 35,
+        height: 35,
+        decoration: BoxDecoration(
+          color: GymRatColors.green.withValues(alpha: .10),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: const Icon(
+          Icons.restaurant_menu_rounded,
+          color: GymRatColors.green,
+          size: 18,
+        ),
+      ),
+      const SizedBox(width: 11),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.tr.t(suggestion.titleKey),
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              context.tr.t(suggestion.descriptionKey),
+              style: const TextStyle(
+                color: GymRatColors.textMuted,
+                fontSize: 9,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(width: 8),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${suggestion.calories} kcal',
+            style: const TextStyle(
+              color: GymRatColors.gold,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            '${suggestion.proteinGrams} P · '
+            '${suggestion.carbohydrateGrams} C · ${suggestion.fatGrams} F',
+            style: const TextStyle(color: GymRatColors.textMuted, fontSize: 8),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 class _SevenDayChart extends StatelessWidget {
   const _SevenDayChart({required this.entries, required this.target});
 
@@ -896,6 +1057,194 @@ class _NutritionSafetyNote extends StatelessWidget {
   );
 }
 
+class _ScannedFoodSheet extends StatefulWidget {
+  const _ScannedFoodSheet({required this.product});
+
+  final FoodProduct product;
+
+  @override
+  State<_ScannedFoodSheet> createState() => _ScannedFoodSheetState();
+}
+
+class _ScannedFoodSheetState extends State<_ScannedFoodSheet> {
+  late final TextEditingController _grams;
+
+  @override
+  void initState() {
+    super.initState();
+    final suggested = widget.product.servingGrams;
+    _grams = TextEditingController(
+      text: _displayNutritionNumber(
+        suggested != null && suggested > 0 ? suggested : 100,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _grams.dispose();
+    super.dispose();
+  }
+
+  double get _amount =>
+      double.tryParse(_grams.text.trim().replaceAll(',', '.')) ?? 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final nutrition = widget.product.nutritionForGrams(_amount);
+    final productName = widget.product.brand == null
+        ? widget.product.name
+        : '${widget.product.brand} · ${widget.product.name}';
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18,
+        20,
+        MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: GymRatColors.green,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    context.tr.t('barcodeProductFound'),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              productName,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.product.barcode,
+              style: const TextStyle(
+                color: GymRatColors.textMuted,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _grams,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: context.tr.t('consumedAmount'),
+                suffixText: 'g',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _ScannedMacro(
+                  label: context.tr.t('calories'),
+                  value: '${nutrition.calories}',
+                ),
+                _ScannedMacro(
+                  label: context.tr.t('protein'),
+                  value: '${nutrition.proteinGrams.round()} g',
+                ),
+                _ScannedMacro(
+                  label: context.tr.t('carbohydrates'),
+                  value: '${nutrition.carbohydrateGrams.round()} g',
+                ),
+                _ScannedMacro(
+                  label: context.tr.t('fat'),
+                  value: '${nutrition.fatGrams.round()} g',
+                ),
+              ],
+            ),
+            const SizedBox(height: 13),
+            Text(
+              context.tr.t('barcodeReviewNotice'),
+              style: const TextStyle(
+                color: GymRatColors.textMuted,
+                fontSize: 10,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton.icon(
+                onPressed: _amount <= 0 || _amount > 5000
+                    ? null
+                    : () => Navigator.of(context).pop(
+                        _NutritionDraft(
+                          name: widget.product.name,
+                          calories: nutrition.calories,
+                          proteinGrams: nutrition.proteinGrams,
+                          carbohydrateGrams: nutrition.carbohydrateGrams,
+                          fatGrams: nutrition.fatGrams,
+                        ),
+                      ),
+                icon: const Icon(Icons.fact_check_outlined),
+                label: Text(
+                  context.tr.t('reviewNutritionValues'),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScannedMacro extends StatelessWidget {
+  const _ScannedMacro({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: GymRatColors.gold,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: GymRatColors.textMuted, fontSize: 8),
+        ),
+      ],
+    ),
+  );
+}
+
 class _NutritionDraft {
   const _NutritionDraft({
     required this.name,
@@ -913,7 +1262,9 @@ class _NutritionDraft {
 }
 
 class _AddNutritionSheet extends StatefulWidget {
-  const _AddNutritionSheet();
+  const _AddNutritionSheet({this.initial});
+
+  final _NutritionDraft? initial;
 
   @override
   State<_AddNutritionSheet> createState() => _AddNutritionSheetState();
@@ -921,11 +1272,32 @@ class _AddNutritionSheet extends StatefulWidget {
 
 class _AddNutritionSheetState extends State<_AddNutritionSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _calories = TextEditingController();
-  final _protein = TextEditingController();
-  final _carbohydrates = TextEditingController();
-  final _fat = TextEditingController();
+  late final TextEditingController _name;
+  late final TextEditingController _calories;
+  late final TextEditingController _protein;
+  late final TextEditingController _carbohydrates;
+  late final TextEditingController _fat;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    _name = TextEditingController(text: initial?.name);
+    _calories = TextEditingController(text: initial?.calories.toString());
+    _protein = TextEditingController(
+      text: initial == null
+          ? null
+          : _displayNutritionNumber(initial.proteinGrams),
+    );
+    _carbohydrates = TextEditingController(
+      text: initial == null
+          ? null
+          : _displayNutritionNumber(initial.carbohydrateGrams),
+    );
+    _fat = TextEditingController(
+      text: initial == null ? null : _displayNutritionNumber(initial.fatGrams),
+    );
+  }
 
   @override
   void dispose() {
@@ -1081,4 +1453,9 @@ class _NumberField extends StatelessWidget {
       return null;
     },
   );
+}
+
+String _displayNutritionNumber(double value) {
+  final rounded = value.roundToDouble();
+  return value == rounded ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 }

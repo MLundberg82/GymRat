@@ -36,9 +36,9 @@ void main() {
       expect(snapshot.daily.map((quest) => quest.current), [1, 30, 3]);
       expect(snapshot.completedDaily, 3);
       expect(snapshot.weekly.map((quest) => quest.current), [2, 90]);
-      expect(snapshot.completedWeekly, 1);
+      expect(snapshot.completedWeekly, 0);
       expect(snapshot.completedWeeklySessions, 2);
-      expect(snapshot.weeklySessionTarget, 3);
+      expect(snapshot.weeklySessionTarget, 5);
     });
 
     test('weekly campaign counts workouts, never exercises', () {

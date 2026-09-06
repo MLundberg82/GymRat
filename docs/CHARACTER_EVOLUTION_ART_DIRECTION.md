@@ -76,7 +76,7 @@ within three percent so evolution morphs remain anchored.
 2. Compare front and back for identity, musculature, shorts, tail, and foot line.
 3. Compare all three identities at the same level for equivalent progression.
 4. Run the character asset contract tests.
-5. Review every milestone in the debug-only Character Lab on a device.
+5. Review every milestone in internal device builds before release.
 6. Measure the runtime export's Android and iOS bundle-size impact; keep draft
    and archival source files outside the bundled `assets/characters` folders.
 7. Add the complete six-file stage to `RatAppearanceCatalog.base.stages` in one

@@ -104,7 +104,7 @@ Later-stage, back-view, and outfit motion frames must be exported from their
 matching approved neutral render. Never reuse one identity's frames for another
 and never reuse front frames for the back view. The level 1-100 Blender source
 and export contract lives in `tool/character_pipeline/pipeline_manifest.json`.
-Character Lab reports whether the selected combination has authored motion or
+Internal asset-contract tests report whether the selected combination has authored motion or
 uses the safe fallback.
 
 ## Tail anchor contract

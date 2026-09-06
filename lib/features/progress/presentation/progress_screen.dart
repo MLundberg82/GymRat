@@ -188,51 +188,54 @@ class _ProgressContent extends StatelessWidget {
           for (final category in TrainingAnalytics.categories(history)) ...[
             _CategoryCard(
               category: category,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => WorkoutCategoryDetailScreen(
-                    history: history,
-                    category: category,
-                  ),
-                ),
-              ),
+              onTap: isPremium
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => WorkoutCategoryDetailScreen(
+                          history: history,
+                          category: category,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(height: 10),
           ],
           if (!isPremium) ...[
             const SizedBox(height: 4),
             const PremiumGateCard(),
+          ] else ...[
+            const SizedBox(height: 18),
+            Text(
+              context.tr.t('recentWorkouts'),
+              style: const TextStyle(
+                color: GymRatColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (data.recentWorkouts.isEmpty)
+              _EmptyHistory(message: context.tr.t('noWorkoutsYet'))
+            else
+              for (final workout in data.recentWorkouts) ...[
+                _WorkoutCard(workout: workout),
+                const SizedBox(height: 10),
+              ],
+            const SizedBox(height: 12),
+            _TrainingLoadCard(
+              insight: TrainingAnalytics.loadInsight(history),
+              isPremium: true,
+            ),
+            const SizedBox(height: 12),
+            _AchievementVault(
+              achievements: AchievementProgress.derive(
+                progress: data,
+                history: history,
+              ),
+            ),
           ],
-          const SizedBox(height: 18),
-          Text(
-            context.tr.t('recentWorkouts'),
-            style: const TextStyle(
-              color: GymRatColors.textPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (data.recentWorkouts.isEmpty)
-            _EmptyHistory(message: context.tr.t('noWorkoutsYet'))
-          else
-            for (final workout in data.recentWorkouts) ...[
-              _WorkoutCard(workout: workout),
-              const SizedBox(height: 10),
-            ],
-          const SizedBox(height: 12),
-          _TrainingLoadCard(
-            insight: TrainingAnalytics.loadInsight(history),
-            isPremium: isPremium,
-          ),
-          const SizedBox(height: 12),
-          _AchievementVault(
-            achievements: AchievementProgress.derive(
-              progress: data,
-              history: history,
-            ),
-          ),
         ],
       ),
     );
@@ -694,7 +697,7 @@ class _CategoryCard extends StatelessWidget {
   const _CategoryCard({required this.category, required this.onTap});
 
   final WorkoutCategoryTrend category;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Material(
@@ -754,18 +757,33 @@ class _CategoryCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(
-              width: 92,
-              child: ProgressLineChart(
-                points: category.primaryMetric,
-                height: 62,
-                semanticLabel: WorkoutCopy.workout(context, category.name),
+            if (onTap == null)
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: GymRatColors.premium.withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: GymRatColors.premium,
+                  size: 18,
+                ),
+              )
+            else ...[
+              SizedBox(
+                width: 92,
+                child: ProgressLineChart(
+                  points: category.primaryMetric,
+                  height: 62,
+                  semanticLabel: WorkoutCopy.workout(context, category.name),
+                ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: GymRatColors.textMuted,
-            ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: GymRatColors.textMuted,
+              ),
+            ],
           ],
         ),
       ),

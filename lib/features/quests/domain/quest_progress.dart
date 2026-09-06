@@ -58,7 +58,7 @@ class QuestSnapshot {
   }
 
   int get completedWeeklySessions => weeklySessions?.visibleCurrent ?? 0;
-  int get weeklySessionTarget => weeklySessions?.target ?? 3;
+  int get weeklySessionTarget => weeklySessions?.target ?? 5;
 }
 
 abstract final class QuestProgressCalculator {
@@ -143,9 +143,9 @@ abstract final class QuestProgressCalculator {
           period: QuestPeriod.weekly,
           unit: QuestUnit.sessions,
           current: weeklyWorkouts.length,
-          target: 3,
+          target: 5,
           claimId: 'weekly-sessions-$weekToken',
-          rewardCredits: 30,
+          rewardCredits: 50,
           isClaimed: claimedQuestIds.contains('weekly-sessions-$weekToken'),
         ),
         QuestProgress(
@@ -155,9 +155,9 @@ abstract final class QuestProgressCalculator {
           period: QuestPeriod.weekly,
           unit: QuestUnit.minutes,
           current: weeklySeconds ~/ 60,
-          target: 90,
+          target: 180,
           claimId: 'weekly-duration-$weekToken',
-          rewardCredits: 35,
+          rewardCredits: 60,
           isClaimed: claimedQuestIds.contains('weekly-duration-$weekToken'),
         ),
       ]),

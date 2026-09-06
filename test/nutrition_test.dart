@@ -69,6 +69,28 @@ void main() {
     });
   });
 
+  test('five-meal plan preserves the personalized daily target', () {
+    final target = NutritionCalculator.targetsFor(profile)!;
+    final plan = NutritionMealPlanner.planFor(target);
+
+    expect(plan, hasLength(5));
+    expect(plan.map((meal) => meal.titleKey), <String>[
+      'mealBreakfast',
+      'mealSnackOne',
+      'mealLunch',
+      'mealSnackTwo',
+      'mealDinner',
+    ]);
+    expect(
+      plan.fold<int>(0, (sum, meal) => sum + meal.calories),
+      closeTo(target.calories, 2),
+    );
+    expect(
+      plan.fold<int>(0, (sum, meal) => sum + meal.proteinGrams),
+      closeTo(target.proteinGrams, 2),
+    );
+  });
+
   group('NutritionStore', () {
     setUp(() {
       SharedPreferences.setMockInitialValues(<String, Object>{});

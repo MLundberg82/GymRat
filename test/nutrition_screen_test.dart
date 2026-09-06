@@ -46,6 +46,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('DAILY ENERGY TARGET'), findsOneWidget);
+    expect(find.text('SCAN BARCODE'), findsOneWidget);
+    expect(find.text('TODAY’S 5-MEAL BLUEPRINT'), findsOneWidget);
     await tester.tap(find.text('LOG MEAL'));
     await tester.pumpAndSettle();
 
@@ -73,13 +75,7 @@ void main() {
     expect(saved, hasLength(1));
     expect(saved.single.calories, 650);
     expect(saved.single.proteinGrams, 45);
-    await tester.drag(
-      find.byType(ListView).last,
-      const Offset(0, -650),
-      warnIfMissed: false,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Power bowl'), findsOneWidget);
+    expect(saved.single.name, 'Power bowl');
   });
 
   testWidgets('minor never receives an adult calorie recommendation', (

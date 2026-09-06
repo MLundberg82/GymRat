@@ -33,11 +33,49 @@ class GymRatCharacter extends StatefulWidget {
 
   static const double displayScale = .70;
   static const Duration emotePlaybackDuration = Duration(milliseconds: 1500);
-  static const Duration frameBlendDuration = Duration(milliseconds: 150);
 
   static int emoteFrameIndex(double progress, int frameCount) {
     if (frameCount <= 1) return 0;
     return (progress.clamp(0.0, 1.0) * (frameCount - 1)).floor();
+  }
+
+  static ({String fromAsset, String toAsset, double mix}) emoteBlendFrame(
+    double progress,
+    List<String> frames,
+  ) {
+    assert(frames.isNotEmpty);
+    final neutral = frames.first;
+    final entry = frames.firstWhere(
+      (frame) => frame != neutral,
+      orElse: () => neutral,
+    );
+    final hold = frames.firstWhere(
+      (frame) => frame != neutral && frame != entry,
+      orElse: () => entry,
+    );
+    final value = progress.clamp(0.0, 1.0);
+
+    ({String fromAsset, String toAsset, double mix}) blend(
+      String from,
+      String to,
+      double start,
+      double end,
+    ) {
+      final linear = ((value - start) / (end - start)).clamp(0.0, 1.0);
+      return (
+        fromAsset: from,
+        toAsset: to,
+        mix: Curves.easeInOutSine.transform(linear),
+      );
+    }
+
+    if (value < .18) return blend(neutral, entry, 0, .18);
+    if (value < .34) return blend(entry, hold, .18, .34);
+    if (value < .68) {
+      return (fromAsset: hold, toAsset: hold, mix: 0);
+    }
+    if (value < .84) return blend(hold, entry, .68, .84);
+    return blend(entry, neutral, .84, 1);
   }
 
   static double breathingScaleX(double progress) =>
@@ -441,9 +479,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       widget.enableEmotes && _animationSet.hasAuthoredEmotes;
 
   void _playRandomEmote() {
-    if (!_canPlayEmote ||
-        _emoteController.isAnimating ||
-        _action != _IdleAction.neutral) {
+    if (!_canPlayEmote || _emoteController.isAnimating) {
       return;
     }
     final emotes = _animationSet.emotes;
@@ -456,7 +492,11 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     );
     _lastEmoteType = emote.type;
     HapticFeedback.selectionClick();
+    _breathScheduleTimer?.cancel();
+    _blinkScheduleTimer?.cancel();
+    _tailScheduleTimer?.cancel();
     _animationTimer?.cancel();
+    _breathingController.reset();
     setState(() {
       _action = _IdleAction.emote;
       _activeFrames = emote.frames;
@@ -500,6 +540,9 @@ class _GymRatCharacterState extends State<GymRatCharacter>
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
+            final emoteBlend = _action == _IdleAction.emote
+                ? GymRatCharacter.emoteBlendFrame(emote, _activeFrames)
+                : null;
             final currentAsset = _action == _IdleAction.blinking
                 ? _identityMaster
                 : _currentFrame;
@@ -547,17 +590,24 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                         ],
                       ),
                     ),
-                  if (_action == _IdleAction.emote)
-                    AnimatedSwitcher(
-                      duration: GymRatCharacter.frameBlendDuration,
-                      reverseDuration: GymRatCharacter.frameBlendDuration,
-                      switchInCurve: Curves.easeInOutSine,
-                      switchOutCurve: Curves.easeInOutSine,
-                      layoutBuilder: (currentChild, previousChildren) => Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: <Widget>[...previousChildren, ?currentChild],
-                      ),
-                      child: characterImage,
+                  if (emoteBlend != null)
+                    Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Opacity(
+                          opacity: 1 - emoteBlend.mix,
+                          child: _emoteImage(
+                            emoteBlend.fromAsset,
+                            semanticLabel: widget.gender.name,
+                          ),
+                        ),
+                        if (emoteBlend.mix > 0 &&
+                            emoteBlend.toAsset != emoteBlend.fromAsset)
+                          Opacity(
+                            opacity: emoteBlend.mix,
+                            child: _emoteImage(emoteBlend.toAsset),
+                          ),
+                      ],
                     )
                   else
                     characterImage,
@@ -609,6 +659,19 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       ),
     );
   }
+
+  Widget _emoteImage(String asset, {String? semanticLabel}) => Image.asset(
+    asset,
+    key: ValueKey<String>(asset),
+    height: widget.height,
+    fit: BoxFit.contain,
+    alignment: Alignment.bottomCenter,
+    gaplessPlayback: true,
+    filterQuality: FilterQuality.high,
+    cacheHeight: _cacheHeight,
+    semanticLabel: semanticLabel,
+    excludeFromSemantics: semanticLabel == null,
+  );
 }
 
 class _BlinkClipper extends CustomClipper<Rect> {

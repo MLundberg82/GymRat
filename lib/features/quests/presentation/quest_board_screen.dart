@@ -13,6 +13,8 @@ import '../domain/quest_progress.dart';
 class QuestBoardScreen extends StatefulWidget {
   const QuestBoardScreen({super.key});
 
+  static const claimCelebrationDuration = Duration(milliseconds: 1750);
+
   @override
   State<QuestBoardScreen> createState() => _QuestBoardScreenState();
 }
@@ -68,9 +70,12 @@ class _QuestBoardScreenState extends State<QuestBoardScreen> {
         totalCredits: inventory.credits,
       );
     });
-    _claimCelebrationTimer = Timer(const Duration(milliseconds: 1350), () {
-      if (mounted) setState(() => _claimVisual = null);
-    });
+    _claimCelebrationTimer = Timer(
+      QuestBoardScreen.claimCelebrationDuration,
+      () {
+        if (mounted) setState(() => _claimVisual = null);
+      },
+    );
     await _refresh();
   }
 
@@ -485,7 +490,7 @@ class _QuestClaimCelebration extends StatelessWidget {
   Widget build(BuildContext context) => AbsorbPointer(
     child: TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1700),
       curve: Curves.easeOutCubic,
       builder: (context, progress, _) {
         final fadeIn = (progress / .16).clamp(0.0, 1.0);

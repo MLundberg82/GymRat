@@ -106,6 +106,47 @@ class NutritionTargets {
   final int fatGrams;
 }
 
+class MealPlanSuggestion {
+  const MealPlanSuggestion({
+    required this.titleKey,
+    required this.descriptionKey,
+    required this.calories,
+    required this.proteinGrams,
+    required this.carbohydrateGrams,
+    required this.fatGrams,
+  });
+
+  final String titleKey;
+  final String descriptionKey;
+  final int calories;
+  final int proteinGrams;
+  final int carbohydrateGrams;
+  final int fatGrams;
+}
+
+abstract final class NutritionMealPlanner {
+  static const _slots = <(String, String, double)>[
+    ('mealBreakfast', 'mealBreakfastExample', .22),
+    ('mealSnackOne', 'mealSnackOneExample', .10),
+    ('mealLunch', 'mealLunchExample', .28),
+    ('mealSnackTwo', 'mealSnackTwoExample', .10),
+    ('mealDinner', 'mealDinnerExample', .30),
+  ];
+
+  static List<MealPlanSuggestion> planFor(NutritionTargets targets) => _slots
+      .map(
+        (slot) => MealPlanSuggestion(
+          titleKey: slot.$1,
+          descriptionKey: slot.$2,
+          calories: (targets.calories * slot.$3).round(),
+          proteinGrams: (targets.proteinGrams * slot.$3).round(),
+          carbohydrateGrams: (targets.carbohydrateGrams * slot.$3).round(),
+          fatGrams: (targets.fatGrams * slot.$3).round(),
+        ),
+      )
+      .toList(growable: false);
+}
+
 abstract final class NutritionCalculator {
   static NutritionTargets? targetsFor(TrainingProfile profile) {
     final age = profile.ageYears;

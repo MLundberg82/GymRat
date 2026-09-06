@@ -149,12 +149,9 @@ void main() {
     expect(find.text('TOTAL XP'), findsOneWidget);
     expect(find.text('PASS'), findsOneWidget);
     expect(find.text('SVIT'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('SENASTE PASSEN'), 300);
-    expect(find.text('SENASTE PASSEN'), findsOneWidget);
-    expect(
-      find.text('Slutför ditt första pass för att starta historiken.'),
-      findsOneWidget,
-    );
+    await tester.scrollUntilVisible(find.text('PREMIUM-PLANEN'), 300);
+    expect(find.text('PREMIUM-PLANEN'), findsOneWidget);
+    expect(find.text('SENASTE PASSEN'), findsNothing);
   });
 
   testWidgets('Hub opens the real Quest Board and Gym Armory', (
@@ -172,8 +169,8 @@ void main() {
     await tester.pumpWidget(const GymRatApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('WEEKLY 0/3'), findsOneWidget);
-    await tester.tap(find.text('WEEKLY 0/3'));
+    expect(find.text('WEEKLY 0/5'), findsOneWidget);
+    await tester.tap(find.text('WEEKLY 0/5'));
     await tester.pumpAndSettle();
 
     expect(find.text('QUEST BOARD'), findsOneWidget);
@@ -262,7 +259,7 @@ void main() {
 
     await tester.pumpWidget(const GymRatApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('WEEKLY 1/3'));
+    await tester.tap(find.text('WEEKLY 1/5'));
     await tester.pumpAndSettle();
 
     expect(find.text('CLAIM'), findsNWidgets(3));
@@ -273,6 +270,9 @@ void main() {
     expect((await RatInventoryStore.load()).credits, 10);
 
     await tester.pump(const Duration(milliseconds: 1400));
+    expect(find.text('+10 ARMORY CREDITS'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('+10 ARMORY CREDITS'), findsNothing);
     expect(find.text('CLAIMED'), findsOneWidget);
     expect((await RatInventoryStore.load()).credits, 10);
@@ -346,17 +346,14 @@ void main() {
     expect(find.text('TRAINING BY AREA'), findsOneWidget);
     await tester.ensureVisible(find.text('CHEST').first);
     await tester.pumpAndSettle();
+    expect(find.text('1 SESSIONS'), findsOneWidget);
     await tester.tap(find.text('CHEST').first);
     await tester.pumpAndSettle();
-    expect(find.text('VOLUME TREND'), findsOneWidget);
-    expect(find.text('Bench Press'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('RECENT WORKOUTS'), 300);
-    expect(find.text('RECENT WORKOUTS'), findsOneWidget);
-    expect(find.text('CHEST'), findsOneWidget);
-    expect(find.textContaining('30 MIN'), findsOneWidget);
-    expect(find.text('500 kg'), findsOneWidget);
+    expect(find.text('VOLUME TREND'), findsNothing);
+    expect(find.text('Bench Press'), findsNothing);
+    await tester.scrollUntilVisible(find.text('THE PREMIUM BLUEPRINT'), 300);
+    expect(find.text('THE PREMIUM BLUEPRINT'), findsOneWidget);
+    expect(find.text('RECENT WORKOUTS'), findsNothing);
   });
 
   testWidgets('History shows workout details and earned records', (

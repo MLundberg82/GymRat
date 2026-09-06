@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
@@ -8,7 +7,6 @@ import '../../../core/theme/gymrat_colors.dart';
 import '../../../core/units/weight_unit_store.dart';
 import '../../armory/presentation/armory_screen.dart';
 import '../../armory/data/rat_inventory_store.dart';
-import '../../character/presentation/character_lab_screen.dart';
 import '../../character/presentation/gymrat_character.dart';
 import '../../coach/presentation/coach_screen.dart';
 import '../../history/presentation/history_screen.dart';
@@ -115,7 +113,6 @@ class _HubScreenState extends State<HubScreen> {
       onProfile: () => _open(const ProfileScreen()),
       onContact: () => _open(const ContactScreen()),
       onPremium: () => _open(const CoachScreen()),
-      onCharacterLab: () => _open(const CharacterLabScreen()),
     ),
     body: Stack(
       fit: StackFit.expand,
@@ -165,7 +162,7 @@ class _HubScreenState extends State<HubScreen> {
                 _StatusRow(
                   streak: progress?.streak ?? 0,
                   completedWeeklySessions: quests?.completedWeeklySessions ?? 0,
-                  weeklySessionTarget: quests?.weeklySessionTarget ?? 3,
+                  weeklySessionTarget: quests?.weeklySessionTarget ?? 5,
                   onQuests: () => _open(const QuestBoardScreen()),
                 ),
                 const SizedBox(height: 12),
@@ -927,7 +924,6 @@ class _GymRatMenu extends StatelessWidget {
     required this.onProfile,
     required this.onContact,
     required this.onPremium,
-    required this.onCharacterLab,
   });
   final VoidCallback onWorkout,
       onProgress,
@@ -937,8 +933,7 @@ class _GymRatMenu extends StatelessWidget {
       onArmory,
       onProfile,
       onContact,
-      onPremium,
-      onCharacterLab;
+      onPremium;
   void _open(BuildContext context, VoidCallback action) {
     action();
   }
@@ -1026,12 +1021,6 @@ class _GymRatMenu extends StatelessWidget {
                       title: context.tr.t('contactSupport'),
                       onTap: () => _open(context, onContact),
                     ),
-                    if (kDebugMode)
-                      _MenuItem(
-                        icon: Icons.science_outlined,
-                        title: context.tr.t('characterLab'),
-                        onTap: () => _open(context, onCharacterLab),
-                      ),
                   ],
                 ),
               ),

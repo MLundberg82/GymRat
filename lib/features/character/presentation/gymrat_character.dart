@@ -32,7 +32,13 @@ class GymRatCharacter extends StatefulWidget {
   final String? emoteSemanticLabel;
 
   static const double displayScale = .70;
-  static const Duration frameBlendDuration = Duration(milliseconds: 160);
+  static const Duration emotePlaybackDuration = Duration(milliseconds: 1500);
+  static const Duration frameBlendDuration = Duration(milliseconds: 150);
+
+  static int emoteFrameIndex(double progress, int frameCount) {
+    if (frameCount <= 1) return 0;
+    return (progress.clamp(0.0, 1.0) * (frameCount - 1)).floor();
+  }
 
   static double breathingScaleX(double progress) =>
       1 + sin(progress.clamp(0.0, 1.0) * pi) * .006;
@@ -141,7 +147,7 @@ class _GymRatCharacterState extends State<GymRatCharacter>
     );
     _emoteController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: GymRatCharacter.emotePlaybackDuration,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -413,7 +419,13 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       return _identityMaster;
     }
 
-    return _activeFrames[_frameIndex];
+    final frameIndex = _action == _IdleAction.emote
+        ? GymRatCharacter.emoteFrameIndex(
+            _emoteController.value,
+            _activeFrames.length,
+          )
+        : _frameIndex;
+    return _activeFrames[frameIndex];
   }
 
   RatAnimationSet get _animationSet => RatAnimationCatalog.forCharacter(
@@ -443,18 +455,25 @@ class _GymRatCharacterState extends State<GymRatCharacter>
       randomValue: _random.nextInt(1 << 31),
     );
     _lastEmoteType = emote.type;
-    HapticFeedback.mediumImpact();
-    _emoteController.forward(from: 0);
-    _playAnimation(
-      action: _IdleAction.emote,
-      frames: emote.frames,
-      frameDuration: const Duration(milliseconds: 42),
-      onComplete: () {
-        _scheduleBreath();
-        _scheduleBlink();
-        _scheduleTail();
-      },
-    );
+    HapticFeedback.selectionClick();
+    _animationTimer?.cancel();
+    setState(() {
+      _action = _IdleAction.emote;
+      _activeFrames = emote.frames;
+      _frameIndex = 0;
+    });
+    _emoteController.forward(from: 0).whenComplete(() {
+      if (!mounted || _action != _IdleAction.emote) return;
+      setState(() {
+        _action = _IdleAction.neutral;
+        _activeFrames = <String>[];
+        _frameIndex = 0;
+      });
+      _emoteController.reset();
+      _scheduleBreath();
+      _scheduleBlink();
+      _scheduleTail();
+    });
   }
 
   @override
@@ -532,8 +551,8 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                     AnimatedSwitcher(
                       duration: GymRatCharacter.frameBlendDuration,
                       reverseDuration: GymRatCharacter.frameBlendDuration,
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
+                      switchInCurve: Curves.easeInOutSine,
+                      switchOutCurve: Curves.easeInOutSine,
                       layoutBuilder: (currentChild, previousChildren) => Stack(
                         alignment: Alignment.bottomCenter,
                         children: <Widget>[...previousChildren, ?currentChild],

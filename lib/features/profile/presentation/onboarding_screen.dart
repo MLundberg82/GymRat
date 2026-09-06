@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/body_measurement_units.dart';
+import '../../../core/units/weight_unit_store.dart';
 import '../data/training_profile_store.dart';
 import '../domain/training_profile.dart';
 
@@ -21,13 +24,21 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
+  final GlobalKey<FormState> _bodyFormKey = GlobalKey<FormState>();
   late RatGender _gender;
   late TrainingExperience _experience;
   late TrainingGoal _goal;
-  late double _height;
-  late double _weight;
   late double _sessions;
-  late double _age;
+  late int _heightCm;
+  late double _weightKg;
+  late int _ageYears;
+  late BodyMeasurementSystem _measurementSystem;
+  late final TextEditingController _ageController;
+  late final TextEditingController _heightCmController;
+  late final TextEditingController _weightKgController;
+  late final TextEditingController _heightFeetController;
+  late final TextEditingController _heightInchesController;
+  late final TextEditingController _weightLbController;
   int _page = 0;
   bool _saving = false;
 
@@ -38,15 +49,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _gender = profile.gender;
     _experience = profile.experience;
     _goal = profile.goal;
-    _height = profile.heightCm.toDouble();
-    _weight = profile.weightKg;
     _sessions = profile.sessionsPerWeek.toDouble();
-    _age = (profile.ageYears ?? 30).toDouble();
+    _heightCm = profile.heightCm;
+    _weightKg = profile.weightKg;
+    _ageYears = profile.ageYears ?? 30;
+    final useAmericanDefault =
+        !WeightUnitStore.hasStoredPreference &&
+        WidgetsBinding.instance.platformDispatcher.locale.countryCode
+                ?.toUpperCase() ==
+            'US';
+    _measurementSystem = useAmericanDefault
+        ? BodyMeasurementSystem.imperial
+        : BodyMeasurementUnits.systemFor(WeightUnitStore.current);
+    _ageController = TextEditingController(text: '$_ageYears');
+    _heightCmController = TextEditingController();
+    _weightKgController = TextEditingController();
+    _heightFeetController = TextEditingController();
+    _heightInchesController = TextEditingController();
+    _weightLbController = TextEditingController();
+    _syncMeasurementControllers();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _ageController.dispose();
+    _heightCmController.dispose();
+    _weightKgController.dispose();
+    _heightFeetController.dispose();
+    _heightInchesController.dispose();
+    _weightLbController.dispose();
     super.dispose();
   }
 
@@ -58,16 +90,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       return;
     }
+    if (_bodyFormKey.currentState?.validate() != true) return;
+    _captureBodyMeasurements();
+    FocusScope.of(context).unfocus();
     setState(() => _saving = true);
+    await WeightUnitStore.setUnit(
+      BodyMeasurementUnits.weightUnitFor(_measurementSystem),
+    );
     await TrainingProfileStore.save(
       TrainingProfile(
         gender: _gender,
         experience: _experience,
-        heightCm: _height.round(),
-        weightKg: double.parse(_weight.toStringAsFixed(1)),
+        heightCm: _heightCm,
+        weightKg: double.parse(_weightKg.toStringAsFixed(1)),
         sessionsPerWeek: _sessions.round(),
         goal: _goal,
-        ageYears: _age.round(),
+        ageYears: _ageYears,
       ),
     );
     if (!mounted) return;
@@ -79,6 +117,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _controller.previousPage(
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _changeMeasurementSystem(BodyMeasurementSystem value) {
+    if (value == _measurementSystem) return;
+    _captureBodyMeasurements();
+    setState(() {
+      _measurementSystem = value;
+      _syncMeasurementControllers();
+    });
+  }
+
+  void _captureBodyMeasurements() {
+    final age = int.tryParse(_ageController.text.trim());
+    if (age != null && age >= 16 && age <= 100) {
+      _ageYears = age;
+    }
+    if (_measurementSystem == BodyMeasurementSystem.metric) {
+      final height = int.tryParse(_heightCmController.text.trim());
+      final weight = _parseDecimal(_weightKgController.text);
+      if (height != null && height >= 120 && height <= 230) {
+        _heightCm = height;
+      }
+      if (weight != null && weight >= 35 && weight <= 250) {
+        _weightKg = weight;
+      }
+      return;
+    }
+    final feet = int.tryParse(_heightFeetController.text.trim());
+    final inches = int.tryParse(_heightInchesController.text.trim());
+    final pounds = _parseDecimal(_weightLbController.text);
+    if (feet != null && inches != null && inches >= 0 && inches <= 11) {
+      final centimeters = BodyMeasurementUnits.centimetersFromFeetAndInches(
+        feet,
+        inches,
+      );
+      if (centimeters >= 120 && centimeters <= 230) {
+        _heightCm = centimeters;
+      }
+    }
+    if (pounds != null) {
+      final kilograms = WeightUnitStore.toKilograms(
+        pounds,
+        unit: WeightUnit.pounds,
+      );
+      if (kilograms >= 35 && kilograms <= 250) {
+        _weightKg = kilograms;
+      }
+    }
+  }
+
+  void _syncMeasurementControllers() {
+    _heightCmController.text = '$_heightCm';
+    _weightKgController.text = _displayNumber(_weightKg);
+    final imperial = BodyMeasurementUnits.feetAndInchesFromCentimeters(
+      _heightCm,
+    );
+    _heightFeetController.text = '${imperial.feet}';
+    _heightInchesController.text = '${imperial.inches}';
+    _weightLbController.text = _displayNumber(
+      WeightUnitStore.fromKilograms(_weightKg, unit: WeightUnit.pounds),
     );
   }
 
@@ -171,13 +270,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   _GoalStep(
                     selected: _goal,
-                    height: _height,
-                    weight: _weight,
-                    age: _age,
+                    formKey: _bodyFormKey,
+                    measurementSystem: _measurementSystem,
+                    ageController: _ageController,
+                    heightCmController: _heightCmController,
+                    weightKgController: _weightKgController,
+                    heightFeetController: _heightFeetController,
+                    heightInchesController: _heightInchesController,
+                    weightLbController: _weightLbController,
                     onSelected: (value) => setState(() => _goal = value),
-                    onHeightChanged: (value) => setState(() => _height = value),
-                    onWeightChanged: (value) => setState(() => _weight = value),
-                    onAgeChanged: (value) => setState(() => _age = value),
+                    onMeasurementSystemChanged: _changeMeasurementSystem,
                   ),
                 ],
               ),
@@ -326,23 +428,29 @@ class _ExperienceStep extends StatelessWidget {
 class _GoalStep extends StatelessWidget {
   const _GoalStep({
     required this.selected,
-    required this.height,
-    required this.weight,
-    required this.age,
+    required this.formKey,
+    required this.measurementSystem,
+    required this.ageController,
+    required this.heightCmController,
+    required this.weightKgController,
+    required this.heightFeetController,
+    required this.heightInchesController,
+    required this.weightLbController,
     required this.onSelected,
-    required this.onHeightChanged,
-    required this.onWeightChanged,
-    required this.onAgeChanged,
+    required this.onMeasurementSystemChanged,
   });
 
   final TrainingGoal selected;
-  final double height;
-  final double weight;
-  final double age;
+  final GlobalKey<FormState> formKey;
+  final BodyMeasurementSystem measurementSystem;
+  final TextEditingController ageController;
+  final TextEditingController heightCmController;
+  final TextEditingController weightKgController;
+  final TextEditingController heightFeetController;
+  final TextEditingController heightInchesController;
+  final TextEditingController weightLbController;
   final ValueChanged<TrainingGoal> onSelected;
-  final ValueChanged<double> onHeightChanged;
-  final ValueChanged<double> onWeightChanged;
-  final ValueChanged<double> onAgeChanged;
+  final ValueChanged<BodyMeasurementSystem> onMeasurementSystemChanged;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -363,43 +471,273 @@ class _GoalStep extends StatelessWidget {
         const SizedBox(height: 8),
       ],
       const SizedBox(height: 18),
-      _SliderCard(
-        label: context.tr.t('ageLabel'),
-        valueLabel: '${age.round()} ${context.tr.t('yearsShort')}',
-        child: Slider(
-          value: age,
-          min: 16,
-          max: 100,
-          divisions: 84,
-          onChanged: onAgeChanged,
-        ),
-      ),
-      const SizedBox(height: 10),
-      _SliderCard(
-        label: context.tr.t('heightLabel'),
-        valueLabel: '${height.round()} cm',
-        child: Slider(
-          value: height,
-          min: 120,
-          max: 230,
-          divisions: 110,
-          onChanged: onHeightChanged,
-        ),
-      ),
-      const SizedBox(height: 10),
-      _SliderCard(
-        label: context.tr.t('weightLabel'),
-        valueLabel: '${weight.toStringAsFixed(1)} kg',
-        child: Slider(
-          value: weight,
-          min: 35,
-          max: 250,
-          divisions: 430,
-          onChanged: onWeightChanged,
+      Form(
+        key: formKey,
+        child: _BodyInputCard(
+          measurementSystem: measurementSystem,
+          ageController: ageController,
+          heightCmController: heightCmController,
+          weightKgController: weightKgController,
+          heightFeetController: heightFeetController,
+          heightInchesController: heightInchesController,
+          weightLbController: weightLbController,
+          onMeasurementSystemChanged: onMeasurementSystemChanged,
         ),
       ),
     ],
   );
+}
+
+class _BodyInputCard extends StatelessWidget {
+  const _BodyInputCard({
+    required this.measurementSystem,
+    required this.ageController,
+    required this.heightCmController,
+    required this.weightKgController,
+    required this.heightFeetController,
+    required this.heightInchesController,
+    required this.weightLbController,
+    required this.onMeasurementSystemChanged,
+  });
+
+  final BodyMeasurementSystem measurementSystem;
+  final TextEditingController ageController;
+  final TextEditingController heightCmController;
+  final TextEditingController weightKgController;
+  final TextEditingController heightFeetController;
+  final TextEditingController heightInchesController;
+  final TextEditingController weightLbController;
+  final ValueChanged<BodyMeasurementSystem> onMeasurementSystemChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: GymRatColors.surface,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: GymRatColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr.t('manualBodyEntryHelp'),
+          style: const TextStyle(
+            color: GymRatColors.textSecondary,
+            fontSize: 11,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: SegmentedButton<BodyMeasurementSystem>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: BodyMeasurementSystem.metric,
+                label: Text(context.tr.t('metricUnits')),
+              ),
+              ButtonSegment(
+                value: BodyMeasurementSystem.imperial,
+                label: Text(context.tr.t('imperialUnits')),
+              ),
+            ],
+            selected: {measurementSystem},
+            onSelectionChanged: (selection) =>
+                onMeasurementSystemChanged(selection.first),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _ManualBodyField(
+          controller: ageController,
+          label: context.tr.t('ageLabel'),
+          suffix: context.tr.t('yearsShort'),
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          validator: (value) =>
+              _validateInteger(context, value, minimum: 16, maximum: 100),
+        ),
+        const SizedBox(height: 12),
+        if (measurementSystem == BodyMeasurementSystem.metric) ...[
+          _ManualBodyField(
+            controller: heightCmController,
+            label: context.tr.t('heightLabel'),
+            suffix: 'cm',
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) =>
+                _validateInteger(context, value, minimum: 120, maximum: 230),
+          ),
+          const SizedBox(height: 12),
+          _ManualBodyField(
+            controller: weightKgController,
+            label: context.tr.t('weightLabel'),
+            suffix: 'kg',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [_decimalFormatter],
+            validator: (value) =>
+                _validateDecimal(context, value, minimum: 35, maximum: 250),
+          ),
+        ] else ...[
+          Text(
+            context.tr.t('heightLabel'),
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _ManualBodyField(
+                  controller: heightFeetController,
+                  label: context.tr.t('feetLabel'),
+                  suffix: 'ft',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) => _validateImperialHeight(
+                    context,
+                    feet: value,
+                    inches: heightInchesController.text,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ManualBodyField(
+                  controller: heightInchesController,
+                  label: context.tr.t('inchesLabel'),
+                  suffix: 'in',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) =>
+                      _validateInteger(context, value, minimum: 0, maximum: 11),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _ManualBodyField(
+            controller: weightLbController,
+            label: context.tr.t('weightLabel'),
+            suffix: 'lb',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [_decimalFormatter],
+            validator: (value) => _validateDecimal(
+              context,
+              value,
+              minimum: WeightUnitStore.fromKilograms(
+                35,
+                unit: WeightUnit.pounds,
+              ),
+              maximum: WeightUnitStore.fromKilograms(
+                250,
+                unit: WeightUnit.pounds,
+              ),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+class _ManualBodyField extends StatelessWidget {
+  const _ManualBodyField({
+    required this.controller,
+    required this.label,
+    required this.suffix,
+    required this.keyboardType,
+    required this.inputFormatters,
+    required this.validator,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String suffix;
+  final TextInputType keyboardType;
+  final List<TextInputFormatter> inputFormatters;
+  final FormFieldValidator<String> validator;
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: controller,
+    keyboardType: keyboardType,
+    inputFormatters: inputFormatters,
+    validator: validator,
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    textInputAction: TextInputAction.next,
+    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+    style: const TextStyle(fontWeight: FontWeight.w800),
+    decoration: InputDecoration(
+      labelText: label,
+      suffixText: suffix,
+      filled: true,
+      fillColor: GymRatColors.surfaceElevated,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+    ),
+  );
+}
+
+final _decimalFormatter = FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]'));
+
+String? _validateInteger(
+  BuildContext context,
+  String? value, {
+  required int minimum,
+  required int maximum,
+}) {
+  final text = value?.trim() ?? '';
+  if (text.isEmpty) return context.tr.t('requiredField');
+  final number = int.tryParse(text);
+  if (number == null || number < minimum || number > maximum) {
+    return context.tr.t('invalidNumber');
+  }
+  return null;
+}
+
+String? _validateDecimal(
+  BuildContext context,
+  String? value, {
+  required double minimum,
+  required double maximum,
+}) {
+  final text = value?.trim() ?? '';
+  if (text.isEmpty) return context.tr.t('requiredField');
+  final number = _parseDecimal(text);
+  if (number == null || number < minimum || number > maximum) {
+    return context.tr.t('invalidNumber');
+  }
+  return null;
+}
+
+String? _validateImperialHeight(
+  BuildContext context, {
+  required String? feet,
+  required String? inches,
+}) {
+  final feetText = feet?.trim() ?? '';
+  final inchesText = inches?.trim() ?? '';
+  if (feetText.isEmpty) return context.tr.t('requiredField');
+  final feetValue = int.tryParse(feetText);
+  final inchesValue = int.tryParse(inchesText);
+  if (feetValue == null || inchesValue == null) return null;
+  final centimeters = BodyMeasurementUnits.centimetersFromFeetAndInches(
+    feetValue,
+    inchesValue,
+  );
+  if (centimeters < 120 || centimeters > 230) {
+    return context.tr.t('invalidNumber');
+  }
+  return null;
+}
+
+double? _parseDecimal(String value) =>
+    double.tryParse(value.trim().replaceAll(',', '.'));
+
+String _displayNumber(double value) {
+  final rounded = value.roundToDouble();
+  return value == rounded ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 }
 
 class _StepTitle extends StatelessWidget {

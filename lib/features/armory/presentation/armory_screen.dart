@@ -8,6 +8,7 @@ import '../../character/presentation/gymrat_character.dart';
 import '../../profile/data/training_profile_store.dart';
 import '../../profile/domain/training_profile.dart';
 import '../../premium/data/premium_access.dart';
+import '../../premium/domain/premium_products.dart';
 import '../../workout/data/workout_session_store.dart';
 import '../data/armory_billing.dart';
 import '../data/rat_inventory_store.dart';
@@ -83,7 +84,9 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
 
   Future<void> _refresh() async {
     final next = _load();
-    setState(() => _data = next);
+    setState(() {
+      _data = next;
+    });
     await next;
   }
 
@@ -107,7 +110,9 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
         content: Text(
           context.tr.t(
             result == ArmoryPurchaseStatus.purchased
-                ? 'armoryPurchaseComplete'
+                ? PremiumProducts.contains(offer.identifier)
+                      ? 'premiumPurchaseComplete'
+                      : 'armoryPurchaseComplete'
                 : 'armoryPurchaseFailed',
           ),
         ),

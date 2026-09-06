@@ -27,8 +27,15 @@ void main() {
     final blink = GymRatCharacter.blinkRect(const Size(320, 600));
     expect(
       GymRatCharacter.frameBlendDuration,
-      const Duration(milliseconds: 160),
+      const Duration(milliseconds: 150),
     );
+    expect(
+      GymRatCharacter.emotePlaybackDuration,
+      const Duration(milliseconds: 1500),
+    );
+    expect(GymRatCharacter.emoteFrameIndex(0, 48), 0);
+    expect(GymRatCharacter.emoteFrameIndex(.5, 48), 23);
+    expect(GymRatCharacter.emoteFrameIndex(1, 48), 47);
     expect(blink.left, greaterThan(0));
     expect(blink.right, lessThan(320));
     expect(blink.top, greaterThan(0));
@@ -70,6 +77,9 @@ void main() {
             expect(emote.frames, hasLength(48));
             expect(emote.frames.first, set.neutral);
             expect(emote.frames.last, set.neutral);
+            expect(emote.frames[1], contains('_entry'));
+            expect(emote.frames[8], contains('_hold'));
+            expect(emote.frames.skip(42), everyElement(set.neutral));
           }
         }
       }
@@ -141,7 +151,8 @@ void main() {
           findsNothing,
         );
         detector.onTap!();
-        await tester.pump(const Duration(milliseconds: 260));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 420));
         final animatedAssets = tester
             .widgetList<Image>(
               find.descendant(of: character, matching: find.byType(Image)),

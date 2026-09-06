@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/app_language_store.dart';
 import '../../../core/localization/gymrat_localizations.dart';
 import '../../../core/theme/gymrat_colors.dart';
+import '../../../core/units/body_measurement_units.dart';
 import '../../../core/units/weight_unit_store.dart';
 import '../data/training_profile_store.dart';
 import '../data/local_data_archive.dart';
@@ -69,6 +70,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final t = context.tr;
+    final measurementSystem = BodyMeasurementUnits.systemFor(
+      WeightUnitStore.current,
+    );
     return Scaffold(
       backgroundColor: GymRatColors.black,
       appBar: AppBar(
@@ -120,8 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _ProfileLine(
                     label: t.t('bodyProfile'),
                     value:
-                        '${profile.heightCm} cm · '
-                        '${profile.weightKg.toStringAsFixed(1)} kg'
+                        '${BodyMeasurementUnits.formatHeight(profile.heightCm, system: measurementSystem)} · '
+                        '${WeightUnitStore.formatKilograms(profile.weightKg)}'
                         '${profile.ageYears == null ? '' : ' · ${profile.ageYears} ${t.t('yearsShort')}'}',
                   ),
                   _ProfileLine(
@@ -220,12 +224,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             builder: (context, unit, _) => SegmentedButton<WeightUnit>(
               showSelectedIcon: false,
               segments: const [
-                ButtonSegment(value: WeightUnit.kilograms, label: Text('KG')),
-                ButtonSegment(value: WeightUnit.pounds, label: Text('LB')),
+                ButtonSegment(
+                  value: WeightUnit.kilograms,
+                  label: Text('CM / KG'),
+                ),
+                ButtonSegment(
+                  value: WeightUnit.pounds,
+                  label: Text('FT / IN / LB'),
+                ),
               ],
               selected: {unit},
-              onSelectionChanged: (selection) =>
-                  WeightUnitStore.setUnit(selection.first),
+              onSelectionChanged: (selection) async {
+                await WeightUnitStore.setUnit(selection.first);
+                if (mounted) setState(() {});
+              },
             ),
           ),
           const SizedBox(height: 28),

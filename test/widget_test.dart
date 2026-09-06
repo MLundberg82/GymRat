@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gymrat/app/gymrat_app.dart';
 import 'package:gymrat/core/localization/app_language_store.dart';
+import 'package:gymrat/core/units/weight_unit_store.dart';
 import 'package:gymrat/features/armory/data/rat_inventory_store.dart';
 import 'package:gymrat/features/profile/data/training_profile_store.dart';
 import 'package:gymrat/features/profile/domain/training_profile.dart';
@@ -10,6 +11,10 @@ import 'package:gymrat/features/workout/domain/workout_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    WeightUnitStore.unit.value = WeightUnit.kilograms;
+  });
+
   testWidgets('first launch creates a persistent training profile', (
     WidgetTester tester,
   ) async {
@@ -18,6 +23,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     SharedPreferences.setMockInitialValues(<String, Object>{});
+    await WeightUnitStore.initialize();
     TrainingProfileStore.profile.value = null;
     AppLanguageStore.locale.value = const Locale('en');
     addTearDown(() => AppLanguageStore.locale.value = null);
@@ -25,7 +31,7 @@ void main() {
     await tester.pumpWidget(const GymRatApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('FORGE YOUR GYMRAT'), findsOneWidget);
+    expect(find.text('BUILD YOUR GYMRAT'), findsOneWidget);
     await tester.tap(find.text('Female'));
     await tester.tap(find.text('CONTINUE'));
     await tester.pumpAndSettle();
@@ -33,7 +39,17 @@ void main() {
     await tester.tap(find.text('CONTINUE'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Build muscle'));
-    await tester.tap(find.text('FORGE MY GYMRAT'));
+    await tester.tap(find.text('CM / KG'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(TextFormField), findsNWidgets(3));
+    await tester.enterText(find.widgetWithText(TextFormField, 'AGE'), '34');
+    await tester.enterText(find.widgetWithText(TextFormField, 'HEIGHT'), '168');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'WEIGHT'),
+      '68.5',
+    );
+    await tester.tap(find.text('BUILD MY GYMRAT'));
     await tester.pumpAndSettle();
 
     expect(find.text('START WORKOUT'), findsOneWidget);
@@ -43,6 +59,44 @@ void main() {
       TrainingExperience.advanced,
     );
     expect(TrainingProfileStore.profile.value?.goal, TrainingGoal.buildMuscle);
+    expect(TrainingProfileStore.profile.value?.ageYears, 34);
+    expect(TrainingProfileStore.profile.value?.heightCm, 168);
+    expect(TrainingProfileStore.profile.value?.weightKg, 68.5);
+  });
+
+  testWidgets('onboarding accepts feet, inches and pounds', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await WeightUnitStore.initialize();
+    TrainingProfileStore.profile.value = null;
+    AppLanguageStore.locale.value = const Locale('en');
+    addTearDown(() => AppLanguageStore.locale.value = null);
+
+    await tester.pumpWidget(const GymRatApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CONTINUE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CONTINUE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('FT / IN / LB'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextFormField), findsNWidgets(4));
+    await tester.enterText(find.widgetWithText(TextFormField, 'FEET'), '5');
+    await tester.enterText(find.widgetWithText(TextFormField, 'INCHES'), '9');
+    await tester.enterText(find.widgetWithText(TextFormField, 'WEIGHT'), '154');
+    await tester.tap(find.text('BUILD MY GYMRAT'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('START WORKOUT'), findsOneWidget);
+    expect(TrainingProfileStore.profile.value?.heightCm, 175);
+    expect(TrainingProfileStore.profile.value?.weightKg, closeTo(69.9, .1));
+    expect(WeightUnitStore.current, WeightUnit.pounds);
   });
 
   testWidgets('GymRat app starts successfully', (WidgetTester tester) async {

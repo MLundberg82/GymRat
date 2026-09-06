@@ -10,8 +10,10 @@ abstract final class WeightUnitStore {
   static final ValueNotifier<WeightUnit> unit = ValueNotifier(
     WeightUnit.kilograms,
   );
+  static bool _hasStoredPreference = false;
 
   static WeightUnit get current => unit.value;
+  static bool get hasStoredPreference => _hasStoredPreference;
   static String get symbol => current == WeightUnit.kilograms ? 'kg' : 'lb';
   static String get symbolUpper => symbol.toUpperCase();
 
@@ -23,11 +25,13 @@ abstract final class WeightUnitStore {
 
   static Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
+    _hasStoredPreference = preferences.containsKey(_key);
     unit.value = fromCode(preferences.getString(_key));
   }
 
   static Future<void> setUnit(WeightUnit value) async {
     unit.value = value;
+    _hasStoredPreference = true;
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_key, codeFor(value));
   }

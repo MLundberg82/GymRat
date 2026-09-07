@@ -30,6 +30,8 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--identity", choices=IDENTITIES, required=True)
     parser.add_argument("--render-preview", type=Path)
+    parser.add_argument("--motion")
+    parser.add_argument("--view", choices=("front", "back"), default="front")
     parser.add_argument("--frame", type=int, default=1)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
@@ -161,6 +163,7 @@ def _sphere(
     bone: str,
     *,
     segments: int = 32,
+    bind: bool = True,
 ) -> bpy.types.Object:
     bpy.ops.mesh.primitive_uv_sphere_add(
         segments=segments,
@@ -177,7 +180,7 @@ def _sphere(
     if material.name.startswith("MAT_MASTER_PROJECTED"):
         _project_master_uv(obj)
     _move_to_collection(obj, collection)
-    return _bind(obj, rig, bone)
+    return _bind(obj, rig, bone) if bind else obj
 
 
 def _capsule_on_bone(
@@ -190,6 +193,7 @@ def _capsule_on_bone(
     collection: bpy.types.Collection,
     *,
     inset: float = 0.08,
+    bind: bool = True,
 ) -> bpy.types.Object:
     bone = rig.data.bones[bone_name]
     head = Vector(bone.head_local)
@@ -206,6 +210,7 @@ def _capsule_on_bone(
         rig,
         bone_name,
         segments=24,
+        bind=bind,
     )
     obj.rotation_mode = "QUATERNION"
     obj.rotation_quaternion = direction.to_track_quat("Z", "Y")
@@ -214,6 +219,52 @@ def _capsule_on_bone(
     if material.name.startswith("MAT_MASTER_PROJECTED"):
         _project_master_uv(obj)
     return obj
+
+
+def _join_and_skin_body(
+    parts: list[bpy.types.Object],
+    rig: bpy.types.Object,
+    material: bpy.types.Material,
+) -> bpy.types.Object:
+    if not parts:
+        raise RuntimeError("Body pilot has no mesh parts")
+    bpy.ops.object.select_all(action="DESELECT")
+    for part in parts:
+        part.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    body = bpy.context.object
+    body.name = "BODY_SKIN"
+
+    remesh = body.modifiers.new(name="Organic body union", type="REMESH")
+    remesh.mode = "VOXEL"
+    remesh.voxel_size = 0.055
+    remesh.use_smooth_shade = True
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.modifier_apply(modifier=remesh.name)
+    smooth = body.modifiers.new(name="Surface smoothing", type="SMOOTH")
+    smooth.factor = 0.42
+    smooth.iterations = 3
+    bpy.ops.object.modifier_apply(modifier=smooth.name)
+
+    body.data.materials.clear()
+    body.data.materials.append(material)
+    _project_master_uv(body)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    body.select_set(True)
+    rig.select_set(True)
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+    armature_modifiers = [
+        modifier for modifier in body.modifiers if modifier.type == "ARMATURE"
+    ]
+    if not armature_modifiers:
+        raise RuntimeError("Automatic body skinning did not create an armature modifier")
+    armature_modifiers[0].use_deform_preserve_volume = True
+    body["gymrat_level"] = 1
+    body["gymrat_skinning"] = "automatic_heat"
+    return body
 
 
 def _curve_tail(
@@ -279,75 +330,161 @@ def _build(identity: str, rig: bpy.types.Object) -> None:
         },
     }[identity]
 
-    fur = _material("MAT_FUR", fur_colors[identity], noise_bump=True)
-    muzzle = _material("MAT_MUZZLE", (0.33, 0.22, 0.17, 1.0), noise_bump=True)
     skin = _material("MAT_SKIN", (0.73, 0.28, 0.22, 1.0), roughness=0.48)
-    cloth = _material("MAT_CLOTH", (0.012, 0.015, 0.014, 1.0), roughness=0.82)
     accent = _material("MAT_ACCENT", (0.18, 0.82, 0.30, 1.0), roughness=0.42)
-    eye = _material("MAT_EYE", (0.055, 0.022, 0.009, 1.0), roughness=0.2)
-    iris = _material("MAT_IRIS", (0.72, 0.30, 0.035, 1.0), roughness=0.28)
     master = _master_material("MAT_MASTER_PROJECTED_BODY", fur_colors[identity])
     master_cloth = _master_material(
         "MAT_MASTER_PROJECTED_CLOTH", (0.012, 0.015, 0.014, 1.0)
     )
 
-    _sphere("BODY_CHEST", (0, 0, 4.92), proportions["chest"], master, model, rig, "chest")
-    _sphere("BODY_WAIST", (0, 0, 4.02), proportions["waist"], master, model, rig, "spine_02")
-    _sphere("BODY_HIPS", (0, 0, 3.25), proportions["hips"], master, model, rig, "pelvis")
-    _sphere("BODY_NECK", (0, 0, 5.72), (0.46, 0.43, 0.53), master, model, rig, "neck")
-    _sphere("BODY_HEAD", (0, 0, 6.47), proportions["head"], master, model, rig, "head")
-    _sphere("BODY_MUZZLE", (0, -0.53, 6.26), (0.47, 0.37, 0.30), master, model, rig, "head")
-    _sphere("BODY_NOSE", (0, -0.82, 6.30), (0.18, 0.14, 0.13), skin, model, rig, "head", segments=20)
-
-    for side, sign in (("L", 1.0), ("R", -1.0)):
+    body_parts = [
         _sphere(
-            f"BODY_EAR_{side}",
-            (0.49 * sign, 0.02, 6.96),
-            (0.36, 0.11, 0.47),
+            "BODY_CHEST",
+            (0, 0, 4.92),
+            proportions["chest"],
             master,
             model,
             rig,
-            f"ear.{side}",
+            "chest",
+            bind=False,
+        ),
+        _sphere(
+            "BODY_WAIST",
+            (0, 0, 4.02),
+            proportions["waist"],
+            master,
+            model,
+            rig,
+            "spine_02",
+            bind=False,
+        ),
+        _sphere(
+            "BODY_HIPS",
+            (0, 0, 3.25),
+            proportions["hips"],
+            master,
+            model,
+            rig,
+            "pelvis",
+            bind=False,
+        ),
+        _sphere(
+            "BODY_NECK",
+            (0, -0.01, 5.72),
+            (0.46, 0.43, 0.53),
+            master,
+            model,
+            rig,
+            "neck",
+            bind=False,
+        ),
+        _sphere(
+            "BODY_HEAD",
+            (0, -0.02, 6.47),
+            proportions["head"],
+            master,
+            model,
+            rig,
+            "head",
+            bind=False,
+        ),
+        _sphere(
+            "BODY_MUZZLE",
+            (0, -0.50, 6.28),
+            (0.43, 0.34, 0.28),
+            master,
+            model,
+            rig,
+            "head",
             segments=24,
+            bind=False,
+        ),
+    ]
+
+    for side, sign in (("L", 1.0), ("R", -1.0)):
+        body_parts.append(
+            _sphere(
+                f"BODY_EAR_{side}",
+                (0.49 * sign, 0.0, 6.93),
+                (0.34, 0.16, 0.43),
+                master,
+                model,
+                rig,
+                f"ear.{side}",
+                segments=24,
+                bind=False,
+            )
         )
-        _sphere(
-            f"BODY_EYE_{side}",
-            (0.25 * sign, -0.57, 6.51),
-            (0.115, 0.075, 0.13),
-            eye,
-            model,
-            rig,
-            "head",
-            segments=20,
-        )
-        _sphere(
-            f"BODY_IRIS_{side}",
-            (0.25 * sign, -0.638, 6.51),
-            (0.05, 0.027, 0.064),
-            iris,
-            model,
-            rig,
-            "head",
-            segments=16,
-        )
-        _capsule_on_bone(
-            f"BODY_UPPER_ARM_{side}", rig, f"upper_arm.{side}", proportions["arm"] * 1.08, 0.86, master, model
-        )
-        _capsule_on_bone(
-            f"BODY_FOREARM_{side}", rig, f"forearm.{side}", proportions["arm"], 0.82, master, model
-        )
-        _capsule_on_bone(
-            f"BODY_HAND_{side}", rig, f"hand.{side}", proportions["arm"] * 0.80, 0.78, master, model, inset=-0.04
-        )
-        _capsule_on_bone(
-            f"BODY_THIGH_{side}", rig, f"thigh.{side}", proportions["leg"] * 1.08, 0.91, master, model
-        )
-        _capsule_on_bone(
-            f"BODY_SHIN_{side}", rig, f"shin.{side}", proportions["leg"] * 0.82, 0.88, master, model
-        )
-        _capsule_on_bone(
-            f"BODY_FOOT_{side}", rig, f"foot.{side}", proportions["leg"] * 0.72, 0.92, master, model, inset=-0.10
-        )
+        for part_name, bone_name, radius, depth, inset in (
+            (
+                "UPPER_ARM",
+                f"upper_arm.{side}",
+                proportions["arm"] * 1.08,
+                0.86,
+                0.08,
+            ),
+            ("FOREARM", f"forearm.{side}", proportions["arm"], 0.82, 0.08),
+            (
+                "HAND",
+                f"hand.{side}",
+                proportions["arm"] * 0.80,
+                0.78,
+                -0.04,
+            ),
+            (
+                "THIGH",
+                f"thigh.{side}",
+                proportions["leg"] * 1.08,
+                0.91,
+                0.08,
+            ),
+            ("SHIN", f"shin.{side}", proportions["leg"] * 0.82, 0.88, 0.08),
+            (
+                "FOOT",
+                f"foot.{side}",
+                proportions["leg"] * 0.72,
+                0.92,
+                -0.10,
+            ),
+        ):
+            body_parts.append(
+                _capsule_on_bone(
+                    f"BODY_{part_name}_{side}",
+                    rig,
+                    bone_name,
+                    radius,
+                    depth,
+                    master,
+                    model,
+                    inset=inset,
+                    bind=False,
+                )
+            )
+
+        # Distal-bone joint shells keep silhouettes closed while the rigidly
+        # weighted pilot bends. A production sculpt can later replace them
+        # without changing the motion contract or bone names.
+        for joint_name, bone_name, radius in (
+            ("SHOULDER", f"upper_arm.{side}", proportions["arm"] * 1.02),
+            ("ELBOW", f"forearm.{side}", proportions["arm"] * 0.84),
+            ("WRIST", f"hand.{side}", proportions["arm"] * 0.66),
+            ("KNEE", f"shin.{side}", proportions["leg"] * 0.78),
+            ("ANKLE", f"foot.{side}", proportions["leg"] * 0.58),
+        ):
+            bone = rig.data.bones[bone_name]
+            body_parts.append(
+                _sphere(
+                    f"BODY_{joint_name}_{side}",
+                    tuple(bone.head_local),
+                    (radius, radius * 0.88, radius),
+                    master,
+                    model,
+                    rig,
+                    bone_name,
+                    segments=20,
+                    bind=False,
+                )
+            )
 
         # Shorts are complete model geometry, not runtime overlays.
         _sphere(
@@ -370,15 +507,33 @@ def _build(identity: str, rig: bpy.types.Object) -> None:
         _sphere("CLOTH_HIGH_TOP", (0, -0.18, 5.02), (0.92, 0.49, 0.78), master_cloth, model, rig, "chest")
         _sphere("CLOTH_TOP_ACCENT", (0.73, -0.49, 4.90), (0.045, 0.025, 0.44), accent, model, rig, "chest", segments=16)
 
+    _join_and_skin_body(body_parts, rig, master)
     _curve_tail(rig, model, skin)
     model["gymrat_model_status"] = "level_1_proportion_pilot"
     model["gymrat_identity"] = identity
     bpy.context.scene["gymrat_model_review_required"] = True
 
 
-def _configure_preview(path: Path, frame: int) -> None:
+def _configure_preview(
+    path: Path,
+    frame: int,
+    *,
+    rig: bpy.types.Object,
+    motion: str | None,
+    view: str,
+) -> None:
     scene = bpy.context.scene
-    scene.camera = bpy.data.objects["CAM_FRONT"]
+    camera_name = "CAM_FRONT" if view == "front" else "CAM_BACK"
+    scene.camera = bpy.data.objects[camera_name]
+    if motion is not None:
+        action_name = f"ACT_{view}_{motion}"
+        action = bpy.data.actions.get(action_name)
+        if action is None:
+            action = bpy.data.actions.get(f"ACT_{motion}")
+        if action is None:
+            raise RuntimeError(f"Preview action {action_name} is missing")
+        rig.animation_data_create()
+        rig.animation_data.action = action
     scene.render.engine = "BLENDER_EEVEE"
     scene.render.resolution_percentage = 50
     scene.render.image_settings.file_format = "PNG"
@@ -422,7 +577,13 @@ def main() -> None:
     bpy.context.scene.frame_set(1)
     _build(args.identity, rig)
     if args.render_preview is not None:
-        _configure_preview(args.render_preview.resolve(), args.frame)
+        _configure_preview(
+            args.render_preview.resolve(),
+            args.frame,
+            rig=rig,
+            motion=args.motion,
+            view=args.view,
+        )
         bpy.ops.render.render(write_still=True)
     if args.dry_run:
         print(f"Built {args.identity} level-1 model pilot without saving")

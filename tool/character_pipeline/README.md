@@ -104,6 +104,10 @@ proportion model and projects only the approved front/back master textures onto
 it. It marks the scene as requiring visual approval, so strict render-ready
 validation continues to fail until form, joints, hands, feet, clothing, and
 materials have passed review. The tool never writes runtime assets directly.
+Use `--motion double_biceps --view front --frame 24 --render-preview <path>`
+with `--dry-run` to render a repeatable pose checkpoint without modifying the
+source scene. The pilot unifies the body surface and uses automatic heat
+skinning so bends can be evaluated without gaps between rigid body sections.
 
 Approved direction references are recorded in the external source directory's
 `approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds

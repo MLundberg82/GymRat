@@ -195,7 +195,7 @@ class _LockedNutritionBody extends StatelessWidget {
   );
 }
 
-class _PremiumNutritionBody extends StatelessWidget {
+class _PremiumNutritionBody extends StatefulWidget {
   const _PremiumNutritionBody({
     required this.profile,
     required this.entries,
@@ -209,11 +209,19 @@ class _PremiumNutritionBody extends StatelessWidget {
   final VoidCallback onScan;
 
   @override
+  State<_PremiumNutritionBody> createState() => _PremiumNutritionBodyState();
+}
+
+class _PremiumNutritionBodyState extends State<_PremiumNutritionBody> {
+  NutritionHistoryPeriod _historyPeriod = NutritionHistoryPeriod.week;
+
+  @override
   Widget build(BuildContext context) {
-    if (profile == null ||
-        profile!.ageYears == null ||
-        profile!.ageYears! < 18) {
-      final adultOnly = profile?.ageYears != null && profile!.ageYears! < 18;
+    if (widget.profile == null ||
+        widget.profile!.ageYears == null ||
+        widget.profile!.ageYears! < 18) {
+      final adultOnly =
+          widget.profile?.ageYears != null && widget.profile!.ageYears! < 18;
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
         children: [
@@ -225,15 +233,15 @@ class _PremiumNutritionBody extends StatelessWidget {
               await Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
-              await onReload();
+              await widget.onReload();
             },
           ),
         ],
       );
     }
-    final target = NutritionCalculator.targetsFor(profile!)!;
+    final target = NutritionCalculator.targetsFor(widget.profile!)!;
     return FutureBuilder<List<NutritionEntry>>(
-      future: entries,
+      future: widget.entries,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(
@@ -247,7 +255,7 @@ class _PremiumNutritionBody extends StatelessWidget {
             .toList(growable: false);
         final totals = NutritionTotals.fromEntries(todayEntries);
         return RefreshIndicator(
-          onRefresh: onReload,
+          onRefresh: widget.onReload,
           color: GymRatColors.green,
           backgroundColor: GymRatColors.surfaceElevated,
           child: ListView(
@@ -263,7 +271,7 @@ class _PremiumNutritionBody extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: onScan,
+                  onPressed: widget.onScan,
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                   label: Text(
                     context.tr.t('scanBarcode'),
@@ -289,11 +297,20 @@ class _PremiumNutritionBody extends StatelessWidget {
               _MealPlanCard(suggestions: NutritionMealPlanner.planFor(target)),
               const SizedBox(height: 22),
               _SectionTitle(
-                title: context.tr.t('sevenDayNutrition'),
+                title: context.tr.t('nutritionHistory'),
                 subtitle: context.tr.t('nutritionHistoryHelp'),
               ),
               const SizedBox(height: 10),
-              _SevenDayChart(entries: allEntries, target: target),
+              _NutritionPeriodSelector(
+                selected: _historyPeriod,
+                onChanged: (period) => setState(() => _historyPeriod = period),
+              ),
+              const SizedBox(height: 10),
+              _NutritionHistoryChart(
+                entries: allEntries,
+                target: target,
+                period: _historyPeriod,
+              ),
               const SizedBox(height: 22),
               _SectionTitle(
                 title: context.tr.t('todaysMeals'),
@@ -304,7 +321,7 @@ class _PremiumNutritionBody extends StatelessWidget {
                 const _EmptyMeals()
               else
                 for (final entry in todayEntries)
-                  _MealCard(entry: entry, onReload: onReload),
+                  _MealCard(entry: entry, onReload: widget.onReload),
               const SizedBox(height: 18),
               const _NutritionSafetyNote(),
             ],
@@ -786,85 +803,140 @@ class _MealPlanRow extends StatelessWidget {
   );
 }
 
-class _SevenDayChart extends StatelessWidget {
-  const _SevenDayChart({required this.entries, required this.target});
+class _NutritionPeriodSelector extends StatelessWidget {
+  const _NutritionPeriodSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final NutritionHistoryPeriod selected;
+  final ValueChanged<NutritionHistoryPeriod> onChanged;
+
+  @override
+  Widget build(BuildContext context) => SegmentedButton<NutritionHistoryPeriod>(
+    showSelectedIcon: false,
+    segments: [
+      for (final period in NutritionHistoryPeriod.values)
+        ButtonSegment(
+          value: period,
+          label: Text(
+            context.tr.t(
+              'nutritionPeriod${period.name[0].toUpperCase()}${period.name.substring(1)}',
+            ),
+          ),
+        ),
+    ],
+    selected: {selected},
+    onSelectionChanged: (value) => onChanged(value.first),
+    style: const ButtonStyle(visualDensity: VisualDensity.compact),
+  );
+}
+
+class _NutritionHistoryChart extends StatelessWidget {
+  const _NutritionHistoryChart({
+    required this.entries,
+    required this.target,
+    required this.period,
+  });
 
   final List<NutritionEntry> entries;
   final NutritionTargets target;
+  final NutritionHistoryPeriod period;
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
-    final days = List.generate(
-      7,
-      (index) => DateTime(today.year, today.month, today.day - 6 + index),
+    final now = DateTime.now();
+    final buckets = NutritionHistory.buckets(
+      entries: entries,
+      period: period,
+      now: now,
+      dailyCalorieTarget: target.calories,
+    );
+    final periodTotals = NutritionTotals.fromEntries(
+      NutritionHistory.entriesFor(entries: entries, period: period, now: now),
     );
     return Container(
-      height: 176,
+      height: 208,
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
       decoration: BoxDecoration(
         color: GymRatColors.surface,
         borderRadius: BorderRadius.circular(21),
         border: Border.all(color: GymRatColors.border),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final day in days)
-            Expanded(
-              child: _DayBar(
-                day: day,
-                calories: NutritionTotals.fromEntries(
-                  entries.where(
-                    (entry) => NutritionCalculator.sameDay(entry.loggedAt, day),
-                  ),
-                ).calories,
-                target: target.calories,
-                today: NutritionCalculator.sameDay(day, today),
-              ),
+          Text(
+            '${periodTotals.calories} kcal · '
+            '${periodTotals.proteinGrams.round()} g '
+            '${context.tr.t('protein').toLowerCase()}',
+            style: const TextStyle(
+              color: GymRatColors.textPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
             ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final bucket in buckets)
+                  Expanded(
+                    child: _HistoryBar(
+                      label: bucket.label,
+                      calories: bucket.totals.calories,
+                      target: bucket.targetCalories,
+                      highlighted:
+                          !now.isBefore(bucket.start) &&
+                          now.isBefore(bucket.end),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _DayBar extends StatelessWidget {
-  const _DayBar({
-    required this.day,
+class _HistoryBar extends StatelessWidget {
+  const _HistoryBar({
+    required this.label,
     required this.calories,
     required this.target,
-    required this.today,
+    required this.highlighted,
   });
 
-  final DateTime day;
+  final String label;
   final int calories;
   final int target;
-  final bool today;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final ratio = target == 0 ? 0.0 : (calories / target).clamp(0.0, 1.15);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Text(
             calories == 0 ? '—' : '$calories',
             style: TextStyle(
-              color: today ? GymRatColors.green : GymRatColors.textMuted,
-              fontSize: 8,
+              color: highlighted ? GymRatColors.green : GymRatColors.textMuted,
+              fontSize: 7,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 5),
           Container(
-            height: math.max(5, 105 * ratio),
+            height: math.max(5, 96 * ratio),
             decoration: BoxDecoration(
-              color: today ? GymRatColors.green : GymRatColors.goldDark,
+              color: highlighted ? GymRatColors.green : GymRatColors.goldDark,
               borderRadius: BorderRadius.circular(7),
-              boxShadow: today
+              boxShadow: highlighted
                   ? [
                       BoxShadow(
                         color: GymRatColors.green.withValues(alpha: .22),
@@ -876,10 +948,12 @@ class _DayBar extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           Text(
-            '${day.day}',
+            label,
             style: TextStyle(
-              color: today ? GymRatColors.textPrimary : GymRatColors.textMuted,
-              fontSize: 9,
+              color: highlighted
+                  ? GymRatColors.textPrimary
+                  : GymRatColors.textMuted,
+              fontSize: 8,
               fontWeight: FontWeight.w900,
             ),
           ),

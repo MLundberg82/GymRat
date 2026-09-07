@@ -190,6 +190,28 @@ void main() {
     );
   });
 
+  test(
+    'Armory roadmap sells only complete looks with aspirational pricing',
+    () {
+      final looks = RatItemCatalog.featuredItems;
+
+      expect(looks, hasLength(5));
+      expect(looks.every((item) => item.slot == RatItemSlot.look), isTrue);
+      expect(looks.every((item) => item.appearanceId != null), isTrue);
+      expect(looks.map((item) => item.priceCredits), <int?>[
+        250,
+        750,
+        1600,
+        3200,
+        6000,
+      ]);
+      expect(
+        looks.every((item) => !RatAppearanceCatalog.isReady(item.appearanceId)),
+        isTrue,
+      );
+    },
+  );
+
   test('base appearance has the complete identity and view matrix', () {
     expect(RatAppearanceCatalog.base.isComplete, isTrue);
     for (final gender in RatGender.values) {

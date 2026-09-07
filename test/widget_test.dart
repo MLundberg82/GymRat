@@ -190,16 +190,13 @@ void main() {
     expect(find.text('0 / 49'), findsOneWidget);
     expect(find.text('RAT APPEARANCE'), findsOneWidget);
 
-    final collectionList = find.byType(ListView).first;
-    for (var step = 0; step < 3; step++) {
-      await tester.drag(collectionList, const Offset(0, -500));
-      await tester.pump();
-    }
-    await tester.tap(find.text('FOUNDER TRAINING TEE'));
+    await tester.ensureVisible(find.text('STREET ROOKIE LOOK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('STREET ROOKIE LOOK'));
     await tester.pump();
 
     expect(find.text('ITEM CONCEPT'), findsOneWidget);
-    expect(find.textContaining('never be placed over the rat'), findsOneWidget);
+    expect(find.textContaining('target price is reserved'), findsOneWidget);
     expect(find.text('EQUIP'), findsNothing);
 
     await tester.tap(find.text('STORE'));

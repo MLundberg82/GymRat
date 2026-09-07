@@ -140,6 +140,26 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
     if (restored) await _refresh();
   }
 
+  Future<void> _useArmoryCredits(RatItem item, int level) async {
+    final result = await RatInventoryStore.purchase(item, level: level);
+    if (!mounted) return;
+    final messageKey = switch (result) {
+      RatItemPurchaseResult.purchased => 'armoryCreditPurchaseComplete',
+      RatItemPurchaseResult.insufficientCredits => 'notEnoughCredits',
+      RatItemPurchaseResult.alreadyOwned => 'armoryAlreadyOwned',
+      RatItemPurchaseResult.appearanceUnavailable =>
+        'appearancePurchaseBlocked',
+    };
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(context.tr.t(messageKey))));
+    if (result == RatItemPurchaseResult.purchased) await _refresh();
+  }
+
+  Future<void> _equipLook(String appearanceId, int level) async {
+    await RatInventoryStore.equipAppearance(appearanceId, level: level);
+    if (mounted) await _refresh();
+  }
+
   @override
   Widget build(BuildContext context) => DefaultTabController(
     length: 2,
@@ -192,6 +212,8 @@ class _ArmoryScreenState extends State<ArmoryScreen> {
                 player: data.player,
                 inventory: data.inventory,
                 onRefresh: _refresh,
+                onPurchaseLook: _useArmoryCredits,
+                onEquipLook: _equipLook,
               ),
               _StoreTab(
                 store: data.store,
@@ -213,11 +235,15 @@ class _CollectionTab extends StatelessWidget {
     required this.player,
     required this.inventory,
     required this.onRefresh,
+    required this.onPurchaseLook,
+    required this.onEquipLook,
   });
 
   final PlayerProgress player;
   final RatInventoryState inventory;
   final Future<void> Function() onRefresh;
+  final Future<void> Function(RatItem item, int level) onPurchaseLook;
+  final Future<void> Function(String appearanceId, int level) onEquipLook;
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +275,8 @@ class _CollectionTab extends StatelessWidget {
             gender:
                 TrainingProfileStore.profile.value?.gender ??
                 RatGender.nonBinary,
+            onPurchaseLook: onPurchaseLook,
+            onEquipLook: onEquipLook,
           ),
           const SizedBox(height: 20),
           Text(
@@ -481,11 +509,15 @@ class _RatAppearanceSection extends StatefulWidget {
     required this.level,
     required this.inventory,
     required this.gender,
+    required this.onPurchaseLook,
+    required this.onEquipLook,
   });
 
   final int level;
   final RatInventoryState inventory;
   final RatGender gender;
+  final Future<void> Function(RatItem item, int level) onPurchaseLook;
+  final Future<void> Function(String appearanceId, int level) onEquipLook;
 
   @override
   State<_RatAppearanceSection> createState() => _RatAppearanceSectionState();
@@ -624,12 +656,26 @@ class _RatAppearanceSectionState extends State<_RatAppearanceSection> {
           const SizedBox(height: 10),
         ],
         for (final item in RatItemCatalog.featuredItems) ...[
-          _RatItemCard(
-            item: item,
-            level: widget.level,
-            owned: widget.inventory.owns(item, widget.level),
-            selected: previewItem?.id == item.id,
-            onPreview: () => setState(() => previewItem = item),
+          Builder(
+            builder: (context) {
+              final ready = RatAppearanceCatalog.isReady(item.appearanceId);
+              final owned = widget.inventory.owns(item, widget.level);
+              final equipped =
+                  widget.inventory.equippedAppearanceId == item.appearanceId;
+              return _RatItemCard(
+                item: item,
+                level: widget.level,
+                owned: owned,
+                selected: previewItem?.id == item.id,
+                equipped: equipped,
+                onPreview: () => setState(() => previewItem = item),
+                onAction: !ready || equipped
+                    ? null
+                    : owned
+                    ? () => widget.onEquipLook(item.appearanceId!, widget.level)
+                    : () => widget.onPurchaseLook(item, widget.level),
+              );
+            },
           ),
           const SizedBox(height: 8),
         ],
@@ -761,14 +807,18 @@ class _RatItemCard extends StatelessWidget {
     required this.level,
     required this.owned,
     required this.selected,
+    required this.equipped,
     required this.onPreview,
+    required this.onAction,
   });
 
   final RatItem item;
   final int level;
   final bool owned;
   final bool selected;
+  final bool equipped;
   final VoidCallback onPreview;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -826,7 +876,7 @@ class _RatItemCard extends StatelessWidget {
                 Text(
                   item.unlockLevel != null
                       ? '${context.tr.t('level')} ${item.unlockLevel}'
-                      : context.tr.t('appearanceInForge'),
+                      : '${item.priceCredits ?? 0} ${context.tr.t('armoryCredits')}',
                   style: const TextStyle(
                     color: GymRatColors.textMuted,
                     fontSize: 9,
@@ -836,23 +886,40 @@ class _RatItemCard extends StatelessWidget {
               ],
             ),
           ),
-          if (owned)
-            Text(
-              context.tr.t('armoryOwned'),
-              style: const TextStyle(
-                color: GymRatColors.gold,
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
+          if (equipped)
+            Text(context.tr.t('equipped'))
+          else if (owned)
+            TextButton(onPressed: onAction, child: Text(context.tr.t('equip')))
+          else if (onAction != null)
+            FilledButton(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                backgroundColor: GymRatColors.gold,
+                foregroundColor: GymRatColors.black,
               ),
+              child: Text('${item.priceCredits ?? 0}'),
             )
           else if (item.unlockLevel == null)
-            Text(
-              context.tr.t('appearanceInForge'),
-              style: const TextStyle(
-                color: GymRatColors.textMuted,
-                fontSize: 8,
-                fontWeight: FontWeight.w900,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${item.priceCredits ?? 0}',
+                  style: const TextStyle(
+                    color: GymRatColors.gold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  context.tr.t('appearanceInForge'),
+                  style: const TextStyle(
+                    color: GymRatColors.textMuted,
+                    fontSize: 7,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             )
           else
             const Icon(Icons.lock_rounded, color: GymRatColors.textMuted),
@@ -871,6 +938,7 @@ IconData _ratItemIcon(RatItemSlot slot) => switch (slot) {
   RatItemSlot.belt => Icons.shield_rounded,
   RatItemSlot.collectible => Icons.military_tech_rounded,
   RatItemSlot.aura => Icons.auto_awesome_rounded,
+  RatItemSlot.look => Icons.checkroom_rounded,
 };
 
 class _StoreTab extends StatelessWidget {

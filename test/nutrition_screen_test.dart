@@ -48,6 +48,15 @@ void main() {
     expect(find.text('DAILY ENERGY TARGET'), findsOneWidget);
     expect(find.text('SCAN BARCODE'), findsOneWidget);
     expect(find.text('TODAY’S 5-MEAL BLUEPRINT'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('NUTRITION HISTORY'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('DAY'), findsOneWidget);
+    expect(find.text('WEEK'), findsOneWidget);
+    expect(find.text('MONTH'), findsOneWidget);
+    expect(find.text('YEAR'), findsOneWidget);
     await tester.tap(find.text('LOG MEAL'));
     await tester.pumpAndSettle();
 

@@ -6,7 +6,6 @@ import '../domain/nutrition_models.dart';
 
 abstract final class NutritionStore {
   static const _entriesKey = 'gymrat-nutrition-entries-v1';
-  static const _maximumEntries = 5000;
 
   static Future<List<NutritionEntry>> load() async {
     final preferences = await SharedPreferences.getInstance();
@@ -51,7 +50,9 @@ abstract final class NutritionStore {
       fatGrams: fatGrams.clamp(0, 1000),
     );
     final entries = <NutritionEntry>[entry, ...await load()];
-    await _save(entries.take(_maximumEntries));
+    // Nutrition history is deliberately continuous. Do not silently trim old
+    // entries: Premium users must be able to inspect monthly and yearly data.
+    await _save(entries);
     return entry;
   }
 

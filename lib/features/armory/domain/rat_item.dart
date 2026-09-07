@@ -1,4 +1,14 @@
-enum RatItemSlot { head, neck, top, bottom, feet, belt, collectible, aura }
+enum RatItemSlot {
+  head,
+  neck,
+  top,
+  bottom,
+  feet,
+  belt,
+  collectible,
+  aura,
+  look,
+}
 
 class RatItem {
   const RatItem({
@@ -44,7 +54,7 @@ abstract final class RatItemCatalog {
     ),
   );
 
-  static const featuredItems = <RatItem>[
+  static const legacyItems = <RatItem>[
     RatItem(
       id: 'rookie_headband',
       nameKey: 'itemRookieHeadband',
@@ -167,8 +177,51 @@ abstract final class RatItemCatalog {
     ),
   ];
 
+  /// Complete-look roadmap. Prices intentionally form a long-term progression
+  /// curve. A look remains a non-purchasable concept until its appearance ID
+  /// has the full identity, view, evolution and motion matrix approved by
+  /// [RatAppearanceCatalog].
+  static const featuredItems = <RatItem>[
+    RatItem(
+      id: 'street_rookie_look',
+      nameKey: 'lookStreetRookie',
+      slot: RatItemSlot.look,
+      priceCredits: 250,
+      appearanceId: 'street_rookie',
+    ),
+    RatItem(
+      id: 'dojo_ninja_look',
+      nameKey: 'lookDojoNinja',
+      slot: RatItemSlot.look,
+      priceCredits: 750,
+      appearanceId: 'dojo_ninja',
+    ),
+    RatItem(
+      id: 'gym_bro_look',
+      nameKey: 'lookGymBro',
+      slot: RatItemSlot.look,
+      priceCredits: 1600,
+      appearanceId: 'gym_bro',
+    ),
+    RatItem(
+      id: 'gym_girl_look',
+      nameKey: 'lookGymGirl',
+      slot: RatItemSlot.look,
+      priceCredits: 3200,
+      appearanceId: 'gym_girl',
+    ),
+    RatItem(
+      id: 'neon_shogun_look',
+      nameKey: 'lookNeonShogun',
+      slot: RatItemSlot.look,
+      priceCredits: 6000,
+      appearanceId: 'neon_shogun',
+    ),
+  ];
+
   static final items = List<RatItem>.unmodifiable([
     ...rankRewards,
+    ...legacyItems,
     ...featuredItems,
   ]);
 

@@ -85,8 +85,8 @@ class _PremiumPaywallSheet extends StatelessWidget {
           const SizedBox(height: 20),
           _PaywallBenefit(
             icon: Icons.bolt_rounded,
-            title: context.tr.t('premiumXpBoost'),
-            detail: context.tr.t('premiumXpBoostHelp'),
+            title: context.tr.t('premiumXpBoostHelp'),
+            detail: '',
           ),
           _PaywallBenefit(
             icon: Icons.restaurant_menu_rounded,
@@ -102,6 +102,11 @@ class _PremiumPaywallSheet extends StatelessWidget {
             icon: Icons.psychology_rounded,
             title: context.tr.t('premiumCoach'),
             detail: context.tr.t('premiumBenefitCoach'),
+          ),
+          _PaywallBenefit(
+            icon: Icons.route_rounded,
+            title: context.tr.t('adaptivePlanReady'),
+            detail: context.tr.t('premiumBenefitCampaign'),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -189,15 +194,17 @@ class _PaywallBenefit extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                detail,
-                style: const TextStyle(
-                  color: GymRatColors.textSecondary,
-                  fontSize: 10,
-                  height: 1.35,
+              if (detail.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  detail,
+                  style: const TextStyle(
+                    color: GymRatColors.textSecondary,
+                    fontSize: 10,
+                    height: 1.35,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

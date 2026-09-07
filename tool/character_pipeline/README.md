@@ -88,6 +88,12 @@ selection is random without immediate repetition and never adds a synthetic
 body transform. Anatomical pose definitions and frame checkpoints live in
 `docs/CHARACTER_EMOTE_POSE_CONTRACT.md`.
 
+`author_double_biceps_pilot.py` authors the approved 48-frame front-view
+double-biceps timing on one identity rig using auto-clamped Bezier curves and a
+fixed root. It deliberately does not render or register sprites until the
+external scene contains a bound authored character mesh and the render passes
+the normal approval gate.
+
 Approved direction references are recorded in the external source directory's
 `approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds
 them as locked, non-rendering Blender references. A direction approval does not

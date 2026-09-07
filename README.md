@@ -39,7 +39,8 @@ real workouts, streaks, PB improvements, and evolution.
 
 Premium also adds a 10% post-workout XP boost, deeper history/results, and a
 Nutrition command center with profile-based starting targets, manual macro
-logging, and seven-day intake history. Purchases use store-localized RevenueCat
+logging, and continuous day/week/month/year history. Purchases use
+store-localized RevenueCat
 packages; debug and explicitly configured owner builds can unlock Premium
 locally for device testing.
 

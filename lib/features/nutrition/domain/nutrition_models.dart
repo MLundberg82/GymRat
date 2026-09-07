@@ -92,6 +92,149 @@ class NutritionTotals {
   }
 }
 
+enum NutritionHistoryPeriod { day, week, month, year }
+
+class NutritionHistoryBucket {
+  const NutritionHistoryBucket({
+    required this.label,
+    required this.start,
+    required this.end,
+    required this.targetCalories,
+    required this.totals,
+  });
+
+  final String label;
+  final DateTime start;
+  final DateTime end;
+  final int targetCalories;
+  final NutritionTotals totals;
+}
+
+abstract final class NutritionHistory {
+  static List<NutritionHistoryBucket> buckets({
+    required Iterable<NutritionEntry> entries,
+    required NutritionHistoryPeriod period,
+    required DateTime now,
+    required int dailyCalorieTarget,
+  }) {
+    final localNow = now.toLocal();
+    final today = DateTime(localNow.year, localNow.month, localNow.day);
+    return switch (period) {
+      NutritionHistoryPeriod.day => List.generate(6, (index) {
+        final start = today.add(Duration(hours: index * 4));
+        final end = start.add(const Duration(hours: 4));
+        return _bucket(
+          entries,
+          label: '${index * 4}'.padLeft(2, '0'),
+          start: start,
+          end: end,
+          targetCalories: (dailyCalorieTarget / 6).round(),
+        );
+      }),
+      NutritionHistoryPeriod.week => List.generate(7, (index) {
+        final start = today.subtract(Duration(days: 6 - index));
+        return _bucket(
+          entries,
+          label: '${start.day}',
+          start: start,
+          end: start.add(const Duration(days: 1)),
+          targetCalories: dailyCalorieTarget,
+        );
+      }),
+      NutritionHistoryPeriod.month => _monthBuckets(
+        entries,
+        today: today,
+        dailyCalorieTarget: dailyCalorieTarget,
+      ),
+      NutritionHistoryPeriod.year => List.generate(12, (index) {
+        final start = DateTime(today.year, index + 1);
+        final end = DateTime(today.year, index + 2);
+        return _bucket(
+          entries,
+          label: '${index + 1}',
+          start: start,
+          end: end,
+          targetCalories: dailyCalorieTarget * end.difference(start).inDays,
+        );
+      }),
+    };
+  }
+
+  static List<NutritionEntry> entriesFor({
+    required Iterable<NutritionEntry> entries,
+    required NutritionHistoryPeriod period,
+    required DateTime now,
+  }) {
+    final localNow = now.toLocal();
+    final today = DateTime(localNow.year, localNow.month, localNow.day);
+    final start = switch (period) {
+      NutritionHistoryPeriod.day => today,
+      NutritionHistoryPeriod.week => today.subtract(const Duration(days: 6)),
+      NutritionHistoryPeriod.month => DateTime(today.year, today.month),
+      NutritionHistoryPeriod.year => DateTime(today.year),
+    };
+    final end = switch (period) {
+      NutritionHistoryPeriod.day => today.add(const Duration(days: 1)),
+      NutritionHistoryPeriod.week => today.add(const Duration(days: 1)),
+      NutritionHistoryPeriod.month => DateTime(today.year, today.month + 1),
+      NutritionHistoryPeriod.year => DateTime(today.year + 1),
+    };
+    return entries
+        .where(
+          (entry) =>
+              !entry.loggedAt.isBefore(start) && entry.loggedAt.isBefore(end),
+        )
+        .toList(growable: false);
+  }
+
+  static List<NutritionHistoryBucket> _monthBuckets(
+    Iterable<NutritionEntry> entries, {
+    required DateTime today,
+    required int dailyCalorieTarget,
+  }) {
+    final monthStart = DateTime(today.year, today.month);
+    final monthEnd = DateTime(today.year, today.month + 1);
+    final result = <NutritionHistoryBucket>[];
+    var cursor = monthStart;
+    var index = 1;
+    while (cursor.isBefore(monthEnd)) {
+      final candidateEnd = cursor.add(const Duration(days: 7));
+      final end = candidateEnd.isAfter(monthEnd) ? monthEnd : candidateEnd;
+      result.add(
+        _bucket(
+          entries,
+          label: 'W$index',
+          start: cursor,
+          end: end,
+          targetCalories: dailyCalorieTarget * end.difference(cursor).inDays,
+        ),
+      );
+      cursor = end;
+      index += 1;
+    }
+    return result;
+  }
+
+  static NutritionHistoryBucket _bucket(
+    Iterable<NutritionEntry> entries, {
+    required String label,
+    required DateTime start,
+    required DateTime end,
+    required int targetCalories,
+  }) => NutritionHistoryBucket(
+    label: label,
+    start: start,
+    end: end,
+    targetCalories: targetCalories,
+    totals: NutritionTotals.fromEntries(
+      entries.where(
+        (entry) =>
+            !entry.loggedAt.isBefore(start) && entry.loggedAt.isBefore(end),
+      ),
+    ),
+  );
+}
+
 class NutritionTargets {
   const NutritionTargets({
     required this.calories,

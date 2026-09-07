@@ -115,9 +115,12 @@ item. Every restorable purchase flow must expose Restore Purchases.
 Quest contracts award Armory Credits through an explicit claim action. Claims
 are idempotent and persisted with the inventory state so the same contract can
 never be collected twice. Armory Credits are earned through training and are
-used only for standard cosmetic items; they are not sold for money. Other rat
-items unlock directly from specific level-ups. Paid cosmetics remain direct
-store products and must not be confused with earned progression.
+used only for complete cosmetic looks; they are not sold for money. The first
+look is attainable early, while later looks use a steep aspirational price
+curve. Separate wearable pieces are not sold because a look may be equipped
+only when its full identity, evolution, view, and animation matrix is approved.
+Paid cosmetics remain direct store products and must not be confused with
+earned progression.
 
 ## Player profile, character, and coaching
 
@@ -141,11 +144,12 @@ The rat grows at each evolution milestone. Growth is modest at early levels and
 ends in an intentionally massive Mr Olympia-scale silhouette at level 100.
 Cosmetics are never positioned over the rat at runtime. A wearable look is
 released only as a complete, authored full-character appearance covering male,
-female, and non-binary identities from both the front and back. Individual
-items may exist as collection rewards or separate concept art before that
-matrix is complete, but they cannot be equipped, sold, or composited onto the
-rat. The selected complete appearance is persisted independently from training
-progress. See `docs/CHARACTER_APPEARANCE_PIPELINE.md`.
+female, and non-binary identities from both the front and back, all evolution
+stages, and all required animations. Complete looks may be previewed as roadmap
+concepts before that matrix is complete, but they cannot be equipped, sold, or
+composited onto the rat. The selected complete appearance is persisted
+independently from training progress. See
+`docs/CHARACTER_APPEARANCE_PIPELINE.md`.
 The milestone physique, file, and review contract is defined in
 `docs/CHARACTER_EVOLUTION_ART_DIRECTION.md`.
 

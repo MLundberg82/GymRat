@@ -91,6 +91,59 @@ void main() {
     );
   });
 
+  test('nutrition history supports day, week, month and year windows', () {
+    final now = DateTime(2026, 9, 7, 12);
+    final entries = [
+      _nutritionEntry('today', DateTime(2026, 9, 7, 8), 500),
+      _nutritionEntry('week', DateTime(2026, 9, 3, 12), 700),
+      _nutritionEntry('month', DateTime(2026, 9, 1, 12), 900),
+      _nutritionEntry('year', DateTime(2026, 2, 1, 12), 1100),
+      _nutritionEntry('old', DateTime(2025, 12, 31, 12), 1300),
+    ];
+
+    expect(
+      NutritionHistory.entriesFor(
+        entries: entries,
+        period: NutritionHistoryPeriod.day,
+        now: now,
+      ).map((entry) => entry.id),
+      ['today'],
+    );
+    expect(
+      NutritionHistory.entriesFor(
+        entries: entries,
+        period: NutritionHistoryPeriod.week,
+        now: now,
+      ).map((entry) => entry.id),
+      ['today', 'week', 'month'],
+    );
+    expect(
+      NutritionHistory.entriesFor(
+        entries: entries,
+        period: NutritionHistoryPeriod.month,
+        now: now,
+      ),
+      hasLength(3),
+    );
+    expect(
+      NutritionHistory.entriesFor(
+        entries: entries,
+        period: NutritionHistoryPeriod.year,
+        now: now,
+      ),
+      hasLength(4),
+    );
+    expect(
+      NutritionHistory.buckets(
+        entries: entries,
+        period: NutritionHistoryPeriod.year,
+        now: now,
+        dailyCalorieTarget: 2000,
+      ),
+      hasLength(12),
+    );
+  });
+
   group('NutritionStore', () {
     setUp(() {
       SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -162,3 +215,14 @@ void main() {
     });
   });
 }
+
+NutritionEntry _nutritionEntry(String id, DateTime loggedAt, int calories) =>
+    NutritionEntry(
+      id: id,
+      name: id,
+      loggedAt: loggedAt,
+      calories: calories,
+      proteinGrams: 20,
+      carbohydrateGrams: 30,
+      fatGrams: 10,
+    );

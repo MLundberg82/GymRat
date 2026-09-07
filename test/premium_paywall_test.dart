@@ -43,6 +43,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('UNLOCK THE FULL GYMRAT EXPERIENCE'), findsOneWidget);
+    expect(find.text('10% extra XP boost'), findsOneWidget);
+    expect(find.textContaining('PB rules'), findsNothing);
     expect(find.byIcon(Icons.close_rounded), findsOneWidget);
     expect(find.text('NOT NOW'), findsOneWidget);
 

@@ -127,6 +127,8 @@ def _validate_scene(
         errors.append(f"{identity}: embedded tail contract is stale")
 
     if require_render_ready:
+        if scene.get("gymrat_model_review_required", False):
+            errors.append(f"{identity}: model pilot still requires visual approval")
         model = bpy.data.collections.get("MODEL_AUTHORED")
         meshes = (
             []

@@ -94,6 +94,17 @@ fixed root. It deliberately does not render or register sprites until the
 external scene contains a bound authored character mesh and the render passes
 the normal approval gate.
 
+`author_motion_library.py` expands that foundation into the complete motion
+contract for one identity: breathing, blink, articulated tail, all four front
+and back emotes, victory, PB celebration, and recovery. Every curve uses
+auto-clamped Bezier interpolation and leaves the root translation untouched.
+
+`build_level1_model_pilot.py` creates an editable, armature-bound level-1
+proportion model and projects only the approved front/back master textures onto
+it. It marks the scene as requiring visual approval, so strict render-ready
+validation continues to fail until form, joints, hands, feet, clothing, and
+materials have passed review. The tool never writes runtime assets directly.
+
 Approved direction references are recorded in the external source directory's
 `approvals.json`. The bootstrap verifies their SHA-256 fingerprints and embeds
 them as locked, non-rendering Blender references. A direction approval does not

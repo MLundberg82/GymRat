@@ -5,11 +5,20 @@ import 'rat_character_view.dart';
 
 enum RatEmoteType { doubleBiceps, chestFlex, legPose, triceps }
 
+enum RatEmoteMotionQuality { keyPoses, continuous }
+
 class RatEmoteSequence {
-  const RatEmoteSequence({required this.type, required this.frames});
+  const RatEmoteSequence({
+    required this.type,
+    required this.frames,
+    this.motionQuality = RatEmoteMotionQuality.keyPoses,
+  });
 
   final RatEmoteType type;
   final List<String> frames;
+  final RatEmoteMotionQuality motionQuality;
+
+  bool get isContinuous => motionQuality == RatEmoteMotionQuality.continuous;
 }
 
 class RatAnimationSet {
@@ -213,11 +222,11 @@ abstract final class RatAnimationCatalog {
       final entry = frame(type, 'entry');
       final hold = frame(type, 'hold');
       return <String>[
-        neutral,
-        ...List<String>.filled(7, entry),
-        ...List<String>.filled(27, hold),
-        ...List<String>.filled(7, entry),
-        ...List<String>.filled(6, neutral),
+        ...List<String>.filled(5, neutral),
+        ...List<String>.filled(18, entry),
+        ...List<String>.filled(15, hold),
+        ...List<String>.filled(5, entry),
+        ...List<String>.filled(5, neutral),
       ];
     }
 

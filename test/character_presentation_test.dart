@@ -34,30 +34,66 @@ void main() {
       expect(GymRatCharacter.emoteFrameIndex(0, 48), 0);
       expect(GymRatCharacter.emoteFrameIndex(.5, 48), 23);
       expect(GymRatCharacter.emoteFrameIndex(1, 48), 47);
-      const frames = <String>['neutral', 'entry', 'hold', 'entry', 'neutral'];
+      const frames = <String>[
+        'neutral',
+        'neutral',
+        'entry',
+        'entry',
+        'hold',
+        'hold',
+        'entry',
+        'neutral',
+      ];
+      final transitions = GymRatCharacter.emoteTransitions(frames);
       final neutral = GymRatCharacter.emoteRenderFrame(0, frames);
-      final neutralBeforeEntry = GymRatCharacter.emoteRenderFrame(.079, frames);
-      final entering = GymRatCharacter.emoteRenderFrame(.08, frames);
-      final holding = GymRatCharacter.emoteRenderFrame(.5, frames);
-      final returning = GymRatCharacter.emoteRenderFrame(.76, frames);
-      final entryBeforeNeutral = GymRatCharacter.emoteRenderFrame(.919, frames);
-      final exiting = GymRatCharacter.emoteRenderFrame(.92, frames);
+      final neutralBeforeEntry = GymRatCharacter.emoteRenderFrame(.27, frames);
+      final entering = GymRatCharacter.emoteRenderFrame(2 / 7, frames);
+      final holding = GymRatCharacter.emoteRenderFrame(4 / 7, frames);
+      final returning = GymRatCharacter.emoteRenderFrame(6 / 7, frames);
+      final exiting = GymRatCharacter.emoteRenderFrame(1, frames);
       expect(neutral.asset, 'neutral');
+      expect(transitions, <double>[2 / 7, 4 / 7, 6 / 7, 1]);
       expect(neutralBeforeEntry.asset, 'neutral');
       expect(entering.asset, 'entry');
-      expect(entering.blurSigma, greaterThan(4));
+      expect(entering.blurSigma, greaterThan(5));
       expect(holding.asset, 'hold');
-      expect(holding.blurSigma, 0);
+      expect(holding.blurSigma, greaterThan(5));
       expect(returning.asset, 'entry');
-      expect(entryBeforeNeutral.asset, 'entry');
       expect(exiting.asset, 'neutral');
-      expect(exiting.blurSigma, greaterThan(4));
+      expect(exiting.blurSigma, greaterThan(5));
       expect(blink.left, greaterThan(0));
       expect(blink.right, lessThan(320));
       expect(blink.top, greaterThan(0));
       expect(blink.bottom, lessThan(600 / 4));
     },
   );
+
+  test('continuous emotes play every authored frame without fallback blur', () {
+    final frames = List<String>.generate(48, (index) => 'frame_$index');
+    const sequence = RatEmoteSequence(
+      type: RatEmoteType.doubleBiceps,
+      frames: <String>[],
+      motionQuality: RatEmoteMotionQuality.continuous,
+    );
+    final middle = GymRatCharacter.emoteRenderFrame(
+      .5,
+      frames,
+      continuous: true,
+    );
+
+    expect(middle.asset, 'frame_23');
+    expect(middle.blurSigma, 0);
+    expect(
+      GymRatCharacter.durationForEmote(
+        RatEmoteSequence(
+          type: sequence.type,
+          frames: frames,
+          motionQuality: sequence.motionQuality,
+        ),
+      ),
+      const Duration(seconds: 2),
+    );
+  });
 
   test('every level-1 identity and view has authored motion', () {
     for (final gender in RatGender.values) {
@@ -94,9 +130,13 @@ void main() {
             expect(emote.frames, hasLength(48));
             expect(emote.frames.first, set.neutral);
             expect(emote.frames.last, set.neutral);
-            expect(emote.frames[1], contains('_entry'));
-            expect(emote.frames[8], contains('_hold'));
-            expect(emote.frames.skip(42), everyElement(set.neutral));
+            expect(emote.frames.take(5), everyElement(set.neutral));
+            expect(emote.frames[5], contains('_entry'));
+            expect(emote.frames[22], contains('_entry'));
+            expect(emote.frames[23], contains('_hold'));
+            expect(emote.frames[37], contains('_hold'));
+            expect(emote.frames[38], contains('_entry'));
+            expect(emote.frames.skip(43), everyElement(set.neutral));
           }
         }
       }

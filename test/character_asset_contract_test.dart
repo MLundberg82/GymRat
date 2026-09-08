@@ -58,6 +58,34 @@ void main() {
     );
   });
 
+  test('a visual stage cannot ship without its matching motion contract', () {
+    const staticOnly = RatAppearance(
+      id: 'static_only',
+      approvedMotionContractVersion: RatAppearanceCatalog.motionContractVersion,
+      stages: <int, Map<RatGender, RatAppearanceAssets>>{
+        1: <RatGender, RatAppearanceAssets>{
+          RatGender.male: RatAppearanceAssets(front: 'm1f', back: 'm1b'),
+          RatGender.female: RatAppearanceAssets(front: 'f1f', back: 'f1b'),
+          RatGender.nonBinary: RatAppearanceAssets(front: 'n1f', back: 'n1b'),
+        },
+      },
+    );
+
+    expect(staticOnly.isComplete, isTrue);
+    expect(
+      staticOnly.hasCompleteMotionContract(
+        RatAppearanceCatalog.motionContractVersion,
+      ),
+      isFalse,
+    );
+    expect(
+      RatAppearanceCatalog.base.hasCompleteMotionContract(
+        RatAppearanceCatalog.motionContractVersion,
+      ),
+      isTrue,
+    );
+  });
+
   test('partial identity or unsupported stages fail the release contract', () {
     const partial = RatAppearance(
       id: 'partial',

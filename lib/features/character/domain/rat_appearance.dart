@@ -22,12 +22,14 @@ class RatAppearance {
     required this.stages,
     this.productId,
     this.approvedMotionContractVersion,
+    this.approvedMotionStages = const <int>{},
   });
 
   final String id;
   final Map<int, Map<RatGender, RatAppearanceAssets>> stages;
   final String? productId;
   final int? approvedMotionContractVersion;
+  final Set<int> approvedMotionStages;
 
   Map<RatGender, RatAppearanceAssets> get assetsByGender => stages[1] ?? {};
 
@@ -44,6 +46,13 @@ class RatAppearance {
       });
 
   List<int> get approvedStages => stages.keys.toList()..sort();
+
+  bool hasApprovedMotionForStage(int stage) =>
+      approvedMotionStages.contains(stage);
+
+  bool hasCompleteMotionContract(int version) =>
+      approvedMotionContractVersion == version &&
+      approvedStages.every(hasApprovedMotionForStage);
 
   int approvedStageForLevel(int level) {
     var approvedStage = 1;
@@ -73,6 +82,8 @@ abstract final class RatAppearanceCatalog {
 
   static const RatAppearance base = RatAppearance(
     id: baseId,
+    approvedMotionContractVersion: motionContractVersion,
+    approvedMotionStages: <int>{1},
     stages: {
       1: {
         RatGender.male: RatAppearanceAssets(
@@ -98,8 +109,7 @@ abstract final class RatAppearanceCatalog {
   static bool _isReleaseComplete(RatAppearance appearance) {
     if (!appearance.isComplete) return false;
     if (!base.approvedStages.every(appearance.stages.containsKey)) return false;
-    return appearance.id == baseId ||
-        appearance.approvedMotionContractVersion == motionContractVersion;
+    return appearance.hasCompleteMotionContract(motionContractVersion);
   }
 
   static RatAppearance byId(String? id) {

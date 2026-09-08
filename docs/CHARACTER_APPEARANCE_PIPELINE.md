@@ -83,7 +83,9 @@ root, and transparency so the animation cannot jump or drift. If the exact
 character/view combination has no authored pose, tapping it does nothing.
 Purchased appearances additionally require the current approved motion-contract
 version in `RatAppearanceCatalog`; static front/back images alone can never make
-a store appearance equipable.
+a store appearance equipable. Each approved visual stage must also be listed in
+the appearance's `approvedMotionStages`; a complete static six-image matrix
+without matching motion therefore remains unreachable.
 
 ## Motion matrix
 
@@ -106,6 +108,13 @@ and never reuse front frames for the back view. The level 1-100 Blender source
 and export contract lives in `tool/character_pipeline/pipeline_manifest.json`.
 Internal asset-contract tests report whether the selected combination has authored motion or
 uses the safe fallback.
+
+Runtime distinguishes a temporary three-key-pose sequence from a continuous
+authored export. Key-pose playback uses one full-body sprite at a time and a
+short bounded motion blur at each swap so neighbouring bodies can never appear
+together. A continuous export plays every authored frame at 24 fps with no
+fallback blur or frame collapsing. Adding 48 filenames while repeating only
+three images does not qualify as continuous motion.
 
 ## Tail anchor contract
 

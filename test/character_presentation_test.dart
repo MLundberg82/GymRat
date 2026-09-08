@@ -29,7 +29,7 @@ void main() {
       final blink = GymRatCharacter.blinkRect(const Size(320, 600));
       expect(
         GymRatCharacter.emotePlaybackDuration,
-        const Duration(milliseconds: 1250),
+        const Duration(milliseconds: 1600),
       );
       expect(GymRatCharacter.emoteFrameIndex(0, 48), 0);
       expect(GymRatCharacter.emoteFrameIndex(.5, 48), 23);
@@ -130,13 +130,13 @@ void main() {
             expect(emote.frames, hasLength(48));
             expect(emote.frames.first, set.neutral);
             expect(emote.frames.last, set.neutral);
-            expect(emote.frames.take(5), everyElement(set.neutral));
-            expect(emote.frames[5], contains('_entry'));
-            expect(emote.frames[22], contains('_entry'));
-            expect(emote.frames[23], contains('_hold'));
-            expect(emote.frames[37], contains('_hold'));
-            expect(emote.frames[38], contains('_entry'));
-            expect(emote.frames.skip(43), everyElement(set.neutral));
+            expect(emote.frames.take(2), everyElement(set.neutral));
+            expect(emote.frames[2], contains('_entry'));
+            expect(emote.frames[6], contains('_entry'));
+            expect(emote.frames[7], contains('_hold'));
+            expect(emote.frames[40], contains('_hold'));
+            expect(emote.frames[41], contains('_entry'));
+            expect(emote.frames.skip(46), everyElement(set.neutral));
           }
         }
       }

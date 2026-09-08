@@ -222,11 +222,11 @@ abstract final class RatAnimationCatalog {
       final entry = frame(type, 'entry');
       final hold = frame(type, 'hold');
       return <String>[
-        ...List<String>.filled(5, neutral),
-        ...List<String>.filled(18, entry),
-        ...List<String>.filled(15, hold),
+        ...List<String>.filled(2, neutral),
         ...List<String>.filled(5, entry),
-        ...List<String>.filled(5, neutral),
+        ...List<String>.filled(34, hold),
+        ...List<String>.filled(5, entry),
+        ...List<String>.filled(2, neutral),
       ];
     }
 

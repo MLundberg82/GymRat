@@ -33,7 +33,7 @@ class GymRatCharacter extends StatefulWidget {
   final String? emoteSemanticLabel;
 
   static const double displayScale = .70;
-  static const Duration emotePlaybackDuration = Duration(milliseconds: 1250);
+  static const Duration emotePlaybackDuration = Duration(milliseconds: 1600);
   static const int emoteFrameRate = 24;
 
   static int emoteFrameIndex(double progress, int frameCount) {
@@ -61,7 +61,7 @@ class GymRatCharacter extends StatefulWidget {
     }
 
     final swapPoints = transitions ?? emoteTransitions(frames);
-    const blurWindow = .052;
+    const blurWindow = .035;
     const maximumBlur = 6.0;
     var blurSigma = 0.0;
     for (final transition in swapPoints) {

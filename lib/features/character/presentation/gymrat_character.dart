@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,14 +33,14 @@ class GymRatCharacter extends StatefulWidget {
   final String? emoteSemanticLabel;
 
   static const double displayScale = .70;
-  static const Duration emotePlaybackDuration = Duration(milliseconds: 1500);
+  static const Duration emotePlaybackDuration = Duration(milliseconds: 1250);
 
   static int emoteFrameIndex(double progress, int frameCount) {
     if (frameCount <= 1) return 0;
     return (progress.clamp(0.0, 1.0) * (frameCount - 1)).floor();
   }
 
-  static ({String fromAsset, String toAsset, double mix}) emoteBlendFrame(
+  static ({String asset, double blurSigma}) emoteRenderFrame(
     double progress,
     List<String> frames,
   ) {
@@ -54,28 +55,29 @@ class GymRatCharacter extends StatefulWidget {
       orElse: () => entry,
     );
     final value = progress.clamp(0.0, 1.0);
-
-    ({String fromAsset, String toAsset, double mix}) blend(
-      String from,
-      String to,
-      double start,
-      double end,
-    ) {
-      final linear = ((value - start) / (end - start)).clamp(0.0, 1.0);
-      return (
-        fromAsset: from,
-        toAsset: to,
-        mix: Curves.easeInOutSine.transform(linear),
+    const transitions = <double>[.08, .22, .76, .92];
+    const blurWindow = .06;
+    const maximumBlur = 4.2;
+    var blurSigma = 0.0;
+    for (final transition in transitions) {
+      final proximity = (1 - (value - transition).abs() / blurWindow).clamp(
+        0.0,
+        1.0,
+      );
+      blurSigma = max(
+        blurSigma,
+        Curves.easeInOutSine.transform(proximity) * maximumBlur,
       );
     }
 
-    if (value < .18) return blend(neutral, entry, 0, .18);
-    if (value < .34) return blend(entry, hold, .18, .34);
-    if (value < .68) {
-      return (fromAsset: hold, toAsset: hold, mix: 0);
-    }
-    if (value < .84) return blend(hold, entry, .68, .84);
-    return blend(entry, neutral, .84, 1);
+    final asset = switch (value) {
+      < .08 => neutral,
+      < .22 => entry,
+      < .76 => hold,
+      < .92 => entry,
+      _ => neutral,
+    };
+    return (asset: asset, blurSigma: blurSigma);
   }
 
   static double breathingScaleX(double progress) =>
@@ -540,8 +542,8 @@ class _GymRatCharacterState extends State<GymRatCharacter>
           animation: Listenable.merge([_breathingController, _emoteController]),
           builder: (context, _) {
             final emote = _emoteController.value;
-            final emoteBlend = _action == _IdleAction.emote
-                ? GymRatCharacter.emoteBlendFrame(emote, _activeFrames)
+            final emoteFrame = _action == _IdleAction.emote
+                ? GymRatCharacter.emoteRenderFrame(emote, _activeFrames)
                 : null;
             final currentAsset = _action == _IdleAction.blinking
                 ? _identityMaster
@@ -590,24 +592,17 @@ class _GymRatCharacterState extends State<GymRatCharacter>
                         ],
                       ),
                     ),
-                  if (emoteBlend != null)
-                    Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        Opacity(
-                          opacity: 1 - emoteBlend.mix,
-                          child: _emoteImage(
-                            emoteBlend.fromAsset,
-                            semanticLabel: widget.gender.name,
-                          ),
-                        ),
-                        if (emoteBlend.mix > 0 &&
-                            emoteBlend.toAsset != emoteBlend.fromAsset)
-                          Opacity(
-                            opacity: emoteBlend.mix,
-                            child: _emoteImage(emoteBlend.toAsset),
-                          ),
-                      ],
+                  if (emoteFrame != null)
+                    ImageFiltered(
+                      imageFilter: ui.ImageFilter.blur(
+                        sigmaX: emoteFrame.blurSigma,
+                        sigmaY: emoteFrame.blurSigma * .32,
+                        tileMode: TileMode.decal,
+                      ),
+                      child: _emoteImage(
+                        emoteFrame.asset,
+                        semanticLabel: widget.gender.name,
+                      ),
                     )
                   else
                     characterImage,

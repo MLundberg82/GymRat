@@ -23,32 +23,41 @@ void main() {
     expect(torso.right, lessThan(320));
   });
 
-  test('emote playback uses a smooth blend without synthetic effects', () {
-    final blink = GymRatCharacter.blinkRect(const Size(320, 600));
-    expect(
-      GymRatCharacter.emotePlaybackDuration,
-      const Duration(milliseconds: 1500),
-    );
-    expect(GymRatCharacter.emoteFrameIndex(0, 48), 0);
-    expect(GymRatCharacter.emoteFrameIndex(.5, 48), 23);
-    expect(GymRatCharacter.emoteFrameIndex(1, 48), 47);
-    const frames = <String>['neutral', 'entry', 'hold', 'entry', 'neutral'];
-    final entering = GymRatCharacter.emoteBlendFrame(.09, frames);
-    final holding = GymRatCharacter.emoteBlendFrame(.5, frames);
-    final exiting = GymRatCharacter.emoteBlendFrame(.92, frames);
-    expect(entering.fromAsset, 'neutral');
-    expect(entering.toAsset, 'entry');
-    expect(entering.mix, closeTo(.5, .005));
-    expect(holding.fromAsset, 'hold');
-    expect(holding.toAsset, 'hold');
-    expect(exiting.fromAsset, 'entry');
-    expect(exiting.toAsset, 'neutral');
-    expect(exiting.mix, closeTo(.5, .005));
-    expect(blink.left, greaterThan(0));
-    expect(blink.right, lessThan(320));
-    expect(blink.top, greaterThan(0));
-    expect(blink.bottom, lessThan(600 / 4));
-  });
+  test(
+    'emote playback keeps one full-body sprite visible at every instant',
+    () {
+      final blink = GymRatCharacter.blinkRect(const Size(320, 600));
+      expect(
+        GymRatCharacter.emotePlaybackDuration,
+        const Duration(milliseconds: 1250),
+      );
+      expect(GymRatCharacter.emoteFrameIndex(0, 48), 0);
+      expect(GymRatCharacter.emoteFrameIndex(.5, 48), 23);
+      expect(GymRatCharacter.emoteFrameIndex(1, 48), 47);
+      const frames = <String>['neutral', 'entry', 'hold', 'entry', 'neutral'];
+      final neutral = GymRatCharacter.emoteRenderFrame(0, frames);
+      final neutralBeforeEntry = GymRatCharacter.emoteRenderFrame(.079, frames);
+      final entering = GymRatCharacter.emoteRenderFrame(.08, frames);
+      final holding = GymRatCharacter.emoteRenderFrame(.5, frames);
+      final returning = GymRatCharacter.emoteRenderFrame(.76, frames);
+      final entryBeforeNeutral = GymRatCharacter.emoteRenderFrame(.919, frames);
+      final exiting = GymRatCharacter.emoteRenderFrame(.92, frames);
+      expect(neutral.asset, 'neutral');
+      expect(neutralBeforeEntry.asset, 'neutral');
+      expect(entering.asset, 'entry');
+      expect(entering.blurSigma, greaterThan(4));
+      expect(holding.asset, 'hold');
+      expect(holding.blurSigma, 0);
+      expect(returning.asset, 'entry');
+      expect(entryBeforeNeutral.asset, 'entry');
+      expect(exiting.asset, 'neutral');
+      expect(exiting.blurSigma, greaterThan(4));
+      expect(blink.left, greaterThan(0));
+      expect(blink.right, lessThan(320));
+      expect(blink.top, greaterThan(0));
+      expect(blink.bottom, lessThan(600 / 4));
+    },
+  );
 
   test('every level-1 identity and view has authored motion', () {
     for (final gender in RatGender.values) {
@@ -160,7 +169,16 @@ void main() {
         );
         detector.onTap!();
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 420));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(
+          find.descendant(of: character, matching: find.byType(Image)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: character, matching: find.byType(ImageFiltered)),
+          findsOneWidget,
+        );
+        await tester.pump(const Duration(milliseconds: 320));
         final animatedAssets = tester
             .widgetList<Image>(
               find.descendant(of: character, matching: find.byType(Image)),

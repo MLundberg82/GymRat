@@ -217,7 +217,6 @@ def _set_emote_pose(rig: bpy.types.Object, motion: str, view: str, pose: str) ->
     if pose == "entry":
         if motion == "double_biceps":
             _straight_arms(rig)
-            _step_leg(rig, view, 0.45)
         elif motion == "chest_flex":
             _side_chest_entry(rig, view)
         elif motion == "leg_pose":
@@ -227,7 +226,6 @@ def _set_emote_pose(rig: bpy.types.Object, motion: str, view: str, pose: str) ->
         return
     if motion == "double_biceps":
         _double_biceps(rig, view)
-        _step_leg(rig, view)
     elif motion == "chest_flex":
         _side_chest(rig, view)
     elif motion == "leg_pose":

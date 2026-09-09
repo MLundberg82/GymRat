@@ -59,8 +59,8 @@
     "pose_specs": {
       "double_biceps": {
         "entry": "both arms extend straight outward to shoulder height",
-        "hold_front": "elbows bend inward, upper arms remain at shoulder height, one leg steps forward and outward",
-        "hold_back": "elbows bend as in front pose, one foot steps back onto the toes",
+        "hold_front": "elbows bend inward, upper arms remain at shoulder height, both feet stay planted and both thighs contract",
+        "hold_back": "elbows bend as in front pose, both feet stay planted and the rear chain contracts",
         "hands_male_non_binary": "fists clenched and turned down",
         "hands_female": "open hands in the Women's Physique convention"
       },

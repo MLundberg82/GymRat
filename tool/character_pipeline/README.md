@@ -62,8 +62,33 @@ Validate the Blender scene anatomy and embedded contracts:
 
 Before rendering runtime emotes, repeat the same command with
 `--require-render-ready`. This stricter gate also requires a rig-bound authored
-mesh and real bone keyframes covering every pose action. Reference-only scenes
-must fail this gate and cannot be exported into the app.
+mesh, one explicitly marked `gymrat_physique_driver` with the complete
+`PHYSIQUE_001` through `PHYSIQUE_100` milestone shape-key set, and real bone
+keyframes covering every pose action. Reference-only scenes or a model with
+dummy/missing evolution stages must fail this gate and cannot be exported into
+the app.
+
+## Runtime 3D export
+
+After all three models and their evolution shape keys pass visual review,
+export one compact, rigged GLB per identity:
+
+```sh
+/Users/mattias/Applications/Blender.app/Contents/MacOS/Blender \
+  --background \
+  --python-exit-code 1 \
+  --python tool/character_pipeline/export_runtime_glb.py \
+  -- \
+  --repo-root "$PWD" \
+  --source-root "$(dirname "$PWD")/GymRat-character-source"
+```
+
+The exporter always runs the strict render-ready validation first and has no
+incomplete-scene override. It exports the bound mesh, rig, all named actions,
+and the approved physique morph targets while excluding reference planes,
+cameras, and lights. Outputs stay in the external source directory under
+`runtime_exports/` until the mobile renderer, file-size budget, and device
+tests are approved.
 
 A milestone is registered in Flutter only after all three identities, both
 views, and all mandatory animation exports pass review. Missing or partial

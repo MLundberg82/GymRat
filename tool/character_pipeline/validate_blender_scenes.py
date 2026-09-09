@@ -25,6 +25,53 @@ def _close(actual: float, expected: float) -> bool:
     return math.isclose(actual, expected, abs_tol=0.0001)
 
 
+def _required_physique_keys(manifest: dict[str, object]) -> tuple[str, ...]:
+    return tuple(f"PHYSIQUE_{level:03d}" for level in manifest["stages"])
+
+
+def _validate_physique_driver(
+    identity: str,
+    meshes: list[bpy.types.Object],
+    manifest: dict[str, object],
+) -> list[str]:
+    errors: list[str] = []
+    drivers = [mesh for mesh in meshes if mesh.get("gymrat_physique_driver")]
+    if not drivers:
+        return [
+            f"{identity}: no authored mesh is marked as the physique driver"
+        ]
+
+    required = _required_physique_keys(manifest)
+    for driver in drivers:
+        shape_keys = driver.data.shape_keys
+        if shape_keys is None:
+            errors.append(f"{identity}: {driver.name} has no physique shape keys")
+            continue
+        available = {key.name for key in shape_keys.key_blocks}
+        missing = [name for name in required if name not in available]
+        if missing:
+            errors.append(
+                f"{identity}: {driver.name} is missing physique shape keys: "
+                + ", ".join(missing)
+            )
+            continue
+
+        previous = shape_keys.key_blocks[required[0]]
+        for name in required[1:]:
+            current = shape_keys.key_blocks[name]
+            maximum_delta = max(
+                (current.data[index].co - previous.data[index].co).length
+                for index in range(len(current.data))
+            )
+            if maximum_delta <= 0.0005:
+                errors.append(
+                    f"{identity}: {driver.name} {name} does not visibly "
+                    "change from the previous milestone"
+                )
+            previous = current
+    return errors
+
+
 def _validate_scene(
     scene_path: Path,
     identity: str,
@@ -147,6 +194,7 @@ def _validate_scene(
                 errors.append(
                     f"{identity}: {mesh.name} is not bound to RIG_GYMRAT"
                 )
+        errors.extend(_validate_physique_driver(identity, meshes, manifest))
     return errors
 
 
@@ -180,4 +228,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    exit_code = main()
+    if exit_code:
+        raise RuntimeError("GymRat Blender scene validation failed")

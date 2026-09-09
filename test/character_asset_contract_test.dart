@@ -244,6 +244,67 @@ void main() {
       }
     },
   );
+
+  test('breathing keeps the face and muzzle pixel-exact', () async {
+    for (final gender in RatGender.values) {
+      for (final view in RatCharacterView.values) {
+        final motion = RatAnimationCatalog.forCharacter(
+          gender: gender,
+          view: view,
+          level: 1,
+        );
+        for (final frame in motion.breathing.toSet()) {
+          await _expectTopRegionMatches(motion.neutral, frame, .292);
+        }
+      }
+    }
+  });
+}
+
+Future<void> _expectTopRegionMatches(
+  String referenceAsset,
+  String candidateAsset,
+  double heightFraction,
+) async {
+  final referenceData = await rootBundle.load(referenceAsset);
+  final candidateData = await rootBundle.load(candidateAsset);
+  final referenceCodec = await ui.instantiateImageCodec(
+    referenceData.buffer.asUint8List(
+      referenceData.offsetInBytes,
+      referenceData.lengthInBytes,
+    ),
+  );
+  final candidateCodec = await ui.instantiateImageCodec(
+    candidateData.buffer.asUint8List(
+      candidateData.offsetInBytes,
+      candidateData.lengthInBytes,
+    ),
+  );
+  final referenceImage = (await referenceCodec.getNextFrame()).image;
+  final candidateImage = (await candidateCodec.getNextFrame()).image;
+  final referencePixels = await referenceImage.toByteData(
+    format: ui.ImageByteFormat.rawRgba,
+  );
+  final candidatePixels = await candidateImage.toByteData(
+    format: ui.ImageByteFormat.rawRgba,
+  );
+  if (referencePixels == null || candidatePixels == null) {
+    throw TestFailure('Could not decode breathing comparison pixels.');
+  }
+  final rowBytes = referenceImage.width * 4;
+  final lockedBytes =
+      (referenceImage.height * heightFraction).floor() * rowBytes;
+  for (var offset = 0; offset < lockedBytes; offset++) {
+    if (referencePixels.getUint8(offset) != candidatePixels.getUint8(offset)) {
+      throw TestFailure(
+        '$candidateAsset changes the locked face region at byte $offset.',
+      );
+    }
+  }
+  referenceImage.dispose();
+  candidateImage.dispose();
+  referenceCodec.dispose();
+  candidateCodec.dispose();
 }
 
 List<String> _stagePaths(int level) {

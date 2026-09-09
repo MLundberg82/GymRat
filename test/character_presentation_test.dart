@@ -266,6 +266,24 @@ void main() {
     },
   );
 
+  test('authored breathing uses unique steps and a symmetric return', () {
+    for (final gender in RatGender.values) {
+      for (final view in RatCharacterView.values) {
+        final frames = RatAnimationCatalog.forCharacter(
+          gender: gender,
+          view: view,
+          level: 1,
+        ).breathing;
+
+        expect(frames, hasLength(9), reason: '$gender $view');
+        expect(frames.toSet(), hasLength(5), reason: '$gender $view');
+        expect(frames.first, frames.last, reason: '$gender $view');
+        expect(frames[1], frames[7], reason: '$gender $view');
+        expect(frames[3], frames[5], reason: '$gender $view');
+      }
+    }
+  });
+
   test('motion never leaks into another view or identity', () {
     for (final gender in RatGender.values) {
       final front = RatAnimationCatalog.forCharacter(

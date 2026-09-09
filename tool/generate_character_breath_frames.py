@@ -86,15 +86,25 @@ def _breathing_frame(source: Image.Image, power: float) -> Image.Image:
     y = np.arange(height, dtype=np.float32)[:, None]
     x = np.arange(width, dtype=np.float32)[None, :]
 
-    top = height * 0.185
-    bottom = height * 0.515
+    # Keep the complete face, muzzle, whiskers, ears, and neck pixel-exact.
+    # The earlier envelope started at 18.5% of the canvas and therefore bent
+    # the lower muzzle on the non-binary master. Breathing belongs below the
+    # clavicles and must never make the character's identity wobble.
+    top = height * 0.292
+    bottom = height * 0.535
     progress = np.clip((y - top) / (bottom - top), 0.0, 1.0)
     envelope = np.maximum(np.sin(progress * np.pi), 0.0) ** 1.7
     envelope *= ((y >= top) & (y <= bottom)).astype(np.float32)
 
-    # Peak inhale widens the ribcage by 0.7%. The deformation tapers to zero
-    # before the head and waistband, so the face and foot line remain fixed.
-    expansion = 1.0 + envelope * (0.007 * power)
+    # Fade the deformation before it reaches the arms and tail. This produces
+    # ribcage expansion rather than widening every opaque pixel on the row.
+    horizontal_distance = np.abs(x - center_x) / (width * 0.285)
+    horizontal_envelope = np.clip(1.0 - horizontal_distance**4, 0.0, 1.0)
+    envelope = envelope * horizontal_envelope
+
+    # Peak inhale widens the ribcage by 0.55%. The motion stays subtle without
+    # moving the canvas or foot line.
+    expansion = 1.0 + envelope * (0.0055 * power)
     source_x = center_x + (x - center_x) / expansion
     source_x = np.broadcast_to(source_x, (height, width))
 
@@ -119,7 +129,7 @@ def _breathing_frame(source: Image.Image, power: float) -> Image.Image:
     ):
         output[corner_y, corner_x] = 0
 
-    return Image.fromarray(output, mode="RGBA")
+    return Image.fromarray(output)
 
 
 def main() -> None:

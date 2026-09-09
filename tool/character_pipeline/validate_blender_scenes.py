@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import sys
+import traceback
 from pathlib import Path
 
 import bpy
@@ -27,6 +28,69 @@ def _close(actual: float, expected: float) -> bool:
 
 def _required_physique_keys(manifest: dict[str, object]) -> tuple[str, ...]:
     return tuple(f"PHYSIQUE_{level:03d}" for level in manifest["stages"])
+
+
+def _action_curves(action: bpy.types.Action):
+    for layer in action.layers:
+        for strip in layer.strips:
+            for slot in action.slots:
+                channelbag = strip.channelbag(slot, ensure=False)
+                if channelbag is not None:
+                    yield from channelbag.fcurves
+
+
+def _value_at(curve, frame: int) -> float | None:
+    for point in curve.keyframe_points:
+        if _close(float(point.co.x), float(frame)):
+            return float(point.co.y)
+    return None
+
+
+def _validate_emote_curves(identity: str, action: bpy.types.Action) -> list[str]:
+    errors: list[str] = []
+    curves = tuple(_action_curves(action))
+    if not curves:
+        return [f"{identity}: {action.name} has no authored bone animation"]
+
+    checkpoints = {1, 10, 24, 38, 43, 48}
+    for curve in curves:
+        values = {frame: _value_at(curve, frame) for frame in checkpoints}
+        if any(value is None for value in values.values()):
+            errors.append(
+                f"{identity}: {action.name} {curve.data_path} is missing "
+                "an emote checkpoint"
+            )
+            continue
+        if any(
+            point.interpolation != "BEZIER"
+            or point.handle_left_type != "AUTO_CLAMPED"
+            or point.handle_right_type != "AUTO_CLAMPED"
+            for point in curve.keyframe_points
+        ):
+            errors.append(
+                f"{identity}: {action.name} {curve.data_path} is not "
+                "auto-clamped Bezier"
+            )
+        if not _close(values[1], values[48]):
+            errors.append(
+                f"{identity}: {action.name} {curve.data_path} does not "
+                "return to neutral"
+            )
+        if not _close(values[10], values[43]):
+            errors.append(
+                f"{identity}: {action.name} {curve.data_path} has an "
+                "asymmetric return"
+            )
+        if not _close(values[24], values[38]):
+            errors.append(
+                f"{identity}: {action.name} {curve.data_path} moves during "
+                "the contraction hold"
+            )
+        if 'pose.bones["root"].location' in curve.data_path and any(
+            not _close(float(point.co.y), 0.0) for point in curve.keyframe_points
+        ):
+            errors.append(f"{identity}: {action.name} translates the root bone")
+    return errors
 
 
 def _validate_physique_driver(
@@ -136,6 +200,7 @@ def _validate_scene(
                     errors.append(
                         f"{identity}: ACT_{action_name} markers are stale"
                     )
+                errors.extend(_validate_emote_curves(identity, action))
                 if require_render_ready:
                     curve_start, curve_end = action.curve_frame_range
                     if (
@@ -228,6 +293,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    if exit_code:
-        raise RuntimeError("GymRat Blender scene validation failed")
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception:
+        traceback.print_exc()
+        raise SystemExit(1)

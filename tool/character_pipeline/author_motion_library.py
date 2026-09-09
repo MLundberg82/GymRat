@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import sys
+import traceback
 from pathlib import Path
 
 import bpy
@@ -121,7 +122,28 @@ def _side_chest(rig: bpy.types.Object, view: str) -> None:
     _aim(rig, "upper_arm.R", (-0.38, -depth, -0.22))
     _aim(rig, "forearm.R", (0.60, depth * 0.25, 0.25))
     _aim(rig, "hand.R", (0.35, depth * 0.2, 0.05))
+    _side_chest_legs(rig, view, 1.0)
     _rotate_local(rig, "chest", (0.02, 0.0, -0.13))
+
+
+def _side_chest_entry(rig: bpy.types.Object, view: str) -> None:
+    depth = -0.28 if view == "front" else 0.28
+    _aim(rig, "upper_arm.L", (0.82, depth, -0.10))
+    _aim(rig, "forearm.L", (-0.78, depth * 0.24, 0.34))
+    _aim(rig, "hand.L", (-0.24, depth * 0.18, 0.04))
+    _aim(rig, "upper_arm.R", (-0.58, -depth, -0.13))
+    _aim(rig, "forearm.R", (0.72, depth * 0.16, 0.16))
+    _aim(rig, "hand.R", (0.31, depth * 0.12, 0.04))
+    _side_chest_legs(rig, view, 0.45)
+    _rotate_local(rig, "chest", (0.01, 0.0, -0.06))
+
+
+def _side_chest_legs(rig: bpy.types.Object, view: str, amount: float) -> None:
+    """Bend the presented leg and keep its foot pointed onto the toes."""
+    depth = -0.18 if view == "front" else 0.18
+    _aim(rig, "thigh.L", (0.12 * amount, depth * amount, -1.0))
+    _aim(rig, "shin.L", (-0.04 * amount, depth * amount, -1.0))
+    _aim(rig, "foot.L", (0.12 * amount, -0.35, -0.94))
 
 
 def _leg_pose(rig: bpy.types.Object, view: str) -> None:
@@ -138,6 +160,18 @@ def _leg_pose(rig: bpy.types.Object, view: str) -> None:
     _rotate_local(rig, "spine_02", (0.06, 0.0, 0.0))
 
 
+def _leg_pose_entry(rig: bpy.types.Object, view: str) -> None:
+    depth = 0.12 if view == "front" else -0.12
+    _aim(rig, "upper_arm.L", (0.82, depth, 0.48))
+    _aim(rig, "forearm.L", (-0.72, depth, 0.54))
+    _aim(rig, "hand.L", (-0.18, 0.20, 0.14))
+    _aim(rig, "upper_arm.R", (-0.82, depth, 0.48))
+    _aim(rig, "forearm.R", (0.72, depth, 0.54))
+    _aim(rig, "hand.R", (0.18, 0.20, 0.14))
+    _step_leg(rig, view, 0.45)
+    _rotate_local(rig, "spine_02", (0.025, 0.0, 0.0))
+
+
 def _side_triceps(rig: bpy.types.Object, view: str) -> None:
     rear = 0.62 if view == "front" else -0.62
     _aim(rig, "upper_arm.L", (0.32, rear, -0.72))
@@ -146,7 +180,28 @@ def _side_triceps(rig: bpy.types.Object, view: str) -> None:
     _aim(rig, "upper_arm.R", (-0.24, rear, -0.74))
     _aim(rig, "forearm.R", (0.28, rear, -0.88))
     _aim(rig, "hand.R", (0.55, rear, 0.08))
+    _side_triceps_legs(rig, view, 1.0)
     _rotate_local(rig, "chest", (-0.02, 0.0, 0.10))
+
+
+def _side_triceps_entry(rig: bpy.types.Object, view: str) -> None:
+    rear = 0.34 if view == "front" else -0.34
+    _aim(rig, "upper_arm.L", (0.52, rear, -0.46))
+    _aim(rig, "forearm.L", (-0.12, rear, -0.78))
+    _aim(rig, "hand.L", (-0.36, rear, 0.06))
+    _aim(rig, "upper_arm.R", (-0.47, rear, -0.48))
+    _aim(rig, "forearm.R", (0.16, rear, -0.76))
+    _aim(rig, "hand.R", (0.36, rear, 0.06))
+    _side_triceps_legs(rig, view, 0.45)
+    _rotate_local(rig, "chest", (-0.01, 0.0, 0.045))
+
+
+def _side_triceps_legs(rig: bpy.types.Object, view: str, amount: float) -> None:
+    """Keep the near foot planted while the far foot rises onto its toes."""
+    depth = 0.17 if view == "front" else -0.17
+    _aim(rig, "thigh.R", (-0.09 * amount, depth * amount, -1.0))
+    _aim(rig, "shin.R", (0.03 * amount, depth * amount, -1.0))
+    _aim(rig, "foot.R", (-0.10 * amount, -0.33, -0.94))
 
 
 def _step_leg(rig: bpy.types.Object, view: str, amount: float = 1.0) -> None:
@@ -160,9 +215,15 @@ def _set_emote_pose(rig: bpy.types.Object, motion: str, view: str, pose: str) ->
     if pose == "neutral":
         return
     if pose == "entry":
-        _straight_arms(rig)
-        if motion in {"double_biceps", "leg_pose"}:
+        if motion == "double_biceps":
+            _straight_arms(rig)
             _step_leg(rig, view, 0.45)
+        elif motion == "chest_flex":
+            _side_chest_entry(rig, view)
+        elif motion == "leg_pose":
+            _leg_pose_entry(rig, view)
+        elif motion == "triceps":
+            _side_triceps_entry(rig, view)
         return
     if motion == "double_biceps":
         _double_biceps(rig, view)
@@ -303,4 +364,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        traceback.print_exc()
+        raise SystemExit(1)

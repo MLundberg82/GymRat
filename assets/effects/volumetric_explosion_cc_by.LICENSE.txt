@@ -1,0 +1,10 @@
+Asset: volumetric_explosion_cc_by.png
+Original files: Explosion Dome/000128.png through 000201.png
+Creator: fscopel
+Source: https://opengameart.org/content/photo-realistic-explosions
+License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+License URL: https://creativecommons.org/licenses/by/3.0/
+
+GymRat resized the 74 source frames, removed their black matte into an alpha
+channel, and packed them into a 10-by-8 RGBA atlas. The source is free for
+commercial use without a watermark when this attribution is preserved.

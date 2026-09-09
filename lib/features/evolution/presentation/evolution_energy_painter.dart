@@ -17,6 +17,11 @@ class EvolutionEnergyPainter extends CustomPainter {
     return ((progress - start) / (end - start)).clamp(0.0, 1.0).toDouble();
   }
 
+  double _noise(int value) {
+    final raw = math.sin(value * 12.9898 + 78.233) * 43758.5453;
+    return raw - raw.floorToDouble();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width * .5, size.height * .49);
@@ -67,7 +72,7 @@ class EvolutionEnergyPainter extends CustomPainter {
     double charge,
     double blast,
   ) {
-    for (var ring = 0; ring < 5; ring++) {
+    for (var ring = 0; ring < 3; ring++) {
       final phase = (progress * (1.15 + ring * .14) + ring * .17) % 1;
       final radius = shortest * (.17 + ring * .055 + phase * .05);
       final alpha = charge * (1 - blast) * (.42 - ring * .055);
@@ -98,15 +103,17 @@ class EvolutionEnergyPainter extends CustomPainter {
     double charge,
     double fade,
   ) {
-    const count = 72;
+    const count = 38;
     for (var i = 0; i < count; i++) {
+      final seed = _noise(i * 41 + 5);
       final angle =
-          i / count * math.pi * 2 + progress * (i.isEven ? 1.7 : -1.2);
+          (i / count + (seed - .5) * .055) * math.pi * 2 +
+          progress * (i.isEven ? .62 : -.48);
       final direction = Offset(math.cos(angle), math.sin(angle));
-      final wave = .52 + (i % 9) * .055;
+      final wave = .48 + seed * .48;
       final outer = shortest * (.28 + .24 * charge) * wave;
       final inner = outer - shortest * (.025 + (i % 5) * .009) * charge;
-      final alpha = charge * fade * (.32 + (i % 7) * .07) * intensity;
+      final alpha = charge * fade * (.18 + seed * .30) * intensity;
       canvas.drawLine(
         center + direction * inner,
         center + direction * outer,
@@ -128,17 +135,18 @@ class EvolutionEnergyPainter extends CustomPainter {
     double fade,
   ) {
     if (blast <= 0) return;
-    const count = 118;
+    const count = 44;
     for (var i = 0; i < count; i++) {
-      final angle = i / count * math.pi * 2 + (i % 11) * .026;
+      final seed = _noise(i * 59 + 17);
+      final angle = (i / count + (seed - .5) * .07) * math.pi * 2;
       final direction = Offset(math.cos(angle), math.sin(angle));
-      final length = shortest * (.12 + .75 * blast) * (.46 + (i % 10) * .06);
-      final alpha = fade * (.42 + (i % 6) * .09) * intensity;
+      final length = shortest * (.12 + .72 * blast) * (.40 + seed * .60);
+      final alpha = fade * (.16 + seed * .34) * intensity;
       canvas.drawLine(
         center + direction * length * .08,
         center + direction * length,
         Paint()
-          ..strokeWidth = 1.2 + (i % 6) * .85
+          ..strokeWidth = .8 + seed * 2.8
           ..strokeCap = StrokeCap.round
           ..color = <Color>[
             Colors.white,
@@ -160,8 +168,11 @@ class EvolutionEnergyPainter extends CustomPainter {
   ) {
     final energy = math.max(charge * (1 - blast), blast * fade) * intensity;
     if (energy <= .02) return;
-    for (var bolt = 0; bolt < 14; bolt++) {
-      final angle = bolt / 14 * math.pi * 2 + progress * 2.4;
+    const boltCount = 7;
+    for (var bolt = 0; bolt < boltCount; bolt++) {
+      final seed = _noise(bolt * 103 + 47);
+      final angle =
+          (bolt / boltCount + seed * .12) * math.pi * 2 + progress * .62;
       final startRadius = size.shortestSide * (.13 + (bolt % 4) * .025);
       final endRadius = size.shortestSide * (.38 + (bolt % 5) * .055);
       final start =
@@ -173,18 +184,22 @@ class EvolutionEnergyPainter extends CustomPainter {
         final t = segment / segments;
         final base = Offset.lerp(start, end, t)!;
         final normal = Offset(-math.sin(angle), math.cos(angle));
-        final zigzag = math.sin((segment + bolt) * 2.7) * (8 + bolt % 4 * 3);
+        final zigzag = math.sin((segment + bolt) * 2.7) * (4 + seed * 11);
         path.lineTo(base.dx + normal.dx * zigzag, base.dy + normal.dy * zigzag);
       }
       canvas.drawPath(
         path,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = bolt.isEven ? 3.2 : 1.8
+          ..strokeWidth = 1.2 + seed * 2.0
           ..strokeCap = StrokeCap.round
           ..color =
               (bolt % 3 == 0 ? const Color(0xFF54FFAA) : GymRatColors.gold)
-                  .withValues(alpha: (energy * .82).clamp(0.0, 1.0).toDouble())
+                  .withValues(
+                    alpha: (energy * (.32 + seed * .38))
+                        .clamp(0.0, 1.0)
+                        .toDouble(),
+                  )
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
       );
     }
@@ -198,10 +213,12 @@ class EvolutionEnergyPainter extends CustomPainter {
     double blast,
     double fade,
   ) {
-    const count = 190;
+    const count = 92;
     for (var i = 0; i < count; i++) {
-      final seed = (i * 73 % 191) / 191;
-      final angle = seed * math.pi * 2 + progress * (i.isEven ? 2.1 : -1.45);
+      final seed = _noise(i * 73 + 11);
+      final angle =
+          (i / count + (seed - .5) * .08) * math.pi * 2 +
+          progress * (i.isEven ? .72 : -.54);
       final travel = blast > 0
           ? (.12 + blast * (.48 + (i % 8) * .055))
           : (.13 + charge * .19 + seed * .12);

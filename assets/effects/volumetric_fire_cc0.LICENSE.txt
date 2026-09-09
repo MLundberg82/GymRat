@@ -1,0 +1,9 @@
+Asset: volumetric_fire_cc0.png
+Original file: Fire01.png
+Creator: Soluna Software
+Source: https://opengameart.org/content/lots-of-game-effects
+License: CC0 1.0 Universal
+License URL: https://creativecommons.org/publicdomain/zero/1.0/
+
+The original 1024x1024 atlas contains 32 RGBA fire-plume frames. GymRat varies
+their phase, size, and depth to avoid visible repetition.

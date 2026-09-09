@@ -10,6 +10,8 @@ import '../../../core/units/weight_unit_store.dart';
 import '../../workout/domain/workout_result.dart';
 import '../../workout/presentation/workout_copy.dart';
 import 'rpg_flame_painter.dart';
+import 'volumetric_explosion.dart';
+import 'volumetric_fire.dart';
 
 class PrCelebration extends StatefulWidget {
   const PrCelebration({
@@ -112,6 +114,14 @@ class _PrCelebrationState extends State<PrCelebration>
             children: <Widget>[
               _background(p),
               CustomPaint(painter: _PrExplosionPainter(p)),
+              VolumetricExplosion(
+                progress: p,
+                start: .01,
+                end: .54,
+                alignment: const Alignment(0, -.30),
+                scale: 1.06,
+              ),
+              VolumetricFire(progress: p, intensity: .92),
               RepaintBoundary(
                 child: CustomPaint(
                   painter: RpgFlamePainter(
@@ -416,6 +426,11 @@ class _PrExplosionPainter extends CustomPainter {
   double _part(double start, double end) =>
       ((progress - start) / (end - start)).clamp(0.0, 1.0).toDouble();
 
+  double _noise(int value) {
+    final raw = math.sin(value * 12.9898 + 78.233) * 43758.5453;
+    return raw - raw.floorToDouble();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height * .35);
@@ -438,54 +453,70 @@ class _PrExplosionPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28),
     );
 
-    for (var i = 0; i < 72; i++) {
-      final angle = i / 72 * math.pi * 2 + (i % 5) * .027;
+    const streakCount = 26;
+    for (var i = 0; i < streakCount; i++) {
+      final seed = _noise(i * 43 + 7);
+      final angle = (i / streakCount + (seed - .5) * .055) * math.pi * 2;
       final direction = Offset(math.cos(angle), math.sin(angle));
       final length =
-          size.shortestSide * (.20 + .67 * burst) * (.54 + (i % 9) * .052);
+          size.shortestSide * (.15 + .62 * burst) * (.42 + seed * .58);
       canvas.drawLine(
-        center + direction * length * .16,
+        center + direction * length * (.20 + seed * .12),
         center + direction * length,
         Paint()
-          ..color = colors[i % colors.length].withValues(alpha: burstFade * .94)
-          ..strokeWidth = 1.4 + (i % 5) * .85
+          ..color = colors[i % colors.length].withValues(
+            alpha: burstFade * (.22 + seed * .30),
+          )
+          ..strokeWidth = .8 + seed * 2.1
           ..strokeCap = StrokeCap.round,
       );
     }
 
-    for (var ring = 0; ring < 5; ring++) {
-      final value = ((progress - .025 - ring * .035) / (.42 + ring * .055))
+    for (var ring = 0; ring < 2; ring++) {
+      final value = ((progress - .035 - ring * .075) / (.40 + ring * .08))
           .clamp(0.0, 1.0)
           .toDouble();
-      canvas.drawCircle(
-        center,
-        size.shortestSide * (.08 + .65 * value),
+      final radius = size.shortestSide * (.08 + .61 * value);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: radius * 2,
+          height: radius * (1.18 + ring * .10),
+        ),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 11 * (1 - value) + 1
-          ..color = colors[ring].withValues(alpha: (1 - value) * .82),
+          ..strokeWidth = 7 * (1 - value) + .8
+          ..color = colors[ring + 1].withValues(alpha: (1 - value) * .42)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2),
       );
     }
 
-    for (var i = 0; i < 96; i++) {
-      final angle = i / 96 * math.pi * 2 + (i % 11) * .041;
-      final speed = .55 + (i % 10) * .055;
+    const particleCount = 54;
+    for (var i = 0; i < particleCount; i++) {
+      final seed = _noise(i * 61 + 17);
+      final angle = (i / particleCount + (seed - .5) * .075) * math.pi * 2;
+      final speed = .48 + seed * .52;
       final distance = size.shortestSide * (.10 + .78 * burst) * speed;
       final point =
           center + Offset(math.cos(angle), math.sin(angle)) * distance;
-      final radius = 1.8 + (i % 5) * 1.05;
+      final radius = 1.1 + seed * 3.0;
       canvas.drawCircle(
         point,
         radius,
-        Paint()..color = colors[i % colors.length].withValues(alpha: burstFade),
+        Paint()
+          ..color = colors[i % colors.length].withValues(
+            alpha: burstFade * (.42 + seed * .46),
+          ),
       );
     }
 
     final afterFade = (1 - after).clamp(0.0, 1.0).toDouble();
-    for (var i = 0; i < 44; i++) {
-      final angle = i / 44 * math.pi * 2 - progress * 1.8;
+    const shardCount = 22;
+    for (var i = 0; i < shardCount; i++) {
+      final seed = _noise(i * 79 + 29);
+      final angle = (i / shardCount + (seed - .5) * .09) * math.pi * 2;
       final distance =
-          size.shortestSide * (.12 + .62 * after) * (.64 + (i % 6) * .055);
+          size.shortestSide * (.12 + .62 * after) * (.52 + seed * .46);
       final point =
           center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.save();
@@ -494,12 +525,12 @@ class _PrExplosionPainter extends CustomPainter {
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset.zero,
-          width: 10 + (i % 4) * 4,
-          height: 2.5 + (i % 3),
+          width: 6 + seed * 11,
+          height: 1.5 + seed * 2.2,
         ),
         Paint()
           ..color = colors[(i + 2) % colors.length].withValues(
-            alpha: afterFade * .92,
+            alpha: afterFade * (.38 + seed * .46),
           ),
       );
       canvas.restore();
@@ -507,12 +538,14 @@ class _PrExplosionPainter extends CustomPainter {
 
     if (progress < .64) {
       final lightning = math.sin(_part(.03, .64) * math.pi).abs();
-      for (var bolt = 0; bolt < 10; bolt++) {
-        final angle = bolt / 10 * math.pi * 2 + progress * 2;
+      const boltCount = 5;
+      for (var bolt = 0; bolt < boltCount; bolt++) {
+        final seed = _noise(bolt * 97 + 37);
+        final angle = (bolt / boltCount + seed * .12) * math.pi * 2;
         final path = Path()..moveTo(center.dx, center.dy);
         for (var step = 1; step <= 5; step++) {
           final distance = size.shortestSide * .07 * step;
-          final side = (step.isEven ? 1 : -1) * 8.0;
+          final side = (step.isEven ? 1 : -1) * (4.0 + seed * 7);
           path.lineTo(
             center.dx +
                 math.cos(angle) * distance +
@@ -526,9 +559,9 @@ class _PrExplosionPainter extends CustomPainter {
           path,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = bolt.isEven ? 3.2 : 1.8
+            ..strokeWidth = 1.2 + seed * 1.8
             ..color = colors[bolt % colors.length].withValues(
-              alpha: lightning * .82,
+              alpha: lightning * (.36 + seed * .36),
             )
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
         );

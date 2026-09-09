@@ -13,6 +13,8 @@ import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/evolution_milestones.dart';
 import '../../rewards/presentation/rpg_flame_painter.dart';
+import '../../rewards/presentation/volumetric_explosion.dart';
+import '../../rewards/presentation/volumetric_fire.dart';
 import 'evolution_energy_painter.dart';
 
 class EvolutionMorph extends StatefulWidget {
@@ -215,6 +217,14 @@ class _EvolutionMorphState extends State<EvolutionMorph>
                   ),
                 ),
               ),
+              VolumetricExplosion(
+                progress: p,
+                start: .42,
+                end: .73,
+                alignment: const Alignment(0, -.02),
+                scale: 1.30 + intensity * .13,
+              ),
+              VolumetricFire(progress: p, intensity: 1.05 + intensity * .12),
               RepaintBoundary(
                 child: CustomPaint(
                   painter: RpgFlamePainter(

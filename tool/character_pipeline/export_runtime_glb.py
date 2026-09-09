@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 from pathlib import Path
 
 import bpy
@@ -126,6 +127,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    if exit_code:
-        raise RuntimeError("GymRat runtime GLB export failed validation")
+    try:
+        raise SystemExit(main())
+    except SystemExit:
+        raise
+    except Exception:
+        traceback.print_exc()
+        raise SystemExit(1)

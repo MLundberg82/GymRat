@@ -13,6 +13,8 @@ import '../../character/presentation/gymrat_character.dart';
 import '../../profile/domain/training_profile.dart';
 import '../domain/gym_upgrade.dart';
 import 'rpg_flame_painter.dart';
+import 'volumetric_explosion.dart';
+import 'volumetric_fire.dart';
 
 class LevelUpCelebration extends StatefulWidget {
   const LevelUpCelebration({
@@ -146,6 +148,17 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
                   progress: p,
                   evolution: widget.isEvolution,
                 ),
+              ),
+              VolumetricExplosion(
+                progress: p,
+                start: .43,
+                end: .75,
+                alignment: const Alignment(0, -.04),
+                scale: widget.isEvolution ? 1.42 : 1.12,
+              ),
+              VolumetricFire(
+                progress: p,
+                intensity: widget.isEvolution ? 1.18 : 1,
               ),
               RepaintBoundary(
                 child: CustomPaint(
@@ -656,6 +669,11 @@ class _LevelEnergyPainter extends CustomPainter {
     return ((progress - start) / (end - start)).clamp(0.0, 1.0).toDouble();
   }
 
+  double _noise(int value) {
+    final raw = math.sin(value * 12.9898 + 78.233) * 43758.5453;
+    return raw - raw.floorToDouble();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height * .48);
@@ -681,7 +699,7 @@ class _LevelEnergyPainter extends CustomPainter {
             Color(0xFFFF8F00),
             Color(0xFF2EFF88),
           ];
-    final chargeRayCount = evolution ? 54 : 42;
+    final chargeRayCount = evolution ? 34 : 26;
 
     canvas.drawCircle(
       center,
@@ -696,7 +714,10 @@ class _LevelEnergyPainter extends CustomPainter {
     );
 
     for (var i = 0; i < chargeRayCount; i++) {
-      final angle = i / chargeRayCount * math.pi * 2 + progress * 1.4;
+      final seed = _noise(i * 37 + 5);
+      final angle =
+          (i / chargeRayCount + (seed - .5) * .055) * math.pi * 2 +
+          progress * (.34 + seed * .36);
       final inner = size.shortestSide * (.14 + .16 * charge);
       final outer = size.shortestSide * (.29 + .18 * charge);
       final direction = Offset(math.cos(angle), math.sin(angle));
@@ -705,65 +726,78 @@ class _LevelEnergyPainter extends CustomPainter {
         center + direction * outer,
         Paint()
           ..color = colors[i % colors.length].withValues(
-            alpha: (charge * chargeFade * .88).clamp(0.0, 1.0).toDouble(),
+            alpha: (charge * chargeFade * (.26 + seed * .34))
+                .clamp(0.0, 1.0)
+                .toDouble(),
           )
           ..strokeWidth = 1.2 + (i % 5) * .72
           ..strokeCap = StrokeCap.round,
       );
     }
 
-    final explosionRays = evolution ? 84 : 68;
+    final explosionRays = evolution ? 40 : 32;
     for (var i = 0; i < explosionRays; i++) {
-      final angle = i / explosionRays * math.pi * 2 + (i % 7) * .023;
+      final seed = _noise(i * 53 + 13);
+      final angle = (i / explosionRays + (seed - .5) * .065) * math.pi * 2;
       final direction = Offset(math.cos(angle), math.sin(angle));
       final length =
-          size.shortestSide * (.12 + .82 * blast) * (.48 + (i % 10) * .054);
+          size.shortestSide * (.12 + .76 * blast) * (.42 + seed * .58);
       canvas.drawLine(
         center + direction * length * .12,
         center + direction * length,
         Paint()
           ..color = colors[i % colors.length].withValues(
-            alpha: blastEnergy * .96,
+            alpha: blastEnergy * (.20 + seed * .34),
           )
-          ..strokeWidth = 1.5 + (i % 6) * .88
+          ..strokeWidth = .8 + seed * 2.6
           ..strokeCap = StrokeCap.round,
       );
     }
 
-    for (var ring = 0; ring < (evolution ? 8 : 6); ring++) {
-      final value = _part(.43 + ring * .022, .72 + ring * .048);
-      canvas.drawCircle(
-        center,
-        size.shortestSide * (.07 + .74 * value),
+    for (var ring = 0; ring < 2; ring++) {
+      final value = _part(.44 + ring * .065, .73 + ring * .085);
+      final radius = size.shortestSide * (.07 + .70 * value);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: radius * 2,
+          height: radius * (1.12 + ring * .13),
+        ),
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 13 * (1 - value) + 1
-          ..color = colors[ring % colors.length].withValues(
-            alpha: (1 - value) * .88,
-          ),
+          ..strokeWidth = 8 * (1 - value) + .8
+          ..color = colors[(ring + 1) % colors.length].withValues(
+            alpha: (1 - value) * .46,
+          )
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.3),
       );
     }
 
-    final particleCount = evolution ? 170 : 128;
+    final particleCount = evolution ? 90 : 70;
     for (var i = 0; i < particleCount; i++) {
-      final angle = i / particleCount * math.pi * 2 + (i % 13) * .029;
+      final seed = _noise(i * 67 + 23);
+      final angle = (i / particleCount + (seed - .5) * .08) * math.pi * 2;
       final distance =
-          size.shortestSide * (.08 + .82 * blast) * (.52 + (i % 10) * .052);
+          size.shortestSide * (.08 + .80 * blast) * (.44 + seed * .56);
       final point =
           center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.drawCircle(
         point,
-        1.5 + (i % 6) * .88,
+        1.0 + seed * 3.6,
         Paint()
-          ..color = colors[i % colors.length].withValues(alpha: blastEnergy),
+          ..color = colors[i % colors.length].withValues(
+            alpha: blastEnergy * (.36 + seed * .48),
+          ),
       );
     }
 
-    final shardCount = evolution ? 72 : 52;
+    final shardCount = evolution ? 36 : 28;
     for (var i = 0; i < shardCount; i++) {
-      final angle = i / shardCount * math.pi * 2 - progress * 2.2;
+      final seed = _noise(i * 89 + 31);
+      final angle =
+          (i / shardCount + (seed - .5) * .085) * math.pi * 2 - progress * .7;
       final distance =
-          size.shortestSide * (.12 + .72 * echo) * (.58 + (i % 8) * .052);
+          size.shortestSide * (.12 + .72 * echo) * (.50 + seed * .48);
       final point =
           center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.save();
@@ -772,12 +806,12 @@ class _LevelEnergyPainter extends CustomPainter {
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset.zero,
-          width: 10 + (i % 5) * 4,
-          height: 2.5 + (i % 3),
+          width: 6 + seed * 13,
+          height: 1.5 + seed * 2.5,
         ),
         Paint()
           ..color = colors[(i + 2) % colors.length].withValues(
-            alpha: echoEnergy * .94,
+            alpha: echoEnergy * (.36 + seed * .48),
           ),
       );
       canvas.restore();
@@ -785,13 +819,15 @@ class _LevelEnergyPainter extends CustomPainter {
 
     if (progress > .14 && progress < .72) {
       final energy = math.sin(_part(.14, .72) * math.pi).abs();
-      final boltCount = evolution ? 14 : 11;
+      final boltCount = evolution ? 8 : 6;
       for (var bolt = 0; bolt < boltCount; bolt++) {
-        final angle = bolt / boltCount * math.pi * 2 + progress * 2.3;
+        final seed = _noise(bolt * 101 + 41);
+        final angle =
+            (bolt / boltCount + seed * .11) * math.pi * 2 + progress * .55;
         final path = Path()..moveTo(center.dx, center.dy);
         for (var step = 1; step <= 7; step++) {
           final distance = size.shortestSide * .052 * step;
-          final side = (step.isEven ? 1 : -1) * (8.0 + bolt % 3 * 2);
+          final side = (step.isEven ? 1 : -1) * (4.0 + seed * 9);
           path.lineTo(
             center.dx +
                 math.cos(angle) * distance +
@@ -805,9 +841,9 @@ class _LevelEnergyPainter extends CustomPainter {
           path,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = bolt.isEven ? 3.5 : 2.0
+            ..strokeWidth = 1.2 + seed * 2.0
             ..color = colors[bolt % colors.length].withValues(
-              alpha: energy * .88,
+              alpha: energy * (.35 + seed * .38),
             )
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
         );

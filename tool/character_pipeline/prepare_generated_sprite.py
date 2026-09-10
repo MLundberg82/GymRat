@@ -43,6 +43,75 @@ def _rgba_without_checker(path: Path) -> np.ndarray:
         return rgba
 
     rgb = rgba[..., :3].astype(np.int16)
+    blue_dominance = rgb[..., 2] - np.maximum(rgb[..., 0], rgb[..., 1])
+    border = np.concatenate(
+        (
+            blue_dominance[:16].reshape(-1),
+            blue_dominance[-16:].reshape(-1),
+            blue_dominance[:, :16].reshape(-1),
+            blue_dominance[:, -16:].reshape(-1),
+        )
+    )
+    if np.percentile(border, 50) >= 180:
+        # Image generators often paint a checkerboard instead of exporting
+        # alpha. A deliberately blue-screened review render gives us a much
+        # cleaner deterministic matte, including fur and whisker edges. The
+        # two thresholds retain opaque subject pixels, feather mixed edge
+        # pixels, and reject the uniform blue field.
+        border_rgb = np.concatenate(
+            (
+                rgb[:16].reshape(-1, 3),
+                rgb[-16:].reshape(-1, 3),
+                rgb[:, :16].reshape(-1, 3),
+                rgb[:, -16:].reshape(-1, 3),
+            )
+        )
+        background_rgb = np.median(border_rgb, axis=0).astype(np.float32)
+        background_dominance = max(
+            1.0,
+            background_rgb[2] - max(background_rgb[0], background_rgb[1]),
+        )
+        alpha = np.clip(
+            1.0
+            - np.maximum(blue_dominance.astype(np.float32), 0.0)
+            / background_dominance,
+            0.0,
+            1.0,
+        )
+        alpha[blue_dominance <= 0] = 1.0
+        alpha[blue_dominance >= background_dominance * 0.94] = 0.0
+
+        # Undo the blue-screen contribution in straight-alpha space. This is
+        # what removes the thin blue fringe that a simple colour threshold
+        # leaves around fur, whiskers and claws.
+        mixed = (alpha > 0.03) & (alpha < 1.0)
+        for channel in range(3):
+            foreground = (
+                rgb[..., channel].astype(np.float32)
+                - (1.0 - alpha) * background_rgb[channel]
+            ) / np.maximum(alpha, 0.03)
+            rgba[..., channel][mixed] = np.round(
+                np.clip(foreground[mixed], 0.0, 255.0)
+            ).astype(np.uint8)
+        rgba[..., 3] = np.round(alpha * 255).astype(np.uint8)
+        visible = rgba[..., 3] > 0
+        blue_spill = visible & (
+            rgba[..., 2].astype(np.int16)
+            > np.maximum(rgba[..., 0], rgba[..., 1]).astype(np.int16)
+        )
+        rgba[..., 2][blue_spill] = np.maximum(
+            rgba[..., 0], rgba[..., 1]
+        )[blue_spill]
+        cyan_spill = (
+            visible
+            & (rgba[..., 1].astype(np.int16) > rgba[..., 0].astype(np.int16) + 8)
+            & (rgba[..., 2].astype(np.int16) > rgba[..., 0].astype(np.int16) + 8)
+        )
+        rgba[..., 1][cyan_spill] = rgba[..., 0][cyan_spill]
+        rgba[..., 2][cyan_spill] = rgba[..., 0][cyan_spill]
+        rgba[rgba[..., 3] == 0, :3] = 0
+        return rgba
+
     minimum = rgb.min(axis=2)
     maximum = rgb.max(axis=2)
     spread = maximum - minimum

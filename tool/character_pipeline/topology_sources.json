@@ -1,0 +1,12 @@
+{
+  "mast_cc0": {
+    "title": "Mast - Blender 4.2.5",
+    "creator": "Daniel Salazar",
+    "source": "https://opengameart.org/content/mast-blender-425",
+    "license": "CC0 1.0 Universal",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sha256": "e3c29d87557d29ca70b700b1861149bf6111711f065c5d5c2379427630441838",
+    "external_path": "vendor/mast_cc0/Mast.blend",
+    "usage": "Topology donor only; original appearance and materials are never shipped."
+  }
+}
